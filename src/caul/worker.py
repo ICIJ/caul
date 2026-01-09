@@ -1,8 +1,13 @@
+from collections import namedtuple
+
 import torch
 
 import numpy as np
 
-from src.caul.model import ASRModel, WorkerResult
+from src.caul.model import ASRModel
+
+
+WorkerResult = namedtuple("WorkerResult", ["transcriptions", "scores"])
 
 
 class ASRWorker:
@@ -11,7 +16,7 @@ class ASRWorker:
         """Primary worker class. Handles transcription agnostically.
 
         :param models: ASRModel list or singleton
-        :param language_map: Map from ISO-639-3 code to index of model in models param
+        :param language_map: Map from ISO-639-3 language code to index of model in models param
         """
 
         if not isinstance(models, list):
@@ -25,13 +30,20 @@ class ASRWorker:
         self.language_map = language_map
 
     def startup(self):
+        """Load all models into memory"""
         for model in self.models:
             model.load()
 
     def shutdown(self):
+        """Garbage collect models"""
         self.models = []
 
     def get_model_by_language(self, language: str) -> ASRModel:
+        """Get model from language map or return first model if language is not mapped to model
+
+        :param language: ISO-639-3 language code
+        :return: ASRModel
+        """
         model_idx = self.language_map.get(language, None)
 
         if model_idx is None:
@@ -40,6 +52,13 @@ class ASRWorker:
         return self.models[model_idx]
 
     def transcribe(self, audio: list[np.ndarray | torch.Tensor | str] | np.ndarray | torch.Tensor | str, languages: list[str] = None):
+        """Transcribe audio tensors or strings. Returns a tuple of (transcription, score). A list of languages of
+        len(audio) may be passed to direct inputs to certain models.
+
+        :param audio: List of np.ndarray or torch.Tensor or str, or a singleton of same types
+        :param languages: List of ISO-639-3 language codes
+        :return: WorkerResult
+        """
         if not isinstance(audio, list):
             audio = [audio]
 

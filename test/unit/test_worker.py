@@ -28,3 +28,6 @@ def test__worker_with_single_parakeet_model_on_mps():
     assert transcription == "To embrace the chaos that they fought in this battle."
     assert score == -248
 
+
+def test__worker_with_single_whisper_model():
+    pass

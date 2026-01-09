@@ -24,11 +24,11 @@ class ParakeetModel(ASRModel):
     def unload(self):
         self.model = None
 
-    def transcribe(self, audio: list[np.ndarray | torch.Tensor | str] | np.ndarray | torch.Tensor | str):
+    def transcribe(self, audio: list[np.ndarray | torch.Tensor | str] | np.ndarray | torch.Tensor | str) -> list[tuple[str, float]]:
         """ Transcribe a batch of audio tensors or file names. Max length 24 minutes.
 
-        :param audio:
-        :return:
+        :param audio: List of np.ndarray or torch.Tensor or str, or a singleton of same types
+        :return: List of tuples of (transcription, score)
         """
         print(audio)
         predictions = self.model.transcribe(audio, timestamps=self.timestamps)
@@ -39,7 +39,7 @@ class ParakeetModel(ASRModel):
     def segment(self, audio: list[np.ndarray | torch.Tensor | str] | np.ndarray | torch.Tensor | str):
         """ Segment a batch of audio tensors or file names by duration; 24 minutes per batch.
 
-        :param audio:
+        :param audio: List of np.ndarray or torch.Tensor or str, or a singleton of same types
         :return: Batch of audio tensors of duration < 24 minutes each
         """
         pass
