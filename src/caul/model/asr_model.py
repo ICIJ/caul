@@ -3,8 +3,8 @@ import torch
 import numpy as np
 
 
-class ASRModel:
-    """ASRModel abstract"""
+class ASRModelHandler:
+    """ASRModelHandler abstract"""
 
     def transcribe(self, audio: list[np.ndarray | torch.Tensor | str] | np.ndarray | torch.Tensor | str):
         """

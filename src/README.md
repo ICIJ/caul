@@ -1,1 +1,0 @@
-### Universal Automatic Speech Recognition Worker

@@ -2,10 +2,10 @@ import torch
 
 import numpy as np
 
-from src.caul.model import ASRModel
+from src.caul.model import ASRModelHandler
 
 
-class WhisperCPPModel(ASRModel):
+class WhisperCPPModelHandler(ASRModelHandler):
 
     def transcribe(self, audio: list[np.ndarray | torch.Tensor | str] | np.ndarray | torch.Tensor | str):
         """List of np.ndarray or torch.Tensor or str, or a singleton of same types

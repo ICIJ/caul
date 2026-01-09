@@ -1,3 +1,3 @@
-from src.caul.model.asr_model import ASRModel
-from src.caul.model.parakeet_model import ParakeetModel
-from src.caul.model.whisper_cpp_model import WhisperCPPModel
+from src.caul.model.asr_model import ASRModelHandler
+from src.caul.model.parakeet_model import ParakeetModelHandler
+from src.caul.model.whisper_cpp_model import WhisperCPPModelHandler
