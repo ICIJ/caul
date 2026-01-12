@@ -7,8 +7,6 @@ import torchaudio
 from caul.constant import PARAKEET_SAMPLE_RATE, PARAKEET_MODEL_MAX_DURATION
 from src.caul.model import ASRModelHandler
 
-MAX_LENGTH = 24  # 24 minutes per batch max
-
 
 class ParakeetModelHandler(ASRModelHandler):
     """Model handler for NVIDIA's Parakeet family of ASR models. Supports up to 24 minutes of audio (batched or
