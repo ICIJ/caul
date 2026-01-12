@@ -1,4 +1,4 @@
-name: unit tests
+name: test
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
       - '.github/workflows/test-unit.yml'
 
 jobs:
-  test-caul:
+  unit-tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
