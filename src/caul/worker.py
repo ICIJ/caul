@@ -11,8 +11,13 @@ WorkerResult = namedtuple("WorkerResult", ["transcriptions", "scores"])
 
 
 class ASRWorker:
+    """ASRWorker class"""
 
-    def __init__(self, models: list[ASRModelHandler] | ASRModelHandler, language_map: dict[str, int] = None):
+    def __init__(
+        self,
+        models: list[ASRModelHandler] | ASRModelHandler,
+        language_map: dict[str, int] = None,
+    ):
         """Primary worker class. Handles transcription agnostically.
 
         :param models: ASRModelHandler list or singleton
@@ -51,9 +56,13 @@ class ASRWorker:
 
         return self.models[model_idx]
 
-    def transcribe(self, audio: list[np.ndarray | torch.Tensor | str] | np.ndarray | torch.Tensor | str, languages: list[str] = None) -> WorkerResult:
-        """Transcribe audio tensors or strings. Returns a tuple of (transcription, score). A list of languages of
-        len(audio) may be passed to direct inputs to certain models.
+    def transcribe(
+        self,
+        audio: list[np.ndarray | torch.Tensor | str] | np.ndarray | torch.Tensor | str,
+        languages: list[str] = None,
+    ) -> WorkerResult:
+        """Transcribe audio tensors or strings. Returns a tuple of (transcription, score). A list
+        of languages of len(audio) may be passed to direct inputs to certain models.
 
         :param audio: List of np.ndarray or torch.Tensor or str, or a singleton of same types
         :param languages: List of ISO-639-3 language codes
@@ -70,14 +79,14 @@ class ASRWorker:
             return self.models[0].transcribe(audio)
 
         # Sort by language where present, preserving original order for returning result
-        for idx, audio in enumerate(audio):
+        for idx, aud in enumerate(audio):
             language = languages[idx]
 
             if language not in audios_by_language:
                 audios_by_language[language] = []
 
             batch_language_ordering.append(language)
-            audios_by_language[language].append(audio)
+            audios_by_language[language].append(aud)
 
         # Run model on language batch
         for language, audio_list in audios_by_language.items():

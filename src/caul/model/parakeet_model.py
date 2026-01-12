@@ -9,27 +9,32 @@ from src.caul.model import ASRModelHandler
 
 
 class ParakeetModelHandler(ASRModelHandler):
-    """Model handler for NVIDIA's Parakeet family of ASR models. Supports up to 24 minutes of audio (batched or
-    unbatched) in a single pass. Assumes that audio inputs (wav files or tensors) are single-channel with a sample rate
-    of 16000—this last is very important for segmenting.
+    """Model handler for NVIDIA's Parakeet family of ASR models. Supports up to 24 minutes of audio
+    (batched or unbatched) in a single pass. Assumes that audio inputs (wav files or tensors) are
+    single-channel with a sample rate of 16000—this last is very important for segmenting.
     """
 
-    def __init__(self, model_name: str, device: str = "cpu", timestamps = True):
+    def __init__(self, model_name: str, device: str = "cpu", timestamps=True):
         self.model_name = model_name
         self.device = device
         self.timestamps = timestamps
         self.model = None
 
     def load(self):
-        self.model = nemo_asr.models.ASRModel.from_pretrained(self.model_name, map_location=torch.device(self.device))
-
-        self.model.freeze()
+        """Load model"""
+        self.model = nemo_asr.models.ASRModel.from_pretrained(
+            self.model_name, map_location=torch.device(self.device)
+        )
 
     def unload(self):
+        """Unload model"""
         self.model = None
 
-    def transcribe(self, audio: list[np.ndarray | torch.Tensor | str] | np.ndarray | torch.Tensor | str) -> list[tuple[str, float]]:
-        """ Segment and transcribe a batch of audio tensors or file names. Max length 24 minutes.
+    def transcribe(
+        self,
+        audio: list[np.ndarray | torch.Tensor | str] | np.ndarray | torch.Tensor | str,
+    ) -> list[tuple[str, float]]:
+        """Segment and transcribe a batch of audio tensors or file names. Max length 24 minutes.
 
         :param audio: List of np.ndarray or torch.Tensor or str, or a singleton of same types
         :return: List of tuples of (transcription, score)
@@ -43,7 +48,9 @@ class ParakeetModelHandler(ASRModelHandler):
         for batch in batches:
             indices, segments = zip(*batch)
             predictions = self.model.transcribe(segments, timestamps=self.timestamps)
-            transcriptions_with_scores = [(indices[idx], p.text, p.score) for idx, p in enumerate(predictions)]
+            transcriptions_with_scores = [
+                (indices[idx], p.text, p.score) for idx, p in enumerate(predictions)
+            ]
 
             transcriptions += transcriptions_with_scores
 
@@ -55,8 +62,11 @@ class ParakeetModelHandler(ASRModelHandler):
 
         return transcriptions
 
-    def segment_batch(self, audio: list[np.ndarray | torch.Tensor | str]) -> list[list[tuple[int, torch.Tensor]]]:
-        """ Segment a batch of audio tensors or file names by duration; 24 minutes per batch.
+    @staticmethod
+    def segment_batch(  # pylint: disable=R0914
+        audio: list[np.ndarray | torch.Tensor | str],
+    ) -> list[list[tuple[int, torch.Tensor]]]:
+        """Segment a batch of audio tensors or file names by duration; 24 minutes per batch.
 
         :param audio: List of np.ndarray or torch.Tensor or str
         :return: Batch of torch.Tensor of duration < 24 minutes each
@@ -72,7 +82,9 @@ class ParakeetModelHandler(ASRModelHandler):
 
                 if sample_rate != PARAKEET_SAMPLE_RATE:
                     # Resample if not 16000
-                    transform = torchaudio.transforms.Resample(sample_rate, PARAKEET_SAMPLE_RATE)
+                    transform = torchaudio.transforms.Resample(
+                        sample_rate, PARAKEET_SAMPLE_RATE
+                    )
                     waveform = transform(waveform)
 
                 # Default dims [channels, aud_length]; need [aud_length]
@@ -82,7 +94,10 @@ class ParakeetModelHandler(ASRModelHandler):
             aud_segments = [(idx, aud, aud_len)]
 
             if aud_len > PARAKEET_MODEL_MAX_DURATION:
-                aud_segments = [(idx, a, a.shape[-1]) for a in np.array_split(aud, PARAKEET_MODEL_MAX_DURATION)]
+                aud_segments = [
+                    (idx, a, a.shape[-1])
+                    for a in np.array_split(aud, PARAKEET_MODEL_MAX_DURATION)
+                ]
 
             audio_by_duration += aud_segments
 
@@ -117,8 +132,3 @@ class ParakeetModelHandler(ASRModelHandler):
             bins_len[max_diff_idx] += duration
 
         return bins
-
-
-
-
-

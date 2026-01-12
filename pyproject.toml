@@ -15,7 +15,30 @@ build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
+    "black>=25.12.0",
+    "pre-commit>=4.5.1",
     "pytest>=9.0.2",
     "torchaudio>=2.9.1",
     "torchcodec>=0.9.1",
 ]
+
+[tool.pylint."MESSAGES CONTROL"]
+disable = [
+    "missing-module-docstring"
+]
+
+[tool.pylint.main]
+fail-under = 8.89
+
+[tool.pylint.refactoring]
+max-nested-blocks = 5
+never-returning-functions = ["sys.exit", "argparse.parse_error"]
+
+[tool.pylint.similarities]
+# Docstrings are removed from the similarity computation
+ignore-docstrings = true
+# Comments are removed from the similarity computation
+ignore-comments = true
+
+[tool.black]
+target-version = ["py310"]

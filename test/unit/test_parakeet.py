@@ -1,13 +1,22 @@
+from test.unit.constant import PARAKEET_MODEL
+
 import torch
 
 from caul.model import ParakeetModelHandler
-from test.unit.constant import PARAKEET_MODEL
 
 
 def test__parakeet_segmentation():
+    """Test audio segmentation with batching (max length 24 minutes)"""
     model = ParakeetModelHandler(PARAKEET_MODEL)
 
-    audio = [torch.zeros([16000 * 60 * 12]), torch.zeros([16000 * 60 * 11]), torch.zeros([16000 * 60 * 5]), torch.zeros([16000 * 60 * 4]), torch.zeros([16000 * 60 * 7]), torch.zeros([16000 * 60 * 10])]
+    audio = [
+        torch.zeros([16000 * 60 * 12]),
+        torch.zeros([16000 * 60 * 11]),
+        torch.zeros([16000 * 60 * 5]),
+        torch.zeros([16000 * 60 * 4]),
+        torch.zeros([16000 * 60 * 7]),
+        torch.zeros([16000 * 60 * 10]),
+    ]
 
     result = model.segment_batch(audio)
 

@@ -1,16 +1,16 @@
+from test.unit.constant import PARAKEET_MODEL, TEST_PATH
+
 import torch
 import torchaudio
-
-from test.unit.constant import PARAKEET_MODEL, TEST_PATH
 
 from caul import ASRWorker
 from caul.model import ParakeetModelHandler
 
 
 def test__worker_with_single_parakeet_model_on_mps():
-    """Test Parakeet on MPS; to note: tensors must be converted to float32 to work with metal, something Nemo
-    doesn't do automatically if we only pass a file path, which is why we load with torchaudio and convert to
-    torch."""
+    """Test Parakeet on MPS; to note: tensors must be converted to float32 to work with metal,
+    something Nemo doesn't do automatically if we only pass a file path, which is why we load with
+    torchaudio and convert to torch."""
     model = ParakeetModelHandler(PARAKEET_MODEL, "mps")
     worker = ASRWorker(models=model)
 
@@ -30,4 +30,4 @@ def test__worker_with_single_parakeet_model_on_mps():
 
 
 def test__worker_with_single_whisper_model():
-    pass
+    """Test calling out to standalone whisper.cpp model"""
