@@ -1,32 +1,37 @@
-from test.unit.constant import PARAKEET_MODEL, TEST_PATH
+from test.unit.constant import (
+    PARAKEET_MODEL,
+    PARAKEET_TEST_TRANSCRIPTION,
+    PARAKEET_TEST_CONFIDENCE,
+)
+from test.unit.mock import MockNvidiaASRModelHandler
 
-import torch
-import torchaudio
+from unittest.mock import patch
 
-from caul import ASRWorker
+import numpy as np
+
 from caul.model import ParakeetModelHandler
+from caul import ASRWorker
 
 
-def test__worker_with_single_parakeet_model_on_mps():
-    """Test Parakeet on MPS; to note: tensors must be converted to float32 to work with metal,
-    something Nemo doesn't do automatically if we only pass a file path, which is why we load with
-    torchaudio and convert to torch."""
-    model = ParakeetModelHandler(PARAKEET_MODEL, "mps")
+@patch.object(ParakeetModelHandler, "load", new=lambda _: None)
+def test__worker_with_single_parakeet_model__np_array_input():
+    """Test standalone Parakeet model"""
+    model = ParakeetModelHandler(PARAKEET_MODEL)
+
+    model.model = MockNvidiaASRModelHandler()
+
     worker = ASRWorker(models=model)
 
     worker.startup()
 
     # load wav, drop channel dim
-    waveform, _ = torchaudio.load(TEST_PATH)
-    waveform = torch.tensor(waveform.numpy())
-    waveform = waveform.squeeze(0)
-
-    transcription, score = worker.transcribe(waveform)[0]
+    audio = np.zeros([16000])
+    transcription, score = worker.transcribe(audio)[0]
 
     score = round(score, 0)
 
-    assert transcription == "To embrace the chaos that they fought in this battle."
-    assert score == -248
+    assert transcription == PARAKEET_TEST_TRANSCRIPTION
+    assert score == PARAKEET_TEST_CONFIDENCE
 
 
 def test__worker_with_single_whisper_model():

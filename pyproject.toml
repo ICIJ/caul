@@ -5,9 +5,10 @@ description = "Python implementation of an ASR service"
 requires-python = "<=3.10.19, >=3.10.0"
 dependencies = [
     "nemo-toolkit[asr]",
-    "torch",
+    "torch>=2.9.1",
     "numpy",
     "torchaudio>=2.9.1",
+    "torchcodec>=0.9.1"
 ]
 [build-system]
 requires = ["uv_build >= 0.9.22, <0.10.0"]
@@ -17,9 +18,8 @@ build-backend = "uv_build"
 dev = [
     "black>=25.12.0",
     "pre-commit>=4.5.1",
+    "pylint>=4.0.4",
     "pytest>=9.0.2",
-    "torchaudio>=2.9.1",
-    "torchcodec>=0.9.1",
 ]
 
 [tool.pylint."MESSAGES CONTROL"]

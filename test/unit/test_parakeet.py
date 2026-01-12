@@ -6,6 +6,7 @@ from caul.model import ParakeetModelHandler
 
 
 def test__parakeet_segmentation():
+    # pylint: disable=R1728
     """Test audio segmentation with batching (max length 24 minutes)"""
     model = ParakeetModelHandler(PARAKEET_MODEL)
 
