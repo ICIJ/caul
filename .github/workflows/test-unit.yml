@@ -1,0 +1,38 @@
+name: Test for caul
+
+on:
+  push:
+    branches: ['main']
+  pull_request:
+    paths:
+      - '**.py'
+      - '.github/workflows/test-unit.yml'
+
+jobs:
+  test-icij-common:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: psf/black@stable
+        with:
+          options: "--check --verbose"
+          src: "src"
+          version: "~= 25.12.0"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.9.24"
+          python-version: "3.10"
+          enable-cache: true
+      - name: Setup Python project
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: Run tests
+        run: |
+          cd icij-common
+          uv run --dev --all-extras --frozen pytest -vvv --cache-clear --show-capture=all -r A test
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
