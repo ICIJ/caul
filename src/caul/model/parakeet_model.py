@@ -4,7 +4,7 @@ import numpy as np
 import nemo.collections.asr as nemo_asr
 import torchaudio
 
-from caul.constant import PARAKEET_SAMPLE_RATE, PARAKEET_MODEL_MAX_DURATION
+from src.caul.constant import PARAKEET_SAMPLE_RATE, PARAKEET_MODEL_MAX_DURATION
 from src.caul.model import ASRModelHandler
 
 
@@ -33,7 +33,12 @@ class ParakeetModelHandler(ASRModelHandler):
     def transcribe(
         self,
         audio: list[np.ndarray | torch.Tensor | str] | np.ndarray | torch.Tensor | str,
-    ) -> list[tuple[str, float]]:
+    ) -> list[
+        tuple[
+            str,
+            float,
+        ]
+    ]:
         """Segment and transcribe a batch of audio tensors or file names. Max length 24 minutes.
 
         :param audio: List of np.ndarray or torch.Tensor or str, or a singleton of same types
@@ -48,8 +53,18 @@ class ParakeetModelHandler(ASRModelHandler):
         for batch in batches:
             indices, segments = zip(*batch)
             predictions = self.model.transcribe(segments, timestamps=self.timestamps)
+            # Get timestamped segments if available, otherwise default to whole text
             transcriptions_with_scores = [
-                (indices[idx], p.text, p.score) for idx, p in enumerate(predictions)
+                (
+                    indices[idx],
+                    (
+                        [(t["start"], t["segment"]) for t in p.timestamp.get("segment")]
+                        if p.timestamp.get("segment") is not None
+                        else [(0.0, p.text)]
+                    ),
+                    p.score,
+                )
+                for idx, p in enumerate(predictions)
             ]
 
             transcriptions += transcriptions_with_scores

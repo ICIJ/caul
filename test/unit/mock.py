@@ -1,4 +1,8 @@
-from test.unit.constant import PARAKEET_TEST_CONFIDENCE, PARAKEET_TEST_TRANSCRIPTION
+from test.unit.constant import (
+    PARAKEET_TEST_CONFIDENCE,
+    PARAKEET_TEST_TRANSCRIPTION,
+    PARAKEET_TEST_SEGMENT_START,
+)
 
 import torch
 
@@ -9,6 +13,14 @@ class MockNvidiaASRModelHandlerResult:
     # pylint: disable=C0115,C0116,R0903
 
     def __init__(self):
+        self.timestamp = {
+            "segment": [
+                {
+                    "segment": PARAKEET_TEST_TRANSCRIPTION,
+                    "start": PARAKEET_TEST_SEGMENT_START,
+                }
+            ]
+        }
         self.text = PARAKEET_TEST_TRANSCRIPTION
         self.score = PARAKEET_TEST_CONFIDENCE
 

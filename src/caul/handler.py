@@ -7,18 +7,18 @@ import numpy as np
 from src.caul.model import ASRModelHandler
 
 
-WorkerResult = namedtuple("WorkerResult", ["transcriptions", "scores"])
+HandlerResult = namedtuple("HandlerResult", ["transcriptions", "scores"])
 
 
-class ASRWorker:
-    """ASRWorker class"""
+class ASRHandler:
+    """ASRHandler class"""
 
     def __init__(
         self,
         models: list[ASRModelHandler] | ASRModelHandler,
         language_map: dict[str, int] = None,
     ):
-        """Primary worker class. Handles transcription agnostically.
+        """Primary application handler class. Handles transcription agnostically.
 
         :param models: ASRModelHandler list or singleton
         :param language_map: Map from ISO-639-3 language code to index of model in models param
@@ -60,13 +60,13 @@ class ASRWorker:
         self,
         audio: list[np.ndarray | torch.Tensor | str] | np.ndarray | torch.Tensor | str,
         languages: list[str] = None,
-    ) -> WorkerResult:
+    ) -> HandlerResult:
         """Transcribe audio tensors or strings. Returns a tuple of (transcription, score). A list
         of languages of len(audio) may be passed to direct inputs to certain models.
 
         :param audio: List of np.ndarray or torch.Tensor or str, or a singleton of same types
         :param languages: List of ISO-639-3 language codes
-        :return: WorkerResult
+        :return: HandlerResult
         """
         if not isinstance(audio, list):
             audio = [audio]
@@ -106,4 +106,4 @@ class ASRWorker:
             transcriptions.append(transcription)
             scores.append(score)
 
-        return WorkerResult(transcriptions=transcriptions, scores=scores)
+        return HandlerResult(transcriptions=transcriptions, scores=scores)
