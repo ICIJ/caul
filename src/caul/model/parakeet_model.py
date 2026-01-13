@@ -6,8 +6,8 @@ import torchaudio
 
 from nemo.collections.asr.parts.utils.rnnt_utils import Hypothesis
 
-from src.caul.constant import PARAKEET_SAMPLE_RATE, PARAKEET_MODEL_MAX_DURATION
-from src.caul.model import ASRModelHandler, ASRModelHandlerResult
+from caul.constant import PARAKEET_SAMPLE_RATE, PARAKEET_MODEL_MAX_DURATION
+from caul.model import ASRModelHandler, ASRModelHandlerResult
 
 
 class ParakeetModelHandlerResult(ASRModelHandlerResult):

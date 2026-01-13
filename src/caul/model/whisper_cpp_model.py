@@ -2,8 +2,8 @@ import torch
 
 import numpy as np
 
-from src.caul.model.asr_model import ASRModelHandlerResult
-from src.caul.model import ASRModelHandler
+from caul.model.asr_model import ASRModelHandlerResult
+from caul.model import ASRModelHandler
 
 
 class WhisperCPPModelHandler(ASRModelHandler):

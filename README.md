@@ -16,8 +16,8 @@ uv sync --dev
 
 A handler object can be instantiated and run on one or more WAV files or directly on NumPy/Torch tensors, returning a list of `ASRHandlerResult` mapped to each input with attributes `transcriptions`, containing a list of tuples of the form `(start_time, text_segment)`, and `scores`:
 ```aiignore
->>> from src.caul import ASRHandler
->>> from src.caul.model import ParakeetModelHandler
+>>> from caul import ASRHandler
+>>> from caul.model import ParakeetModelHandler
 >>> model = ParakeetModelHandler("nvidia/parakeet-tdt-0.6b-v3")
 >>> handler = ASRHandler(models=model)
 >>> handler.startup()
