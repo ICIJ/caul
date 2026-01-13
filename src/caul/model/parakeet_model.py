@@ -6,7 +6,12 @@ import torchaudio
 
 from nemo.collections.asr.parts.utils.rnnt_utils import Hypothesis
 
-from caul.constant import PARAKEET_SAMPLE_RATE, PARAKEET_MODEL_MAX_DURATION
+from caul.constant import (
+    PARAKEET_SAMPLE_RATE,
+    PARAKEET_MODEL_MAX_DURATION_KHZ,
+    PARAKEET_SAMPLE_MINUTE,
+    PARAKEET_MODEL_MAX_DURATION_MIN,
+)
 from caul.model import ASRModelHandler, ASRModelHandlerResult
 
 
@@ -89,7 +94,7 @@ class ParakeetModelHandler(ASRModelHandler):
         :param audio: List of np.ndarray or torch.Tensor or str, or a singleton of same types
         :return: List of tuples of (original_ordering, audio_tensor, duration)
         """
-        audio_with_duration = []
+        indexed_audio_with_duration = []
 
         # Load arrays and divide into max_length segments
         for idx, aud in enumerate(audio):
@@ -104,18 +109,17 @@ class ParakeetModelHandler(ASRModelHandler):
             if self.device != "cpu":
                 aud = aud.to(self.device)
 
-            aud_len = aud.shape[-1]
-            aud_segments = [(idx, aud, aud_len)]
+            aud_segments = [aud]
 
-            if aud_len > PARAKEET_MODEL_MAX_DURATION:
-                aud_segments = [
-                    (idx, a, a.shape[-1])
-                    for a in torch.split(aud, PARAKEET_MODEL_MAX_DURATION)
-                ]
+            if aud.shape[-1] > PARAKEET_MODEL_MAX_DURATION_KHZ:
+                aud_segments = torch.split(aud, PARAKEET_MODEL_MAX_DURATION_KHZ)
 
-            audio_with_duration += aud_segments
+            indexed_audio_with_duration += [
+                (idx, aud, aud.shape[-1] / PARAKEET_SAMPLE_MINUTE)
+                for aud in aud_segments
+            ]
 
-        return audio_with_duration
+        return indexed_audio_with_duration
 
     def load_wave(self, wav_path: str) -> torch.Tensor:
         """Load a wav file from path as torch.Tensor and resample if needed
@@ -133,44 +137,44 @@ class ParakeetModelHandler(ASRModelHandler):
 
     @staticmethod
     def segment_audio_tensors(  # pylint: disable=R0914
-        audio_with_duration: list[tuple[int, torch.Tensor, int]],
+        indexed_audio_with_duration: list[tuple[int, torch.Tensor, int]],
     ) -> list[list[tuple[int, torch.Tensor]]]:
         """Segment a batch of torch.Tensors by duration, 24 minutes max per batch.
 
-        :param audio_with_duration: List of tuples of (original_ordering, audio_tensor, duration)
+        :param indexed_audio_with_duration: List of tuples of (original_ordering, audio_tensor,
+                                            duration)
         :return: Batch of torch.Tensor of duration < 24 minutes each indexed by original_ordering
         """
 
         # Sort by duration
-        audio_with_duration = sorted(
-            audio_with_duration, key=lambda x: x[-1], reverse=True
+        indexed_audio_with_duration = sorted(
+            indexed_audio_with_duration, key=lambda x: x[-1], reverse=True
         )
 
         # Now this becomes a bin-packing minimization problem. We'll use a variant of best-fit
         # decreasing.
         # Get min number of bins; max is simply len(aud_segments)
-        # min_bins = ceil(sum([at[-1] for at in audio_with_duration]) / PARAKEET_MODEL_MAX_DURATION)
+        # min_bins = ceil(sum([at[-1] for at in audio_with_duration]) / PARAKEET_MODEL_MAX_DURATION_MIN)
 
         bins = [[]]
         bins_len = [0]
 
         # With each pass, choose a bin by maximizing remaining space
-        for idx, segment, duration in audio_with_duration:
-            if not isinstance(segment, torch.Tensor):
-                segment = torch.Tensor(segment)
-
+        for idx, segment, duration in indexed_audio_with_duration:
             bin_len_diffs = []
 
             for bin_len in bins_len:
-                bin_len_diffs.append(PARAKEET_MODEL_MAX_DURATION - bin_len)
+                bin_len_diffs.append(PARAKEET_MODEL_MAX_DURATION_MIN - bin_len)
 
-            if max(bin_len_diffs) < 0:
+            if max(bin_len_diffs) <= duration:
                 bins.append([])
                 bins_len.append(0)
+                bin_len_diffs.append(PARAKEET_MODEL_MAX_DURATION_MIN)
 
             max_diff_idx = np.argmax(bin_len_diffs)
 
             bins[max_diff_idx].append((idx, segment))
+
             bins_len[max_diff_idx] += duration
 
         return bins

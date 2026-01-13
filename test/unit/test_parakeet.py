@@ -1,3 +1,4 @@
+from caul.constant import PARAKEET_SAMPLE_MINUTE
 from test.unit.constant import PARAKEET_MODEL
 
 import torch
@@ -11,16 +12,11 @@ def test__parakeet_segmentation():
     model = ParakeetModelHandler(PARAKEET_MODEL)
 
     audio = [
-        torch.zeros([16000 * 60 * 12]),
-        torch.zeros([16000 * 60 * 11]),
-        torch.zeros([16000 * 60 * 5]),
-        torch.zeros([16000 * 60 * 4]),
-        torch.zeros([16000 * 60 * 7]),
-        torch.zeros([16000 * 60 * 10]),
+        torch.zeros([PARAKEET_SAMPLE_MINUTE * i]) for i in [12, 11, 5, 4, 7, 10, 30]
     ]
 
     result = model.segment_audio_tensors(model.load_audio_tensors(audio))
 
-    assert len(result) == 2
-    assert [len(r) for r in result] == [4, 2]
-    assert sum([len(r) for r in result]) == len(audio)
+    assert [
+        [r[-1].shape[-1] / PARAKEET_SAMPLE_MINUTE for r in re] for re in result
+    ] == [[24.0], [12.0, 11.0], [10.0, 7.0, 6.0], [5.0, 4.0]]
