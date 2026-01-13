@@ -14,14 +14,14 @@ uv python install 3.10
 uv sync --dev
 ```
 
-A handler object can be instantiated and run on one or more WAV files or directly on NumPy/Torch tensors, returning a list of tuples, one for each input, containing its transcription as a list of tuples of the form `(start_time, text_segment)` along with the model's overall confidence score:
+A handler object can be instantiated and run on one or more WAV files or directly on NumPy/Torch tensors, returning a list of `ASRHandlerResult` mapped to each input with attributes `transcription`, containing a list of tuples of the form `(start_time, text_segment)`, and `scores`:
 ```aiignore
 >>> from src.caul import ASRHandler
->>> from src.caul.model.parakeet_model import ParakeetModelHandler
+>>> from src.caul.model import ParakeetModelHandler
 >>> model = ParakeetModelHandler("nvidia/parakeet-tdt-0.6b-v3")
 >>> handler = ASRHandler(models=model)
 >>> handler.startup()
 >>> results = handler.transcribe("<...path to some audio file...>")
 >>> print(results)
-[([(0.0, "Gr-r-r--there go, my heart's abhorrence! Water your damned flower-pots, do!")], -250.0), ...]
+ASRHandlerResult(transcriptions=[[(0.0, "Gr-r-r--there go, my heart's abhorrence! Water your damned flower-pots, do!"), ...], ...], scores=[-250.0, ...])
 ```

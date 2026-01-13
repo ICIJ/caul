@@ -1,13 +1,33 @@
-from collections import namedtuple
+from dataclasses import dataclass, field
 
 import torch
 
 import numpy as np
 
+from src.caul.model.asr_model import ASRModelHandlerResult
 from src.caul.model import ASRModelHandler
 
 
-HandlerResult = namedtuple("HandlerResult", ["transcriptions", "scores"])
+@dataclass
+class ASRHandlerResult:
+    """ASRHandlerResult class"""
+
+    transcriptions: list[list[tuple[float, str]]] = field(default_factory=list)
+    scores: list[float] = field(default_factory=list)
+
+    def add_transcriptions(
+        self, model_result: list[ASRModelHandlerResult] | ASRModelHandlerResult
+    ):
+        """Parse ASRModelHandlerResult
+
+        :param model_result: List of ASRModelHandlerResult
+        """
+        if not isinstance(model_result, list):
+            model_result = [model_result]
+
+        for result in model_result:
+            self.transcriptions.append(result.transcription)
+            self.scores.append(result.score)
 
 
 class ASRHandler:
@@ -60,7 +80,7 @@ class ASRHandler:
         self,
         audio: list[np.ndarray | torch.Tensor | str] | np.ndarray | torch.Tensor | str,
         languages: list[str] = None,
-    ) -> HandlerResult:
+    ) -> ASRHandlerResult:
         """Transcribe audio tensors or strings. Returns a tuple of (transcription, score). A list
         of languages of len(audio) may be passed to direct inputs to certain models.
 
@@ -71,12 +91,15 @@ class ASRHandler:
         if not isinstance(audio, list):
             audio = [audio]
 
+        handler_result = ASRHandlerResult()
         audios_by_language = {}
         model_results = {}
         batch_language_ordering = []
 
         if languages is None:
-            return self.models[0].transcribe(audio)
+            handler_result.add_transcriptions(self.models[0].transcribe(audio))
+
+            return handler_result
 
         # Sort by language where present, preserving original order for returning result
         for idx, aud in enumerate(audio):
@@ -93,17 +116,13 @@ class ASRHandler:
             model = self.get_model_by_language(language)
             model_results[language] = model.transcribe(audio_list)
 
-        transcriptions = []
-        scores = []
-
         # For use with .pop()
         batch_language_ordering.reverse()
 
         # Reassemble
         for language in batch_language_ordering:
-            transcription, score = model_results[language].pop()
+            model_result = model_results[language].pop()
 
-            transcriptions.append(transcription)
-            scores.append(score)
+            handler_result.add_transcriptions(model_result)
 
-        return HandlerResult(transcriptions=transcriptions, scores=scores)
+        return handler_result

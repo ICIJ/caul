@@ -4,8 +4,21 @@ import numpy as np
 import nemo.collections.asr as nemo_asr
 import torchaudio
 
+from nemo.collections.asr.parts.utils.rnnt_utils import Hypothesis
+
 from src.caul.constant import PARAKEET_SAMPLE_RATE, PARAKEET_MODEL_MAX_DURATION
-from src.caul.model import ASRModelHandler
+from src.caul.model import ASRModelHandler, ASRModelHandlerResult
+
+
+class ParakeetModelHandlerResult(ASRModelHandlerResult):
+
+    def parse_parakeet_hypothesis(self, hypothesis: Hypothesis):
+        self.transcription = (
+            [(s["start"], s["segment"]) for s in hypothesis.timestamp.get("segment")]
+            if hypothesis.timestamp.get("segment") is not None
+            else [(0.0, hypothesis.text)]
+        )
+        self.score = hypothesis.score
 
 
 class ParakeetModelHandler(ASRModelHandler):
@@ -33,12 +46,7 @@ class ParakeetModelHandler(ASRModelHandler):
     def transcribe(
         self,
         audio: list[np.ndarray | torch.Tensor | str] | np.ndarray | torch.Tensor | str,
-    ) -> list[
-        tuple[
-            str,
-            float,
-        ]
-    ]:
+    ) -> list[ParakeetModelHandlerResult]:
         """Segment and transcribe a batch of audio tensors or file names. Max length 24 minutes.
 
         :param audio: List of np.ndarray or torch.Tensor or str, or a singleton of same types
@@ -51,29 +59,22 @@ class ParakeetModelHandler(ASRModelHandler):
         transcriptions = []
 
         for batch in batches:
-            indices, segments = zip(*batch)
-            predictions = self.model.transcribe(segments, timestamps=self.timestamps)
+            prebatch_indices, segments = zip(*batch)
+            hypotheses = self.model.transcribe(segments, timestamps=self.timestamps)
             # Get timestamped segments if available, otherwise default to whole text
-            transcriptions_with_scores = [
-                (
-                    indices[idx],
-                    (
-                        [(t["start"], t["segment"]) for t in p.timestamp.get("segment")]
-                        if p.timestamp.get("segment") is not None
-                        else [(0.0, p.text)]
-                    ),
-                    p.score,
-                )
-                for idx, p in enumerate(predictions)
-            ]
+            for idx, hyp in enumerate(hypotheses):
+                model_result = ParakeetModelHandlerResult()
 
-            transcriptions += transcriptions_with_scores
+                model_result.parse_parakeet_hypothesis(hyp)
 
-        # Sort in original order
+                indexed_result = prebatch_indices[idx], model_result
+                transcriptions.append(indexed_result)
+
+        # Sort in order received before batching
         transcriptions = sorted(transcriptions, key=lambda x: x[0])
 
         # Drop index
-        transcriptions = [(t[1], t[2]) for t in transcriptions]
+        transcriptions = [t[-1] for t in transcriptions]
 
         return transcriptions
 
@@ -119,8 +120,8 @@ class ParakeetModelHandler(ASRModelHandler):
         # Sort by duration
         audio_by_duration = sorted(audio_by_duration, key=lambda x: x[-1], reverse=True)
 
-        # Now this becomes a bin-packing minimization problem. We'll use a variant of
-        # best-fit decreasing.
+        # Now this becomes a bin-packing minimization problem. We'll use a variant of best-fit
+        # decreasing.
         # Get min number of bins; max is simply len(aud_segments)
         # min_bins = ceil(sum([at[-1] for at in audio_by_duration]) / PARAKEET_MODEL_MAX_DURATION)
 

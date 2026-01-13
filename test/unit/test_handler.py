@@ -1,3 +1,5 @@
+from dataclasses import astuple
+
 from test.unit.constant import (
     PARAKEET_MODEL,
     PARAKEET_TEST_TRANSCRIPTION,
@@ -27,12 +29,12 @@ def test__handler_with_single_parakeet_model__np_array_input():
 
     # load wav, drop channel dim
     audio = np.zeros([16000])
-    transcription, score = handler.transcribe(audio)[0]
+    transcriptions, scores = astuple(handler.transcribe(audio))
 
-    score = round(score, 0)
-
-    assert transcription == [(PARAKEET_TEST_SEGMENT_START, PARAKEET_TEST_TRANSCRIPTION)]
-    assert score == PARAKEET_TEST_CONFIDENCE
+    assert transcriptions == [
+        [(PARAKEET_TEST_SEGMENT_START, PARAKEET_TEST_TRANSCRIPTION)]
+    ]
+    assert scores == [PARAKEET_TEST_CONFIDENCE]
 
 
 def test__handler_with_single_whisper_model():
