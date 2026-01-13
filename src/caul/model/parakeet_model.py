@@ -119,7 +119,7 @@ class ParakeetModelHandler(ASRModelHandler):
         # Sort by duration
         audio_by_duration = sorted(audio_by_duration, key=lambda x: x[-1], reverse=True)
 
-        # Now this because a bin-packing minimization problem. We'll use a variant of
+        # Now this becomes a bin-packing minimization problem. We'll use a variant of
         # best-fit decreasing.
         # Get min number of bins; max is simply len(aud_segments)
         # min_bins = ceil(sum([at[-1] for at in audio_by_duration]) / PARAKEET_MODEL_MAX_DURATION)
