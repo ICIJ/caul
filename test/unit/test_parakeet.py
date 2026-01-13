@@ -19,7 +19,7 @@ def test__parakeet_segmentation():
         torch.zeros([16000 * 60 * 10]),
     ]
 
-    result = model.segment_batch(audio)
+    result = model.segment_audio_tensors(model.load_audio_tensors(audio))
 
     assert len(result) == 2
     assert [len(r) for r in result] == [4, 2]

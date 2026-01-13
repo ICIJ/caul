@@ -55,7 +55,8 @@ class ParakeetModelHandler(ASRModelHandler):
         if not isinstance(audio, list):
             audio = [audio]
 
-        batches = self.segment_batch(audio)
+        audio = self.load_audio_tensors(audio)
+        batches = self.segment_audio_tensors(audio)
         transcriptions = []
 
         for batch in batches:
@@ -78,33 +79,30 @@ class ParakeetModelHandler(ASRModelHandler):
 
         return transcriptions
 
-    @staticmethod
-    def segment_batch(  # pylint: disable=R0914
-        audio: list[np.ndarray | torch.Tensor | str],
-    ) -> list[list[tuple[int, torch.Tensor]]]:
-        """Segment a batch of audio tensors or file names by duration; 24 minutes per batch.
+    def load_audio_tensors(
+        self, audio: list[np.ndarray | torch.Tensor | str]
+    ) -> list[tuple[int, torch.Tensor, int]]:
+        """Accepts audio inputs as a list of wav paths, np.ndarray, or torch.Tensor, converting to
+        torch.Tensor and sending them to device where needed, segmenting for inputs greater than
+         24 minutes (Parakeet's max), and returns a list indexed by original ordering.
 
-        :param audio: List of np.ndarray or torch.Tensor or str
-        :return: Batch of torch.Tensor of duration < 24 minutes each
+        :param audio: List of np.ndarray or torch.Tensor or str, or a singleton of same types
+        :return: List of tuples of (original_ordering, audio_tensor, duration)
         """
-
-        audio_by_duration = []
+        audio_with_duration = []
 
         # Load arrays and divide into max_length segments
         for idx, aud in enumerate(audio):
             # Load audio files as arrays
             if isinstance(aud, str):
-                waveform, sample_rate = torchaudio.load(aud)
+                aud = self.load_wave(aud)
 
-                if sample_rate != PARAKEET_SAMPLE_RATE:
-                    # Resample if not 16000
-                    transform = torchaudio.transforms.Resample(
-                        sample_rate, PARAKEET_SAMPLE_RATE
-                    )
-                    waveform = transform(waveform)
+            if isinstance(aud, np.ndarray):
+                aud = torch.Tensor(aud)
 
-                # Default dims [channels, aud_length]; need [aud_length]
-                aud = waveform.numpy().squeeze(0)
+            # Send to GPU
+            if self.device != "cpu":
+                aud = aud.to(self.device)
 
             aud_len = aud.shape[-1]
             aud_segments = [(idx, aud, aud_len)]
@@ -112,24 +110,52 @@ class ParakeetModelHandler(ASRModelHandler):
             if aud_len > PARAKEET_MODEL_MAX_DURATION:
                 aud_segments = [
                     (idx, a, a.shape[-1])
-                    for a in np.array_split(aud, PARAKEET_MODEL_MAX_DURATION)
+                    for a in torch.split(aud, PARAKEET_MODEL_MAX_DURATION)
                 ]
 
-            audio_by_duration += aud_segments
+            audio_with_duration += aud_segments
+
+        return audio_with_duration
+
+    def load_wave(self, wav_path: str) -> torch.Tensor:
+        """Load a wav file from path as torch.Tensor and resample if needed
+
+        :param wav_path: path to wave file
+        :return: torch.Tensor
+        """
+        waveform, sample_rate = torchaudio.load(wav_path)
+
+        if sample_rate != PARAKEET_SAMPLE_RATE:
+            waveform = self.resample_waveform(waveform, sample_rate)
+
+        # Default dims [channels, aud_length]; need [aud_length]
+        return waveform.squeeze(0)
+
+    @staticmethod
+    def segment_audio_tensors(  # pylint: disable=R0914
+        audio_with_duration: list[tuple[int, torch.Tensor, int]],
+    ) -> list[list[tuple[int, torch.Tensor]]]:
+        """Segment a batch of torch.Tensors by duration, 24 minutes max per batch.
+
+        :param audio_with_duration: List of tuples of (original_ordering, audio_tensor, duration)
+        :return: Batch of torch.Tensor of duration < 24 minutes each indexed by original_ordering
+        """
 
         # Sort by duration
-        audio_by_duration = sorted(audio_by_duration, key=lambda x: x[-1], reverse=True)
+        audio_with_duration = sorted(
+            audio_with_duration, key=lambda x: x[-1], reverse=True
+        )
 
         # Now this becomes a bin-packing minimization problem. We'll use a variant of best-fit
         # decreasing.
         # Get min number of bins; max is simply len(aud_segments)
-        # min_bins = ceil(sum([at[-1] for at in audio_by_duration]) / PARAKEET_MODEL_MAX_DURATION)
+        # min_bins = ceil(sum([at[-1] for at in audio_with_duration]) / PARAKEET_MODEL_MAX_DURATION)
 
         bins = [[]]
         bins_len = [0]
 
         # With each pass, choose a bin by maximizing remaining space
-        for idx, segment, duration in audio_by_duration:
+        for idx, segment, duration in audio_with_duration:
             if not isinstance(segment, torch.Tensor):
                 segment = torch.Tensor(segment)
 
@@ -148,3 +174,14 @@ class ParakeetModelHandler(ASRModelHandler):
             bins_len[max_diff_idx] += duration
 
         return bins
+
+    @staticmethod
+    def resample_waveform(waveform: torch.Tensor, sample_rate: int) -> torch.Tensor:
+        """Resample when sample rate is not 16000
+
+        :param waveform: torch.Tensor
+        :param sample_rate: int
+        :return: torch.Tensor
+        """
+        transform = torchaudio.transforms.Resample(sample_rate, PARAKEET_SAMPLE_RATE)
+        return transform(waveform)
