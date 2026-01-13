@@ -6,9 +6,9 @@
 # caul
 **Automatic speech recognition in Python**
 
-Code for audiofile transcription using NVIDIA's [Parakeet](https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3) family of multilingual models with fallback to the [Whisper.CPP](https://https://github.com/ggml-org/whisper.cpp) project. Built with `uv` for package and project management. Because of a dependency on NVIDIA's `nemo-toolkit`, Python 3.10 is required. 
+***"Here's to Harry ... the best, bar none."***
 
-To install, use
+Audiofile transcription using NVIDIA's [Parakeet](https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3) family of multilingual models with fallback to [Whisper.CPP](https://https://github.com/ggml-org/whisper.cpp) for languages outside Parakeet's scope. Built with `uv` for package and project management. Installation's as simple as
 ```aiignore
 uv python install 3.10
 uv sync --dev
