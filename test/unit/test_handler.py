@@ -5,6 +5,7 @@ from test.unit.constant import (
     PARAKEET_TEST_TRANSCRIPTION,
     PARAKEET_TEST_CONFIDENCE,
     PARAKEET_TEST_SEGMENT_START,
+    PARAKEET_TEST_SEGMENT_END,
 )
 from test.unit.mock import MockNvidiaASRModelHandler
 
@@ -32,7 +33,13 @@ def test__handler_with_single_parakeet_model__np_array_input():
     transcriptions, scores = astuple(handler.transcribe(audio))
 
     assert transcriptions == [
-        [(PARAKEET_TEST_SEGMENT_START, PARAKEET_TEST_TRANSCRIPTION)]
+        [
+            (
+                PARAKEET_TEST_SEGMENT_START,
+                PARAKEET_TEST_SEGMENT_END,
+                PARAKEET_TEST_TRANSCRIPTION,
+            )
+        ]
     ]
     assert scores == [PARAKEET_TEST_CONFIDENCE]
 

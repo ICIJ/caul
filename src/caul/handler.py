@@ -29,6 +29,8 @@ class ASRHandlerResult:
             self.transcriptions.append(result.transcription)
             self.scores.append(result.score)
 
+        return self
+
 
 class ASRHandler:
     """ASRHandler class"""
@@ -97,9 +99,7 @@ class ASRHandler:
         batch_language_ordering = []
 
         if languages is None:
-            handler_result.add_transcriptions(self.models[0].transcribe(audio))
-
-            return handler_result
+            return handler_result.add_transcriptions(self.models[0].transcribe(audio))
 
         # Sort by language where present, preserving original order for returning result
         for idx, aud in enumerate(audio):

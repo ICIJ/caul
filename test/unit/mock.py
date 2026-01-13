@@ -2,6 +2,7 @@ from test.unit.constant import (
     PARAKEET_TEST_CONFIDENCE,
     PARAKEET_TEST_TRANSCRIPTION,
     PARAKEET_TEST_SEGMENT_START,
+    PARAKEET_TEST_SEGMENT_END,
 )
 
 import torch
@@ -18,6 +19,7 @@ class MockNvidiaASRModelHandlerResult:
                 {
                     "segment": PARAKEET_TEST_TRANSCRIPTION,
                     "start": PARAKEET_TEST_SEGMENT_START,
+                    "end": PARAKEET_TEST_SEGMENT_END,
                 }
             ]
         }

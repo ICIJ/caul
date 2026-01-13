@@ -1,3 +1,6 @@
+from functools import reduce
+from itertools import groupby
+
 import torch
 
 import numpy as np
@@ -17,13 +20,41 @@ from caul.model import ASRModelHandler, ASRModelHandlerResult
 
 class ParakeetModelHandlerResult(ASRModelHandlerResult):
 
-    def parse_parakeet_hypothesis(self, hypothesis: Hypothesis):
+    def parse_parakeet_hypothesis(
+        self, hypothesis: Hypothesis
+    ) -> ASRModelHandlerResult:
         self.transcription = (
-            [(s["start"], s["segment"]) for s in hypothesis.timestamp.get("segment")]
+            [
+                (s["start"], s["end"], s["segment"])
+                for s in hypothesis.timestamp.get("segment")
+            ]
             if hypothesis.timestamp.get("segment") is not None
-            else [(0.0, hypothesis.text)]
+            else [(0.0, 0.0, hypothesis.text)]
         )
         self.score = hypothesis.score
+
+        return self
+
+    def concat(self, model_result: ASRModelHandlerResult) -> ASRModelHandlerResult:
+        if model_result is None:
+            return
+
+        if self.transcription is None:
+            self.transcription = []
+
+        self.transcription += model_result.transcription
+
+        # We have to weight by total segment len
+        transcription_duration = self.transcription[-1][1]
+        model_result_duration = model_result.transcription[-1][1]
+        total_duration = transcription_duration + model_result_duration
+
+        self.score = (
+            self.score * transcription_duration
+            + model_result.score * model_result_duration
+        ) / total_duration
+
+        return self
 
 
 class ParakeetModelHandler(ASRModelHandler):
@@ -69,20 +100,13 @@ class ParakeetModelHandler(ASRModelHandler):
             hypotheses = self.model.transcribe(segments, timestamps=self.timestamps)
             # Get timestamped segments if available, otherwise default to whole text
             for idx, hyp in enumerate(hypotheses):
-                model_result = ParakeetModelHandlerResult()
-
-                model_result.parse_parakeet_hypothesis(hyp)
-
+                model_result = ParakeetModelHandlerResult().parse_parakeet_hypothesis(
+                    hyp
+                )
                 indexed_result = prebatch_indices[idx], model_result
                 transcriptions.append(indexed_result)
 
-        # Sort in order received before batching
-        transcriptions = sorted(transcriptions, key=lambda x: x[0])
-
-        # Drop index
-        transcriptions = [t[-1] for t in transcriptions]
-
-        return transcriptions
+        return self.map_results_to_inputs(transcriptions)
 
     def load_audio_tensors(
         self, audio: list[np.ndarray | torch.Tensor | str]
@@ -154,7 +178,7 @@ class ParakeetModelHandler(ASRModelHandler):
         # Now this becomes a bin-packing minimization problem. We'll use a variant of best-fit
         # decreasing.
         # Get min number of bins; max is simply len(aud_segments)
-        # min_bins = ceil(sum([at[-1] for at in audio_with_duration]) / PARAKEET_MODEL_MAX_DURATION_MIN)
+        # min_bins = ceil(sum([at[1] for at in audio_with_duration]) / PARAKEET_MODEL_MAX_DURATION_MIN)
 
         bins = [[]]
         bins_len = [0]
@@ -178,6 +202,34 @@ class ParakeetModelHandler(ASRModelHandler):
             bins_len[max_diff_idx] += duration
 
         return bins
+
+    @staticmethod
+    def map_results_to_inputs(
+        batched_results: list[tuple[int, ParakeetModelHandlerResult]],
+    ) -> list[ParakeetModelHandlerResult]:
+        """Remap unordered and segmented tensors to original inputs for return
+
+        :param batched_results: list of unordered indexed ParakeetModelHandlerResult, still segmented
+        :return: list[ParakeetModelHandlerResult]
+        """
+        unbatched_results = []
+
+        # Sort in order received before batching
+        batched_results = sorted(batched_results, key=lambda x: x[0])
+
+        # Concat segmented tensors
+        results_grouped_by_index = groupby(batched_results, key=lambda x: x[0])
+
+        for group_idx, group_results in results_grouped_by_index:
+            group_results = [gr[1] for gr in list(group_results)]  # drop index
+            merged_results = (
+                reduce(lambda l, r: l.concat(r), group_results)
+                if len(group_results) > 1
+                else group_results[0]
+            )
+            unbatched_results.append(merged_results)
+
+        return unbatched_results
 
     @staticmethod
     def resample_waveform(waveform: torch.Tensor, sample_rate: int) -> torch.Tensor:

@@ -11,7 +11,7 @@ from abc import ABC, abstractmethod
 class ASRModelHandlerResult:
     """Base result class for ASR models"""
 
-    transcription: list[tuple[float, str]] = None
+    transcription: list[tuple] = None
     score: float = None
 
 
