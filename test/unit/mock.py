@@ -10,7 +10,7 @@ import torch
 import numpy as np
 
 
-class MockNvidiaASRModelHandlerResult:
+class MockNvidiaASRInferenceHandlerResult:
     # pylint: disable=C0115,C0116,R0903
 
     def __init__(self):
@@ -27,12 +27,12 @@ class MockNvidiaASRModelHandlerResult:
         self.score = PARAKEET_TEST_CONFIDENCE
 
 
-class MockNvidiaASRModelHandler:
+class MockNvidiaASRInferenceHandler:
     # pylint: disable=C0115,C0116,W0613,R0903
 
     def transcribe(
         self,
         audio: list[np.ndarray | torch.Tensor | str] | np.ndarray | torch.Tensor | str,
         timestamps: bool,
-    ) -> list[MockNvidiaASRModelHandlerResult]:
-        return [MockNvidiaASRModelHandlerResult()]
+    ) -> list[MockNvidiaASRInferenceHandlerResult]:
+        return [MockNvidiaASRInferenceHandlerResult()]

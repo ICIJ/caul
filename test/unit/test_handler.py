@@ -1,30 +1,38 @@
 from dataclasses import astuple
 
+from caul.model.postprocessing.parakeet_postprocessor import ParakeetPostprocessor
+from caul.model.preprocessing.parakeet_preprocessor import ParakeetPreprocessor
 from test.unit.constant import (
-    PARAKEET_MODEL,
+    parakeet_inference,
     PARAKEET_TEST_TRANSCRIPTION,
     PARAKEET_TEST_CONFIDENCE,
     PARAKEET_TEST_SEGMENT_START,
     PARAKEET_TEST_SEGMENT_END,
 )
-from test.unit.mock import MockNvidiaASRModelHandler
+from test.unit.mock import MockNvidiaASRInferenceHandler
 
 from unittest.mock import patch
 
 import numpy as np
 
-from caul.model import ParakeetModelHandler
+from caul.model import ParakeetInferenceHandler
 from caul import ASRHandler
 
 
-@patch.object(ParakeetModelHandler, "load", new=lambda _: None)
-def test__handler_with_single_parakeet_model__np_array_input():
-    """Test standalone Parakeet model"""
-    model = ParakeetModelHandler(PARAKEET_MODEL)
+@patch.object(ParakeetInferenceHandler, "load", new=lambda _: None)
+def test__handler_with_single_PARAKEET_INFERENCE__np_array_input():
+    """Test standalone Parakeet inference_handler"""
+    preprocessor = ParakeetPreprocessor()
+    inference_handler = ParakeetInferenceHandler(parakeet_inference)
+    postprocessor = ParakeetPostprocessor()
 
-    model.model = MockNvidiaASRModelHandler()
+    inference_handler.model = MockNvidiaASRInferenceHandler()
 
-    handler = ASRHandler(models=model)
+    handler = ASRHandler(
+        preprocessor=preprocessor,
+        inference_handler=inference_handler,
+        postprocessor=postprocessor,
+    )
 
     handler.startup()
 

@@ -3,24 +3,28 @@ from dataclasses import astuple
 from more_itertools import flatten
 
 from caul.constant import PARAKEET_SAMPLE_MINUTE
-from caul.model.parakeet_model import ParakeetModelHandlerResult
-from test.unit.constant import PARAKEET_MODEL
+from caul.model.inference.parakeet_inference import (
+    ParakeetInferenceHandlerResult,
+    ParakeetInferenceHandler,
+)
+from caul.model.postprocessing.parakeet_postprocessor import ParakeetPostprocessor
+from caul.model.preprocessing.parakeet_preprocessor import ParakeetPreprocessor
 
 import torch
 
-from caul.model import ParakeetModelHandler
 
-
-def test__parakeet_batching_and_unbatching():
+def test__parakeet_batching_unbatching():
     # pylint: disable=R1728
     """Test audio segmentation with batching (max length 24 minutes) and unbatching"""
-    model = ParakeetModelHandler(PARAKEET_MODEL)
+    preprocessor = ParakeetPreprocessor()
 
     audio = [
         torch.zeros([PARAKEET_SAMPLE_MINUTE * i]) for i in [12, 11, 5, 4, 7, 10, 30]
     ]
 
-    result = model.segment_audio_tensors(model.load_audio_tensors(audio))
+    result = preprocessor.batch_audio_tensors(
+        preprocessor.segment_audio_tensors(preprocessor.load_audio_tensors(audio))
+    )
 
     assert [
         [(r[0], r[-1].shape[-1] / PARAKEET_SAMPLE_MINUTE) for r in re] for re in result
@@ -31,34 +35,46 @@ def test__parakeet_batching_and_unbatching():
         [(2, 5.0), (3, 4.0)],
     ]
 
-    # Unbatch
-    flattened_results = list(flatten(result))
+
+def test__parakeet_unbatching():
+    """Test parakeet unbatching including reassembling segmented tensors"""
+    postprocessor = ParakeetPostprocessor()
+
     transcriptions = [
-        [(0, 1, "six part one")],
+        [(0, 1, "one part one")],
         [(0, 1, "zero")],
-        [(0, 1, "one")],
-        [(0, 1, "five")],
-        [(0, 1, "four")],
-        [(1, 2, "six part two")],
+        [(1, 2, "one part two")],
         [(0, 1, "two")],
-        [(0, 1, "three")],
     ]
-    scores = [6.0, 0.0, 1.0, 5.0, 4.0, 7.0, 2.0, 3.0]
     results = [
         (
-            input_idx,
-            ParakeetModelHandlerResult(
-                transcription=transcriptions[result_idx], score=scores[result_idx]
+            2,
+            ParakeetInferenceHandlerResult(
+                transcription=[(0, 1, "two one")], score=2.1
             ),
-        )
-        for (result_idx, (input_idx, _)) in enumerate(flattened_results)
+        ),
+        (
+            0,
+            ParakeetInferenceHandlerResult(transcription=[(0, 1, "zero")], score=0.0),
+        ),
+        (
+            2,
+            ParakeetInferenceHandlerResult(
+                transcription=[(1, 2, "two two")], score=2.2
+            ),
+        ),
+        (
+            1,
+            ParakeetInferenceHandlerResult(transcription=[(0, 1, "one")], score=1.0),
+        ),
     ]
-    assert [astuple(result) for result in model.map_results_to_inputs(results)] == [
-        ([(0, 1, "zero")], 0.0),
-        ([(0, 1, "one")], 1.0),
-        ([(0, 1, "two")], 2.0),
-        ([(0, 1, "three")], 3.0),
-        ([(0, 1, "four")], 4.0),
-        ([(0, 1, "five")], 5.0),
-        ([(0, 1, "six part one"), (1, 2, "six part two")], 6.5),
+
+    postprocessed_result = postprocessor.process(results)
+
+    assert postprocessed_result == [
+        ParakeetInferenceHandlerResult(transcription=[(0, 1, "zero")], score=0.0),
+        ParakeetInferenceHandlerResult(transcription=[(0, 1, "one")], score=1.0),
+        ParakeetInferenceHandlerResult(
+            transcription=[(0, 1, "two one"), (1, 2, "two two")], score=2.15
+        ),
     ]
