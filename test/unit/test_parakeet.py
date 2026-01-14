@@ -1,11 +1,6 @@
-from dataclasses import astuple
-
-from more_itertools import flatten
-
 from caul.constant import PARAKEET_SAMPLE_MINUTE
 from caul.model.inference.parakeet_inference import (
     ParakeetInferenceHandlerResult,
-    ParakeetInferenceHandler,
 )
 from caul.model.postprocessing.parakeet_postprocessor import ParakeetPostprocessor
 from caul.model.preprocessing.parakeet_preprocessor import ParakeetPreprocessor

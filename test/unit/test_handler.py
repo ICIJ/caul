@@ -15,7 +15,7 @@ from unittest.mock import patch
 
 import numpy as np
 
-from caul.model import ParakeetInferenceHandler
+from caul.model.inference.parakeet_inference import ParakeetInferenceHandler
 from caul import ASRHandler
 
 
