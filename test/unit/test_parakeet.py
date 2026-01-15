@@ -1,9 +1,9 @@
 from caul.constant import PARAKEET_SAMPLE_MINUTE
-from caul.model.inference.parakeet_inference import (
+from caul.inference.parakeet_inference import (
     ParakeetInferenceHandlerResult,
 )
-from caul.model.postprocessing.parakeet_postprocessor import ParakeetPostprocessor
-from caul.model.preprocessing.parakeet_preprocessor import ParakeetPreprocessor
+from caul.postprocessing.parakeet_postprocessor import ParakeetPostprocessor
+from caul.preprocessing.parakeet_preprocessor import ParakeetPreprocessor
 
 import torch
 

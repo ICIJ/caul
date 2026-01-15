@@ -1,7 +1,7 @@
 from dataclasses import astuple
 
-from caul.model.postprocessing.parakeet_postprocessor import ParakeetPostprocessor
-from caul.model.preprocessing.parakeet_preprocessor import ParakeetPreprocessor
+from caul.postprocessing.parakeet_postprocessor import ParakeetPostprocessor
+from caul.preprocessing.parakeet_preprocessor import ParakeetPreprocessor
 from test.unit.constant import (
     parakeet_inference,
     PARAKEET_TEST_TRANSCRIPTION,
@@ -15,8 +15,8 @@ from unittest.mock import patch
 
 import numpy as np
 
-from caul.model.inference.parakeet_inference import ParakeetInferenceHandler
-from caul import ASRHandler
+from caul.inference.parakeet_inference import ParakeetInferenceHandler
+from caul.handler import ASRHandler
 
 
 @patch.object(ParakeetInferenceHandler, "load", new=lambda _: None)

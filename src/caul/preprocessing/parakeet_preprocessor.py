@@ -10,7 +10,7 @@ from caul.constant import (
     PARAKEET_INFERENCE_MAX_DURATION_MIN,
     DEVICE_CPU,
 )
-from caul.model.preprocessing.asr_preprocessor import ASRPreprocessor
+from caul.preprocessing.asr_preprocessor import ASRPreprocessor
 
 
 class ParakeetPreprocessor(ASRPreprocessor):
@@ -37,7 +37,7 @@ class ParakeetPreprocessor(ASRPreprocessor):
     def load_audio_tensors(
         self, audio: list[np.ndarray | torch.Tensor | str]
     ) -> list[tuple[int, torch.Tensor]]:
-        """Accepts audio inputs as a list of wav paths, np.ndarray, or torch.Tensor, converting to
+        """Accepts audio inputs as a list of file paths, np.ndarray, or torch.Tensor, converting to
         torch.Tensor and sending them to device where needed.
 
         :param audio: List of np.ndarray or torch.Tensor or str, or a singleton of same types

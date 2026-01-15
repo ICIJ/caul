@@ -2,7 +2,7 @@ import torch
 
 import numpy as np
 
-from caul.model.inference.asr_inference import (
+from caul.inference.asr_inference import (
     ASRInferenceHandler,
     ASRInferenceHandlerResult,
 )

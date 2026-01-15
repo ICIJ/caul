@@ -1,8 +1,8 @@
 from functools import reduce
 from itertools import groupby
 
-from caul.model.inference.parakeet_inference import ParakeetInferenceHandlerResult
-from caul.model.postprocessing.asr_postprocessor import ASRPostprocessor
+from caul.inference.parakeet_inference import ParakeetInferenceHandlerResult
+from caul.postprocessing.asr_postprocessor import ASRPostprocessor
 
 
 class ParakeetPostprocessor(ASRPostprocessor):

@@ -1,15 +1,25 @@
+import logging
+
 from dataclasses import dataclass, field
 
 import torch
 
 import numpy as np
 
-from caul.model.inference.asr_inference import (
+from caul import MODEL_FAMILY_COMPONENTS
+from caul.exception import (
+    MissingModelSpecificationException,
+    UnsupportedModelException,
+    MissingComponentException,
+)
+from caul.inference.asr_inference import (
     ASRInferenceHandlerResult,
     ASRInferenceHandler,
 )
-from caul.model.postprocessing.asr_postprocessor import ASRPostprocessor
-from caul.model.preprocessing.asr_preprocessor import ASRPreprocessor
+from caul.postprocessing.asr_postprocessor import ASRPostprocessor
+from caul.preprocessing.asr_preprocessor import ASRPreprocessor
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -42,11 +52,14 @@ class ASRHandlerResult:
 class ASRHandler:
     """ASRHandler class"""
 
+    # pylint: disable=R0913,R0917
+
     def __init__(
         self,
-        preprocessor: list[ASRPreprocessor] | ASRPreprocessor,
-        inference_handler: list[ASRInferenceHandler] | ASRInferenceHandler,
-        postprocessor: list[ASRPostprocessor] | ASRPostprocessor,
+        model: list[str] | str = None,
+        preprocessor: list[ASRPreprocessor] | ASRPreprocessor = None,
+        inference_handler: list[ASRInferenceHandler] | ASRInferenceHandler = None,
+        postprocessor: list[ASRPostprocessor] | ASRPostprocessor = None,
         language_map: dict[str, int] = None,
     ):
         """Primary application handler class. Handles transcription agnostically.
@@ -57,23 +70,60 @@ class ASRHandler:
         :param language_map: Map from ISO-639-3 language code to index of inference_handler
         """
 
-        if not isinstance(preprocessor, list):
-            preprocessor = [preprocessor]
+        if {model, preprocessor, inference_handler, postprocessor} == {None}:
+            raise MissingModelSpecificationException(
+                "Either a model family must be provided or a preprocessor, inference_handler, and "
+                "postprocessor"
+            )
 
-        if not isinstance(inference_handler, list):
-            inference_handler = [inference_handler]
-
-        if not isinstance(postprocessor, list):
-            postprocessor = [postprocessor]
-
-        self.preprocessor = preprocessor
-        self.inference_handler = inference_handler
-        self.postprocessor = postprocessor
+        if model is None and None in [preprocessor, inference_handler, postprocessor]:
+            raise MissingComponentException(
+                "One of preprocessor, inference_handler, or postprocessor is missing"
+            )
 
         if language_map is None:
             language_map = {}
 
         self.language_map = language_map
+
+        self.preprocessor = []
+        self.inference_handler = []
+        self.postprocessor = []
+
+        if model is not None:
+            if not isinstance(model, list):
+                model = [model]
+
+            for mod in model:
+                if mod.lower() not in MODEL_FAMILY_COMPONENTS:
+                    raise UnsupportedModelException(f"Unsupported model '{mod}'")
+
+                components = MODEL_FAMILY_COMPONENTS[mod]
+
+                self.preprocessor.append(components[0])
+                self.inference_handler.append(components[1])
+                self.postprocessor.append(components[2])
+        else:
+            if not isinstance(preprocessor, list):
+                preprocessor = [preprocessor]
+
+            if not isinstance(inference_handler, list):
+                inference_handler = [inference_handler]
+
+            if not isinstance(postprocessor, list):
+                postprocessor = [postprocessor]
+
+            self.preprocessor += preprocessor
+            self.inference_handler += inference_handler
+            self.postprocessor += postprocessor
+
+    def __repr__(self):
+        return (
+            f"<ASRHandler "
+            f"preprocessor={self.preprocessor}, "
+            f"inference_handler={self.inference_handler}, "
+            f"postprocessor={self.postprocessor}>"
+        )
 
     def startup(self):
         """Load all models into memory"""

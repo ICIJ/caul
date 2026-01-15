@@ -5,7 +5,7 @@ import nemo.collections.asr as nemo_asr
 from nemo.collections.asr.parts.utils.rnnt_utils import Hypothesis
 
 from caul.constant import DEVICE_CPU
-from caul.model.inference.asr_inference import (
+from caul.inference.asr_inference import (
     ASRInferenceHandlerResult,
     ASRInferenceHandler,
 )
