@@ -20,7 +20,7 @@ A handler object can be instantiated and run on one or more WAV files or
 directly on NumPy/Torch tensors, returning a list of `ASRHandlerResult` 
 for each input. `transcriptions` contains a list of 
 tuples of the form `(start_time, end_time, text_segment)` and `scores` a measure
-of confidence in a transcription in `range(0, -250)`:
+of confidence in a transcription in the `range(0, -250)`:
 ```aiignore
 >>> from caul.handler import ASRHandler
 >>> handler = ASRHandler(model="parakeet")
