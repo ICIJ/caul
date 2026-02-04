@@ -1,5 +1,3 @@
-from copy import deepcopy
-
 import librosa
 import torch
 
@@ -148,9 +146,9 @@ class ParakeetPreprocessor(ASRTask):
         are not sufficient to safely divide audio.
 
         :param audio_tensor: input tensor
-        :param frame_length: number of samples per analysis frame
+        :param frame_len: number of samples per analysis frame
         :param silence_thresh_db: max decibel value
-        :param hop_length: number of samples between analysis frames
+        :param hop_len: number of samples between analysis frames
         :return: list of tensor segments
         """
         # TODO: Implement fallback to overlaps

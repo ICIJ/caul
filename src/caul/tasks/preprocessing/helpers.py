@@ -27,5 +27,5 @@ class InputMetadata:
 class PreprocessedInput:
     """Preprocessed input wrapper"""
 
-    tensor: torch.Tensor
+    tensor: torch.Tensor | list
     metadata: InputMetadata
