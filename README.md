@@ -23,9 +23,9 @@ tuples of the form `(start_time, end_time, text_segment)` and `scores` a measure
 of confidence in a transcription in the `range(0, -250)`:
 ```aiignore
 >>> from caul.handler import ASRHandler
->>> handler = ASRHandler(model="parakeet")
+>>> handler = ASRHandler(models="parakeet")
 >>> handler.startup()
 >>> results = handler.transcribe("<...path to some audio file...>")
 >>> print(results)
-ASRHandlerResult(transcriptions=[[(0.0, 1.0, "Gr-r-r--there go, my heart's abhorrence! Water your damned flower-pots, do!"), ...], ...], scores=[-250.0, ...])
+[ASRInferenceHandlerResult(transcriptions=[[(0.0, 1.0, "Gr-r-r--there go, my heart's abhorrence! Water your damned flower-pots, do!"), ...], ...], scores=[-250.0, ...])]
 ```

@@ -33,7 +33,10 @@ class ParakeetModelHandler(ASRModelHandler):
         self.tasks = [self.preprocessor, self.inference_handler, self.postprocessor]
 
     def set_device(self, device: str | torch.device = DEVICE_CPU):
-        """Set/change device here and on inference_handler"""
+        """Set/change device here and on inference_handler
+
+        :param device: device to use
+        """
         if isinstance(device, str):
             device = torch.device(device)
 
