@@ -1,6 +1,4 @@
-parakeet_inference = "nvidia/parakeet-tdt-0.6b-v3"
-
-TEST_PATH = "test/resources/YOU0000000315_S0001812.wav"
+TEST_PATH = "test/resources/asr_test.wav"
 
 PARAKEET_TEST_SEGMENT_START = 0.08
 

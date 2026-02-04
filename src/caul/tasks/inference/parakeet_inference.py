@@ -5,7 +5,7 @@ import nemo.collections.asr as nemo_asr
 from nemo.collections.asr.parts.utils.rnnt_utils import Hypothesis
 
 from caul.constant import DEVICE_CPU
-from caul.inference.asr_inference import (
+from caul.tasks.inference.asr_inference import (
     ASRInferenceHandlerResult,
     ASRInferenceHandler,
 )
@@ -73,36 +73,48 @@ class ParakeetInferenceHandler(ASRInferenceHandler):
     are single-channel with a sample rate of 16000—this last is very important for segmenting.
     """
 
-    def __init__(self, model_name: str, device: str = DEVICE_CPU, timestamps=True):
+    def __init__(self, model_name: str, device: str = DEVICE_CPU):
         self.model_name = model_name
         self.device = device
-        self.timestamps = timestamps
         self.model = None
 
     def load(self):
-        """Load model"""
+        """Load model; default to CPU where no device is present"""
+        device = self.device
+
+        if device is None:
+            device = DEVICE_CPU
+
         self.model = nemo_asr.models.ASRModel.from_pretrained(
-            self.model_name, map_location=torch.device(self.device)
+            self.model_name, map_location=torch.device(device)
         )
 
     def unload(self):
         """Unload model"""
         self.model = None
 
-    def transcribe(
+    def set_device(self, device: str | torch.device = DEVICE_CPU):
+        """Set/change device"""
+        self.device = device
+
+    def process(
         self,
         inputs: list[tuple[int, torch.Tensor]],
+        timestamps: bool = True,
     ) -> list[tuple[int, ParakeetInferenceHandlerResult]]:
         """Transcribe a batch of audio tensors or file names of total max length <= 24 minutes
 
         :param inputs: List of np.ndarray or torch.Tensor or str, or singleton of same types
+        :param timestamps: Whether to include timestamps with transcriptions
         :return: List of tuples of (input_idx, transcription)
         """
         transcriptions = []
 
         for tensor_batch in inputs:
             prebatch_indices, segments = zip(*tensor_batch)
-            hypotheses = self.model.transcribe(segments, timestamps=self.timestamps)
+            # send to device
+            segments = [s.to(self.device) for s in segments]
+            hypotheses = self.model.transcribe(segments, timestamps=timestamps)
             # Get timestamped segments if available, otherwise default to whole text
             for idx, hyp in enumerate(hypotheses):
                 model_result = (

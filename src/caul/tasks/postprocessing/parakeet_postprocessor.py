@@ -1,24 +1,24 @@
 from functools import reduce
 from itertools import groupby
 
-from caul.inference.parakeet_inference import ParakeetInferenceHandlerResult
-from caul.postprocessing.asr_postprocessor import ASRPostprocessor
+from caul.tasks.asr_task import ASRTask
+from caul.tasks.inference.parakeet_inference import ParakeetInferenceHandlerResult
 
 
-class ParakeetPostprocessor(ASRPostprocessor):
+class ParakeetPostprocessor(ASRTask):
     """Postprocessing logic for ParakeetInferenceHandler output"""
 
     def process(
-        self, inference_result: list[tuple[int, ParakeetInferenceHandlerResult]]
+        self, inputs: list[tuple[int, ParakeetInferenceHandlerResult]]
     ) -> list[ParakeetInferenceHandlerResult]:
         """Process indexed ParakeetInferenceHandler results and return them in their original
         ordering
 
-        :param inference_result: List of indexed parakeet model results of form (input_idx, result)
+        :param inputs: List of indexed parakeet model results of form (input_idx, result)
         :return: list of parakeet model results in input ordering
         """
 
-        return self.map_results_to_inputs(inference_result)
+        return self.map_results_to_inputs(inputs)
 
     @staticmethod
     def map_results_to_inputs(

@@ -6,18 +6,16 @@ import torch
 
 import numpy as np
 
-from caul import MODEL_FAMILY_COMPONENTS
 from caul.exception import (
     MissingModelSpecificationException,
     UnsupportedModelException,
-    MissingComponentException,
 )
-from caul.inference.asr_inference import (
+from caul.model_handlers import MODEL_FAMILY_HANDLER_MAP
+from caul.tasks.inference.asr_inference import (
     ASRInferenceHandlerResult,
-    ASRInferenceHandler,
 )
-from caul.postprocessing.asr_postprocessor import ASRPostprocessor
-from caul.preprocessing.asr_preprocessor import ASRPreprocessor
+from caul.model_handlers.asr_handler import ASRModelHandler, ASRModelHandlerResult
+from caul.utils import dict_key_fuzzy_match
 
 logger = logging.getLogger(__name__)
 
@@ -33,16 +31,16 @@ class ASRHandlerResult:
 
     def add_transcriptions(
         self,
-        inference_result: list[ASRInferenceHandlerResult] | ASRInferenceHandlerResult,
+        handler_result: list[ASRInferenceHandlerResult] | ASRInferenceHandlerResult,
     ):
         """Parse ASRInferenceHandlerResult
 
-        :param inference_result: List of ASRInferenceHandlerResult
+        :param handler_result: List of ASRInferenceHandlerResult
         """
-        if not isinstance(inference_result, list):
-            inference_result = [inference_result]
+        if not isinstance(handler_result, list):
+            handler_result = [handler_result]
 
-        for result in inference_result:
+        for result in handler_result:
             self.transcriptions.append(result.transcription)
             self.scores.append(result.score)
 
@@ -56,148 +54,114 @@ class ASRHandler:
 
     def __init__(
         self,
-        model: list[str] | str = None,
-        preprocessor: list[ASRPreprocessor] | ASRPreprocessor = None,
-        inference_handler: list[ASRInferenceHandler] | ASRInferenceHandler = None,
-        postprocessor: list[ASRPostprocessor] | ASRPostprocessor = None,
+        models: list[str | ASRModelHandler] | str | ASRModelHandler,
+        device: torch.device | str = None,
         language_map: dict[str, int] = None,
     ):
         """Primary application handler class. Handles transcription agnostically.
 
-        :param preprocessor: ASRPreprocessor list or singleton
-        :param inference_handler: ASRInferenceHandler list or singleton
-        :param postprocessor: ASRPostprocessor list or singleton
+        :param models: Model_handler(s) or string reference(s)
+        :param device: cuda/cpu/mps
         :param language_map: Map from ISO-639-3 language code to index of inference_handler
         """
+        if isinstance(device, str):
+            device = torch.device(device)
 
-        if {model, preprocessor, inference_handler, postprocessor} == {None}:
-            raise MissingModelSpecificationException(
-                "Either a model family must be provided or a preprocessor, inference_handler, and "
-                "postprocessor"
-            )
-
-        if model is None and None in [preprocessor, inference_handler, postprocessor]:
-            raise MissingComponentException(
-                "One of preprocessor, inference_handler, or postprocessor is missing"
-            )
+        self.device = device
 
         if language_map is None:
             language_map = {}
 
         self.language_map = language_map
 
-        self.preprocessor = []
-        self.inference_handler = []
-        self.postprocessor = []
+        self.model_handlers = []
 
-        if model is not None:
-            if not isinstance(model, list):
-                model = [model]
+        if isinstance(models, list) and len(models) == 0:
+            raise MissingModelSpecificationException(
+                "At least one model name or model handler must be provided"
+            )
 
-            for mod in model:
-                if mod.lower() not in MODEL_FAMILY_COMPONENTS:
-                    raise UnsupportedModelException(f"Unsupported model '{mod}'")
+        if not isinstance(models, list):
+            models = [models]
 
-                components = MODEL_FAMILY_COMPONENTS[mod]
+        for model in models:
+            if isinstance(model, str):
+                supported_model_handler = dict_key_fuzzy_match(
+                    MODEL_FAMILY_HANDLER_MAP, model
+                )
 
-                self.preprocessor.append(components[0])
-                self.inference_handler.append(components[1])
-                self.postprocessor.append(components[2])
-        else:
-            if not isinstance(preprocessor, list):
-                preprocessor = [preprocessor]
+                if supported_model_handler is None:
+                    raise UnsupportedModelException(f"Unsupported model '{model}'")
 
-            if not isinstance(inference_handler, list):
-                inference_handler = [inference_handler]
+                # Set device after instantiation
+                supported_model_handler.set_device(self.device)
 
-            if not isinstance(postprocessor, list):
-                postprocessor = [postprocessor]
-
-            self.preprocessor += preprocessor
-            self.inference_handler += inference_handler
-            self.postprocessor += postprocessor
+                self.model_handlers.append(supported_model_handler)
+            elif isinstance(model, ASRModelHandler):
+                self.model_handlers.append(model)
+            else:
+                raise UnsupportedModelException(f"Unsupported model type '{model}'")
 
     def __repr__(self):
-        return (
-            f"<ASRHandler "
-            f"preprocessor={self.preprocessor}, "
-            f"inference_handler={self.inference_handler}, "
-            f"postprocessor={self.postprocessor}>"
-        )
+        return f"<ASRHandler " f"models: {self.model_handlers} "
 
     def startup(self):
-        """Load all models into memory"""
-        for inference_handler in self.inference_handler:
-            inference_handler.load()
+        """Run all model handler startup procedures"""
+        for model_handler in self.model_handlers:
+            model_handler.startup()
 
     def shutdown(self):
-        """Garbage collect inference handlers"""
-        self.inference_handler = []
+        """Garbage collect model handlers"""
+        self.model_handlers = []
 
-    def get_resources_by_language(
-        self, language: str, resource_type: list[str] | str
-    ) -> (
-        list[ASRPreprocessor | ASRInferenceHandler | ASRPostprocessor]
-        | ASRPreprocessor
-        | ASRInferenceHandler
-        | ASRPostprocessor
-    ):
-        """Get preprocessor and inference_handler from language map or return first reference to
-         both if language is not mapped
+    def get_handler_by_language(self, language: str) -> ASRModelHandler:
+        """Get model_handler from language map or return first reference if language is not mapped
 
         :param language: ISO-639-3 language code
-        :param resource_type: list of resource_types
-        :return: ASRPreprocessor, ASRInferenceHandler
+        :return: ASRModelHandler
         """
-        resources = []
         reference_idx = self.language_map.get(
             language, 0
         )  # default to primary inference_handler when no language given
 
-        for r_type in resource_type:
-            resource = (
-                getattr(self, r_type)[reference_idx]
-                if hasattr(self, r_type) and len(getattr(self, r_type)) > reference_idx
-                else None
+        if len(self.model_handlers) <= reference_idx:
+            raise UnsupportedModelException(
+                "Language is mapped to a model index which does not exist"
             )
-            resources.append(resource)
 
-        if len(resources) == 1:
-            resources = resources[0]
-
-        return resources
+        return self.model_handlers[reference_idx]
 
     def transcribe(
         self,
-        audio: list[np.ndarray | torch.Tensor | str] | np.ndarray | torch.Tensor | str,
+        inputs: list[np.ndarray | torch.Tensor | str] | np.ndarray | torch.Tensor | str,
         languages: list[str] = None,
-    ) -> ASRHandlerResult:
+    ) -> list[ASRModelHandlerResult]:
         """Transcribe audio tensors or strings. Returns a tuple of (transcription, score). A list
-        of languages of len(audio) may be passed to direct inputs to certain inference_handlers.
+        of languages of len(inputs) may be passed to direct inputs to certain inference_handlers.
 
-        :param audio: List of np.ndarray or torch.Tensor or str, or a singleton of same types
+        :param inputs: List of np.ndarray or torch.Tensor or str, or a singleton of same types
         :param languages: List of ISO-639-3 language codes
         :return: HandlerResult
         """
-        if not isinstance(audio, list):
-            audio = [audio]
+        if len(self.model_handlers) == 0:
+            raise MissingModelSpecificationException(
+                "At least one model name or model handler must be provided"
+            )
 
-        handler_result = ASRHandlerResult()
+        if not isinstance(inputs, list):
+            inputs = [inputs]
+
         audios_by_language = {}
-        inference_results = {}
+        model_handler_results_by_language = {}
         batch_language_ordering = []
+        model_handler_results = []
 
         if languages is None:
-            preprocessed_inputs = self.preprocessor[0].process(audio)
-            inference_results = self.inference_handler[0].transcribe(
-                preprocessed_inputs
-            )
-            return handler_result.add_transcriptions(
-                self.postprocessor[0].process(inference_results)
-            )
+            # Default to first model handler
+            return self.model_handlers[0].process(inputs)
 
         # Sort by language where present, preserving original order for returning result
-        for idx, aud in enumerate(audio):
+        for idx, aud in enumerate(inputs):
             language = languages[idx]
 
             if language not in audios_by_language:
@@ -208,23 +172,16 @@ class ASRHandler:
 
         # Run inference_handler on language batch
         for language, audio_list in audios_by_language.items():
-            preprocessor, inference_handler = self.get_resources_by_language(
-                language, ["preprocessor", "inference_handler"]
-            )
-            preprocessed_inputs = preprocessor.process(audio_list)
-            inference_results[language] = inference_handler.transcribe(
-                preprocessed_inputs
-            )
+            model_handler = self.get_handler_by_language(language)
+            model_handler_results_by_language[language] = model_handler.process(inputs)
 
         # For use with .pop()
         batch_language_ordering.reverse()
 
         # Reassemble and postprocess
         for language in batch_language_ordering:
-            postprocessor = self.get_resources_by_language(language, "postprocessor")
-            inference_result = inference_results[language].pop()
-            postprocessed_result = postprocessor.process(inference_result)
+            model_handler_result = model_handler_results_by_language[language].pop()
 
-            handler_result.add_transcriptions(postprocessed_result)
+            model_handler_results.append(model_handler_result)
 
-        return handler_result
+        return model_handler_results

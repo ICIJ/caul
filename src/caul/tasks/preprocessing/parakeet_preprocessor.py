@@ -10,25 +10,25 @@ from caul.constant import (
     PARAKEET_INFERENCE_MAX_DURATION_MIN,
     DEVICE_CPU,
 )
-from caul.preprocessing.asr_preprocessor import ASRPreprocessor
+from caul.tasks.asr_task import ASRTask
 
 
-class ParakeetPreprocessor(ASRPreprocessor):
+class ParakeetPreprocessor(ASRTask):
     """Preprocessing logic for ParakeetInferenceHandler inputs"""
 
     def process(
         self,
-        audio: list[np.ndarray | torch.Tensor | str] | np.ndarray | torch.Tensor | str,
+        inputs: list[np.ndarray | torch.Tensor | str] | np.ndarray | torch.Tensor | str,
     ) -> list[list[tuple[int, torch.Tensor]]]:
         """Segment and batch audio inputs
 
-        :param audio: List of np.ndarray or torch.Tensor or str, or singleton of same types
+        :param inputs: List of np.ndarray or torch.Tensor or str, or singleton of same types
         :return: batches of audio tensor segments of (input_idx, audio_tensor)
         """
-        if not isinstance(audio, list):
-            audio = [audio]
+        if not isinstance(inputs, list):
+            inputs = [inputs]
 
-        audio_tensors = self.load_audio_tensors(audio)
+        audio_tensors = self.load_audio_tensors(inputs)
         segmented_tensors = self.segment_audio_tensors(audio_tensors)
         batches = self.batch_audio_tensors(segmented_tensors)
 
@@ -38,7 +38,7 @@ class ParakeetPreprocessor(ASRPreprocessor):
         self, audio: list[np.ndarray | torch.Tensor | str]
     ) -> list[tuple[int, torch.Tensor]]:
         """Accepts audio inputs as a list of file paths, np.ndarray, or torch.Tensor, converting to
-        torch.Tensor and sending them to device where needed.
+        torch.Tensor
 
         :param audio: List of np.ndarray or torch.Tensor or str, or a singleton of same types
         :return: List of tuples of (input_idx, audio_tensor)
@@ -53,10 +53,6 @@ class ParakeetPreprocessor(ASRPreprocessor):
 
             if isinstance(aud, np.ndarray):
                 aud = torch.Tensor(aud)
-
-            # Send to GPU
-            if self.device != DEVICE_CPU:
-                aud = aud.to(self.device)
 
             audio_tensors.append((input_idx, aud))
 

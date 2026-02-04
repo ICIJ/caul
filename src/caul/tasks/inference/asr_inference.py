@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
+from caul.tasks.asr_task import ASRTask
+
 
 @dataclass
 class ASRInferenceHandlerResult:
@@ -10,14 +12,11 @@ class ASRInferenceHandlerResult:
     score: float = None
 
 
-class ASRInferenceHandler(ABC):
+class ASRInferenceHandler(ASRTask):
     """Abstract for ASR inference"""
 
     @abstractmethod
-    def transcribe(
-        self,
-        inputs: list,
-    ) -> list[ASRInferenceHandlerResult]:
+    def process(self, inputs: list, *args, **kwargs) -> list[ASRInferenceHandlerResult]:
         """
 
         :param inputs: List of inference inputs

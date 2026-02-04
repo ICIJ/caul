@@ -1,9 +1,10 @@
 from dataclasses import astuple
 
-from caul.postprocessing.parakeet_postprocessor import ParakeetPostprocessor
-from caul.preprocessing.parakeet_preprocessor import ParakeetPreprocessor
+from caul.model_handlers import ParakeetModelHandler
+from caul.tasks.inference.parakeet_inference import ParakeetInferenceHandler
+from caul.tasks.postprocessing.parakeet_postprocessor import ParakeetPostprocessor
+from caul.tasks.preprocessing.parakeet_preprocessor import ParakeetPreprocessor
 from test.unit.constant import (
-    parakeet_inference,
     PARAKEET_TEST_TRANSCRIPTION,
     PARAKEET_TEST_CONFIDENCE,
     PARAKEET_TEST_SEGMENT_START,
@@ -15,41 +16,34 @@ from unittest.mock import patch
 
 import numpy as np
 
-from caul.inference.parakeet_inference import ParakeetInferenceHandler
 from caul.handler import ASRHandler
 
 
 @patch.object(ParakeetInferenceHandler, "load", new=lambda _: None)
-def test__handler_with_single_PARAKEET_INFERENCE__np_array_input():
+def test__handler_with_single_parakeet_model__np_array_input(inference_handler=None):
     """Test standalone Parakeet inference_handler"""
-    preprocessor = ParakeetPreprocessor()
-    inference_handler = ParakeetInferenceHandler(parakeet_inference)
-    postprocessor = ParakeetPostprocessor()
+    model_handler = ParakeetModelHandler()
 
-    inference_handler.model = MockNvidiaASRInferenceHandler()
+    model_handler.inference_handler.model = MockNvidiaASRInferenceHandler()
 
-    handler = ASRHandler(
-        preprocessor=preprocessor,
-        inference_handler=inference_handler,
-        postprocessor=postprocessor,
-    )
+    handler = ASRHandler(models=model_handler)
 
     handler.startup()
 
     # load wav, drop channel dim
     audio = np.zeros([16000])
-    transcriptions, scores = astuple(handler.transcribe(audio))
+    transcriptions, scores = zip(*[astuple(r) for r in handler.transcribe(audio)])
 
-    assert transcriptions == [
+    assert transcriptions == (
         [
             (
                 PARAKEET_TEST_SEGMENT_START,
                 PARAKEET_TEST_SEGMENT_END,
                 PARAKEET_TEST_TRANSCRIPTION,
             )
-        ]
-    ]
-    assert scores == [PARAKEET_TEST_CONFIDENCE]
+        ],
+    )
+    assert scores == (PARAKEET_TEST_CONFIDENCE,)
 
 
 def test__handler_with_single_whisper_model():

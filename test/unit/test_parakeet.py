@@ -1,9 +1,7 @@
 from caul.constant import PARAKEET_SAMPLE_MINUTE
-from caul.inference.parakeet_inference import (
-    ParakeetInferenceHandlerResult,
-)
-from caul.postprocessing.parakeet_postprocessor import ParakeetPostprocessor
-from caul.preprocessing.parakeet_preprocessor import ParakeetPreprocessor
+from caul.tasks.inference.parakeet_inference import ParakeetInferenceHandlerResult
+from caul.tasks.postprocessing.parakeet_postprocessor import ParakeetPostprocessor
+from caul.tasks.preprocessing.parakeet_preprocessor import ParakeetPreprocessor
 
 import torch
 
@@ -35,12 +33,6 @@ def test__parakeet_unbatching():
     """Test parakeet unbatching including reassembling segmented tensors"""
     postprocessor = ParakeetPostprocessor()
 
-    transcriptions = [
-        [(0, 1, "one part one")],
-        [(0, 1, "zero")],
-        [(1, 2, "one part two")],
-        [(0, 1, "two")],
-    ]
     results = [
         (
             2,
