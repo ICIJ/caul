@@ -1,6 +1,6 @@
 class MissingModelSpecificationException(Exception):
-    pass
+    """Raise if referencing a missing model"""
 
 
 class UnsupportedModelException(Exception):
-    pass
+    """Raise if an unsupported model type is passed"""

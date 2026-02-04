@@ -9,12 +9,16 @@ from caul.tasks.asr_task import ASRTask
 
 @dataclass
 class ASRModelHandlerResult:
+    """ASR model handler result"""
 
     transcriptions: list[dict]
     scores: list[float]
 
 
 class ASRModelHandler(ABC):
+    """ASR model handler abstract"""
+
+    # pylint: disable=R0903
 
     def __init__(self, *args, **kwargs):
         self.tasks: list[ASRTask] = []

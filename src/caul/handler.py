@@ -170,7 +170,9 @@ class ASRHandler:
         # Run inference_handler on language batch
         for language, audio_list in audios_by_language.items():
             model_handler = self.get_handler_by_language(language)
-            model_handler_results_by_language[language] = model_handler.process(inputs)
+            model_handler_results_by_language[language] = model_handler.process(
+                audio_list
+            )
 
         # For use with .pop()
         batch_language_ordering.reverse()

@@ -8,7 +8,6 @@ from caul.constant import (
     PARAKEET_SAMPLE_MINUTE,
     PARAKEET_SAMPLE_RATE,
     PARAKEET_INFERENCE_MAX_DURATION_MIN,
-    DEVICE_CPU,
 )
 from caul.tasks.asr_task import ASRTask
 

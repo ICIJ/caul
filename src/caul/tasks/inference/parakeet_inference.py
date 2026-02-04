@@ -43,7 +43,7 @@ class ParakeetInferenceHandlerResult(ASRInferenceHandlerResult):
         :return: copy of self
         """
         if model_result is None:
-            return
+            return self
 
         if self.transcription is None:
             self.transcription = []

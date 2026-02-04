@@ -1,4 +1,4 @@
-from caul import PARAKEET
+from caul.constant import PARAKEET
 from caul.model_handlers.parakeet import ParakeetModelHandler
 
 
