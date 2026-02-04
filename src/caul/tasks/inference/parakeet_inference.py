@@ -9,6 +9,7 @@ from caul.tasks.inference.asr_inference import (
     ASRInferenceHandlerResult,
     ASRInferenceHandler,
 )
+from caul.tasks.preprocessing.helpers import PreprocessedInput
 
 
 class ParakeetInferenceHandlerResult(ASRInferenceHandlerResult):
@@ -91,7 +92,7 @@ class ParakeetInferenceHandler(ASRInferenceHandler):
 
         self.model = nemo_asr.models.ASRModel.from_pretrained(
             self.model_name, map_location=torch.device(device)
-        )
+        ).eval()
 
     def unload(self):
         """Unload model"""
@@ -108,28 +109,33 @@ class ParakeetInferenceHandler(ASRInferenceHandler):
 
     def process(
         self,
-        inputs: list[tuple[int, torch.Tensor]],
+        inputs: list[list[PreprocessedInput]] | list[PreprocessedInput],
         timestamps: bool = True,
-    ) -> list[tuple[int, ParakeetInferenceHandlerResult]]:
-        """Transcribe a batch of audio tensors or file names of total max length <= 24 minutes
+    ) -> list[ParakeetInferenceHandlerResult]:
+        """Transcribe a batch of audio tensors or file names of max duration <= 20 minutes
 
         :param inputs: List of np.ndarray or torch.Tensor or str, or singleton of same types
         :param timestamps: Whether to include timestamps with transcriptions
-        :return: List of tuples of (input_idx, transcription)
+        :return: List of results
         """
+        if len(inputs) == 0:
+            return []
+
+        if isinstance(inputs[0], PreprocessedInput):
+            inputs = [inputs]
+
         transcriptions = []
 
-        for tensor_batch in inputs:
-            prebatch_indices, segments = zip(*tensor_batch)
-            # send to device
-            segments = [s.to(self.device) for s in segments]
-            hypotheses = self.model.transcribe(segments, timestamps=timestamps)
+        for input_batch in inputs:
+            hypotheses = self.model.transcribe(
+                [i.tensor.to(self.device) for i in input_batch], timestamps=timestamps
+            )
             # Get timestamped segments if available, otherwise default to whole text
             for idx, hyp in enumerate(hypotheses):
-                model_result = (
-                    ParakeetInferenceHandlerResult().parse_parakeet_hypothesis(hyp)
-                )
-                indexed_result = prebatch_indices[idx], model_result
-                transcriptions.append(indexed_result)
+                input_ordering_idx = input_batch[idx].metadata.input_ordering
+                model_result = ParakeetInferenceHandlerResult(
+                    input_ordering=input_ordering_idx
+                ).parse_parakeet_hypothesis(hyp)
+                transcriptions.append(model_result)
 
         return transcriptions

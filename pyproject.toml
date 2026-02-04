@@ -8,7 +8,8 @@ dependencies = [
     "torch>=2.9.1",
     "numpy",
     "torchaudio>=2.9.1",
-    "torchcodec>=0.9.1"
+    "torchcodec>=0.9.1",
+    "librosa>=0.11.0",
 ]
 [build-system]
 requires = ["uv_build >= 0.9.22, <0.10.0"]

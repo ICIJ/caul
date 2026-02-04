@@ -2,8 +2,6 @@ from dataclasses import astuple
 
 from caul.model_handlers import ParakeetModelHandler
 from caul.tasks.inference.parakeet_inference import ParakeetInferenceHandler
-from caul.tasks.postprocessing.parakeet_postprocessor import ParakeetPostprocessor
-from caul.tasks.preprocessing.parakeet_preprocessor import ParakeetPreprocessor
 from test.unit.constant import (
     PARAKEET_TEST_TRANSCRIPTION,
     PARAKEET_TEST_CONFIDENCE,
@@ -32,18 +30,16 @@ def test__handler_with_single_parakeet_model__np_array_input(inference_handler=N
 
     # load wav, drop channel dim
     audio = np.zeros([16000])
-    transcriptions, scores = zip(*[astuple(r) for r in handler.transcribe(audio)])
+    result = handler.transcribe(audio)[0]
 
-    assert transcriptions == (
-        [
-            (
-                PARAKEET_TEST_SEGMENT_START,
-                PARAKEET_TEST_SEGMENT_END,
-                PARAKEET_TEST_TRANSCRIPTION,
-            )
-        ],
-    )
-    assert scores == (PARAKEET_TEST_CONFIDENCE,)
+    assert result.transcription == [
+        (
+            PARAKEET_TEST_SEGMENT_START,
+            PARAKEET_TEST_SEGMENT_END,
+            PARAKEET_TEST_TRANSCRIPTION,
+        )
+    ]
+    assert result.score == PARAKEET_TEST_CONFIDENCE
 
 
 def test__handler_with_single_whisper_model():

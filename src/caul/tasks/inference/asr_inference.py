@@ -8,6 +8,7 @@ from caul.tasks.asr_task import ASRTask
 class ASRInferenceHandlerResult:
     """Base result class for ASR models"""
 
+    input_ordering: int = -1
     transcription: list[tuple] = None
     score: float = None
 

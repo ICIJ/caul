@@ -1,3 +1,6 @@
+from copy import deepcopy
+
+import librosa
 import torch
 
 import numpy as np
@@ -5,11 +8,13 @@ import torchaudio
 
 from caul.constant import (
     PARAKEET_INFERENCE_MAX_DURATION_KHZ,
-    PARAKEET_SAMPLE_MINUTE,
-    PARAKEET_SAMPLE_RATE,
+    EXPECTED_SAMPLE_MINUTE,
+    EXPECTED_SAMPLE_RATE,
     PARAKEET_INFERENCE_MAX_DURATION_MIN,
 )
+from caul.filesystem import save_tensor
 from caul.tasks.asr_task import ASRTask
+from caul.tasks.preprocessing.helpers import PreprocessedInput, InputMetadata
 
 
 class ParakeetPreprocessor(ASRTask):
@@ -18,106 +23,190 @@ class ParakeetPreprocessor(ASRTask):
     def process(
         self,
         inputs: list[np.ndarray | torch.Tensor | str] | np.ndarray | torch.Tensor | str,
-    ) -> list[list[tuple[int, torch.Tensor]]]:
+        input_sample_rates: list[int] | int = None,
+        save_to_filesystem: bool = True,
+    ) -> list[list[PreprocessedInput]]:
         """Segment and batch audio inputs
 
         :param inputs: List of np.ndarray or torch.Tensor or str, or singleton of same types
-        :return: batches of audio tensor segments of (input_idx, audio_tensor)
+        :param input_sample_rates: sample rate(s) of audio inputs
+        :param save_to_filesystem: whether to save to filesystem
+        :return: batches of indexed preprocessed audio tensors (input_idx, preprocessed_input)
         """
         if not isinstance(inputs, list):
             inputs = [inputs]
 
-        audio_tensors = self.load_audio_tensors(inputs)
-        segmented_tensors = self.segment_audio_tensors(audio_tensors)
-        batches = self.batch_audio_tensors(segmented_tensors)
+        preprocessed_inputs = self.preprocess_inputs(
+            inputs, input_sample_rates, save_to_filesystem
+        )
+        batches = self.batch_audio_tensors(preprocessed_inputs)
 
         return batches
 
-    def load_audio_tensors(
-        self, audio: list[np.ndarray | torch.Tensor | str]
-    ) -> list[tuple[int, torch.Tensor]]:
+    def preprocess_inputs(
+        self,
+        inputs: list[np.ndarray | torch.Tensor | str],
+        input_sample_rates: list[int] = None,
+        save_to_filesystem: bool = True,
+    ) -> list[PreprocessedInput]:
         """Accepts audio inputs as a list of file paths, np.ndarray, or torch.Tensor, converting to
-        torch.Tensor
+        torch.Tensor, normalizing, segmenting inputs longer than 20 minutes (just under Parakeet's
+        max) first by silences or with overlaps where not available, and batching segments
 
-        :param audio: List of np.ndarray or torch.Tensor or str, or a singleton of same types
-        :return: List of tuples of (input_idx, audio_tensor)
+        :param inputs: List of np.ndarray or torch.Tensor or str, or a singleton of same types
+        :param input_sample_rates: sample rate(s) of audio inputs
+        :param save_to_filesystem: whether to save to filesystem
+        :return: List of processed inputs
         """
-        audio_tensors = []
+        preprocessed_inputs = []
 
         # Load arrays and divide into max_length segments
-        for input_idx, aud in enumerate(audio):
+        for input_idx, audio_input in enumerate(inputs):
+            input_file_path = None
+            new_file_path = None
+            input_format = None
+
             # Load audio files as arrays
-            if isinstance(aud, str):
-                aud = self.load_wave(aud)
+            if isinstance(audio_input, str):
+                input_file_path = audio_input
+                input_format = (
+                    input_file_path.split(".")[-1]
+                    if len(input_file_path.split(".")) > 1
+                    else None
+                )
+                audio_input, sample_rate = torchaudio.load(audio_input)
 
-            if isinstance(aud, np.ndarray):
-                aud = torch.Tensor(aud)
+            if isinstance(audio_input, np.ndarray):
+                audio_input = torch.Tensor(audio_input)
 
-            audio_tensors.append((input_idx, aud))
+            # Normalize
+            if input_sample_rates is not None and len(input_sample_rates) > input_idx:
+                sample_rate = input_sample_rates[input_idx]
+            else:
+                sample_rate = EXPECTED_SAMPLE_RATE
 
-        return audio_tensors
+            audio_input = self.normalize(audio_input, sample_rate)
 
-    def load_wave(self, wav_path: str) -> torch.Tensor:
-        """Load a wav file from path as torch.Tensor and resample if needed
+            # Segment where necessary
+            duration_khz = audio_input.shape[-1]
+            tensor_segments = [audio_input]
 
-        :param wav_path: path to wave file
-        :return: torch.Tensor
+            if duration_khz > PARAKEET_INFERENCE_MAX_DURATION_KHZ:
+                tensor_segments = self.segment_audio_tensor(audio_input)
+
+            for tensor_segment in tensor_segments:
+                # Create temporary filesystem reference if applicable
+                if save_to_filesystem:
+                    new_file_path = save_tensor(tensor_segment)
+
+                # Create preprocessed input
+                metadata = InputMetadata(
+                    input_ordering=input_idx,
+                    duration=duration_khz / EXPECTED_SAMPLE_MINUTE,
+                    input_format=input_format,
+                    input_file_path=input_file_path,
+                    preprocessed_file_path=new_file_path,
+                )
+
+                preprocessed_input = PreprocessedInput(
+                    tensor=tensor_segment,
+                    metadata=metadata,
+                )
+
+                preprocessed_inputs.append(preprocessed_input)
+
+        return preprocessed_inputs
+
+    def normalize(self, audio_tensor: torch.Tensor, sample_rate: int) -> torch.Tensor:
+        """Normalize audio_tensor (single channel, sample rate = 16000)
+
+        :param audio_tensor: input tensor
+        :param sample_rate: input sample rate
+        :return: normalized tensor
         """
-        waveform, sample_rate = torchaudio.load(wav_path)
+        if sample_rate != EXPECTED_SAMPLE_RATE:
+            audio_tensor = self.resample_waveform(audio_tensor, sample_rate)
 
-        if sample_rate != PARAKEET_SAMPLE_RATE:
-            waveform = self.resample_waveform(waveform, sample_rate)
+        # Stereo dims (channels, aud_length); need mono (aud_length)
+        if len(audio_tensor.shape) > 1:
+            audio_tensor = audio_tensor.squeeze(0)
 
-        # Default dims [channels, aud_length]; need [aud_length]
-        return waveform.squeeze(0)
+        return audio_tensor
 
     @staticmethod
-    def segment_audio_tensors(
-        audio_tensors: list[tuple[int, torch.Tensor]],
-    ) -> list[tuple[int, torch.Tensor, int]]:
-        """Segment inputs greater than 24 minutes (Parakeet's max per-batch duration), surjectively
-        mapping them onto their ordering as originally received with their duration in minutes
+    def segment_audio_tensor(
+        audio_tensor: torch.Tensor,
+        frame_len: int = 2048,
+        silence_thresh_db: int = 35,
+        hop_len: int = 512,
+        kept_silence_len_secs: int = 0.15,
+        min_silence_len_secs: int = 0.5,
+        max_segment_len_secs: int = EXPECTED_SAMPLE_MINUTE
+        * PARAKEET_INFERENCE_MAX_DURATION_MIN,
+    ) -> list[torch.Tensor]:
+        """Splits on silences with librosa, falling back to overlaps where min segments
+        are not sufficient to safely divide audio.
 
-        :param audio_tensors: List of torch.Tensor
-        :return: List of tuples of (input_idx, audio_tensor, duration)
+        :param audio_tensor: input tensor
+        :param frame_length: number of samples per analysis frame
+        :param silence_thresh_db: max decibel value
+        :param hop_length: number of samples between analysis frames
+        :return: list of tensor segments
         """
+        # TODO: Implement fallback to overlaps
+        tensor_segments = []
 
-        indexed_audio_with_duration = []
+        # Intervals between silences
+        nonsilent_intervals = librosa.effects.split(
+            audio_tensor.numpy(),
+            top_db=silence_thresh_db,
+            frame_length=frame_len,
+            hop_length=hop_len,
+        )
 
-        for input_idx, audio_tensor in audio_tensors:
-            aud_segments = [audio_tensor]
+        merged = []
+        min_silence_sample_len = int(min_silence_len_secs * EXPECTED_SAMPLE_MINUTE)
+        kept_silence_sample_len = int(kept_silence_len_secs * EXPECTED_SAMPLE_MINUTE)
+        max_segment_sample_len = int(max_segment_len_secs * EXPECTED_SAMPLE_MINUTE)
 
-            if audio_tensor.shape[-1] > PARAKEET_INFERENCE_MAX_DURATION_KHZ:
-                aud_segments = torch.split(
-                    audio_tensor, PARAKEET_INFERENCE_MAX_DURATION_KHZ
-                )
+        # Merge intervals separated by short silences
+        for start, end in nonsilent_intervals:
+            if len(merged) == 0:
+                merged.append((start, end))
+            else:
+                _, prev_end = merged[-1]
+                if start - prev_end < min_silence_sample_len:
+                    merged[-1][1] = end
+                else:
+                    merged.append((start, end))
 
-            indexed_audio_with_duration += [
-                (
-                    input_idx,
-                    audio_tensor,
-                    audio_tensor.shape[-1] / PARAKEET_SAMPLE_MINUTE,
-                )
-                for audio_tensor in aud_segments
-            ]
+        # Segment controlling max length
+        for start, end in merged:
+            start = max(0, start - kept_silence_sample_len)
+            end = min(audio_tensor.shape[-1], end + kept_silence_sample_len)
 
-        return indexed_audio_with_duration
+            while end - start > max_segment_sample_len:
+                segment_end = start + max_segment_sample_len
+                tensor_segment = audio_tensor[start:segment_end]
+
+                tensor_segments.append(tensor_segment)
+
+        return tensor_segments
 
     @staticmethod
     def batch_audio_tensors(  # pylint: disable=R0914
-        indexed_audio_with_duration: list[tuple[int, torch.Tensor, int]],
-    ) -> list[list[tuple[int, torch.Tensor]]]:
-        """Batch audio tensors by duration, 24 minutes max per batch, optimizing for tightly packed
+        preprocessed_inputs: list[PreprocessedInput],
+    ) -> list[list[PreprocessedInput]]:
+        """Batch audio tensors by duration, 20 minutes max per batch, optimizing for tightly packed
         batches.
 
-        :param indexed_audio_with_duration: List of tuples of (input_idx, audio_tensor,
-                                            duration)
-        :return: list of list of tuples of (input_idx, audio_tensor)
+        :param preprocessed_inputs: list of PreprocessedInput
+        :return: list of list[PreprocessedInput]
         """
 
         # Sort by duration
-        indexed_audio_with_duration = sorted(
-            indexed_audio_with_duration, key=lambda x: x[-1], reverse=True
+        preprocessed_inputs = sorted(
+            preprocessed_inputs, key=lambda p: p.metadata.duration, reverse=True
         )
 
         # Now this becomes a bin-packing minimization problem. We'll use a variant of best-fit
@@ -127,22 +216,22 @@ class ParakeetPreprocessor(ASRTask):
         bins_len = [0]
 
         # With each pass, choose a bin by maximizing remaining space
-        for idx, segment, duration in indexed_audio_with_duration:
+        for preprocessed_input in preprocessed_inputs:
             bin_len_diffs = []
 
             for bin_len in bins_len:
                 bin_len_diffs.append(PARAKEET_INFERENCE_MAX_DURATION_MIN - bin_len)
 
-            if max(bin_len_diffs) <= duration:
+            if max(bin_len_diffs) <= preprocessed_input.metadata.duration:
                 bins.append([])
                 bins_len.append(0)
                 bin_len_diffs.append(PARAKEET_INFERENCE_MAX_DURATION_MIN)
 
             max_diff_idx = np.argmax(bin_len_diffs)
 
-            bins[max_diff_idx].append((idx, segment))
+            bins[max_diff_idx].append(preprocessed_input)
 
-            bins_len[max_diff_idx] += duration
+            bins_len[max_diff_idx] += preprocessed_input.metadata.duration
 
         return bins
 
@@ -154,5 +243,5 @@ class ParakeetPreprocessor(ASRTask):
         :param sample_rate: int
         :return: resampled torch.Tensor
         """
-        transform = torchaudio.transforms.Resample(sample_rate, PARAKEET_SAMPLE_RATE)
+        transform = torchaudio.transforms.Resample(sample_rate, EXPECTED_SAMPLE_RATE)
         return transform(waveform)
