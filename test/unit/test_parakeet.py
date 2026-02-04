@@ -1,5 +1,9 @@
-from caul.constant import PARAKEET_SAMPLE_MINUTE
-from caul.tasks.inference.parakeet_inference import ParakeetInferenceHandlerResult
+from caul.constant import PARAKEET_SAMPLE_MINUTE, DEVICE_CPU, DEVICE_MPS
+from caul.model_handlers import ParakeetModelHandler
+from caul.tasks.inference.parakeet_inference import (
+    ParakeetInferenceHandlerResult,
+    ParakeetInferenceHandler,
+)
 from caul.tasks.postprocessing.parakeet_postprocessor import ParakeetPostprocessor
 from caul.tasks.preprocessing.parakeet_preprocessor import ParakeetPreprocessor
 
@@ -65,3 +69,16 @@ def test__parakeet_unbatching():
             transcription=[(0, 1, "two one"), (1, 2, "two two")], score=2.15
         ),
     ]
+
+
+def test__parakeet_device_setting():
+    """Test parakeet device setting"""
+    handler = ParakeetModelHandler()
+
+    assert handler.device == torch.device(DEVICE_CPU)
+    assert handler.inference_handler.device == torch.device(DEVICE_CPU)
+
+    handler.set_device(DEVICE_MPS)
+
+    assert handler.device == torch.device(DEVICE_MPS)
+    assert handler.inference_handler.device == torch.device(DEVICE_MPS)

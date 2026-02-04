@@ -1,7 +1,7 @@
 import torch
 
 from caul.constant import DEVICE_CPU, PARAKEET_MODEL_REF
-from caul.model_handlers.asr_handler import ASRModelHandler
+from caul.model_handlers.asr_model_handler import ASRModelHandler
 from caul.tasks.inference.parakeet_inference import ParakeetInferenceHandler
 from caul.tasks.postprocessing.parakeet_postprocessor import ParakeetPostprocessor
 from caul.tasks.preprocessing.parakeet_preprocessor import ParakeetPreprocessor
@@ -18,6 +18,10 @@ class ParakeetModelHandler(ASRModelHandler):
         super().__init__()
 
         self.model_name = model_name
+
+        if isinstance(device, str):
+            device = torch.device(device)
+
         self.device = device
 
         self.preprocessor = ParakeetPreprocessor()
@@ -30,9 +34,14 @@ class ParakeetModelHandler(ASRModelHandler):
 
     def set_device(self, device: str | torch.device = DEVICE_CPU):
         """Set/change device here and on inference_handler"""
+        if isinstance(device, str):
+            device = torch.device(device)
+
         self.device = device
 
         self.inference_handler.set_device(device)
+
+        return self
 
     def startup(self):
         """Load model"""

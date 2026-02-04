@@ -14,7 +14,7 @@ from caul.model_handlers import MODEL_FAMILY_HANDLER_MAP
 from caul.tasks.inference.asr_inference import (
     ASRInferenceHandlerResult,
 )
-from caul.model_handlers.asr_handler import ASRModelHandler, ASRModelHandlerResult
+from caul.model_handlers.asr_model_handler import ASRModelHandler, ASRModelHandlerResult
 from caul.utils import dict_key_fuzzy_match
 
 logger = logging.getLogger(__name__)
@@ -64,9 +64,6 @@ class ASRHandler:
         :param device: cuda/cpu/mps
         :param language_map: Map from ISO-639-3 language code to index of inference_handler
         """
-        if isinstance(device, str):
-            device = torch.device(device)
-
         self.device = device
 
         if language_map is None:

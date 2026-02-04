@@ -73,8 +73,12 @@ class ParakeetInferenceHandler(ASRInferenceHandler):
     are single-channel with a sample rate of 16000—this last is very important for segmenting.
     """
 
-    def __init__(self, model_name: str, device: str = DEVICE_CPU):
+    def __init__(self, model_name: str, device: str | torch.device = DEVICE_CPU):
         self.model_name = model_name
+
+        if isinstance(device, str):
+            device = torch.device(device)
+
         self.device = device
         self.model = None
 
@@ -95,7 +99,12 @@ class ParakeetInferenceHandler(ASRInferenceHandler):
 
     def set_device(self, device: str | torch.device = DEVICE_CPU):
         """Set/change device"""
+        if isinstance(device, str):
+            device = torch.device(device)
+
         self.device = device
+
+        return self
 
     def process(
         self,
