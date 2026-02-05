@@ -26,8 +26,6 @@ def test__handler_with_single_parakeet_model__np_array_input(inference_handler=N
 
     handler = ASRHandler(models=model_handler)
 
-    handler.startup()
-
     # load wav, drop channel dim
     audio = np.zeros([16000])
     result = handler.transcribe(audio)[0]
