@@ -23,19 +23,21 @@ class ParakeetPreprocessor(ASRTask):
         inputs: list[np.ndarray | torch.Tensor | str] | np.ndarray | torch.Tensor | str,
         input_sample_rates: list[int] | int = None,
         save_to_filesystem: bool = True,
+        return_tensors=True,
     ) -> list[list[PreprocessedInput]]:
         """Segment and batch audio inputs
 
         :param inputs: List of np.ndarray or torch.Tensor or str, or singleton of same types
         :param input_sample_rates: sample rate(s) of audio inputs
         :param save_to_filesystem: whether to save to filesystem
+        :param return_tensors: whether to keep tensors in preprocessed inputs
         :return: batches of indexed preprocessed audio tensors (input_idx, preprocessed_input)
         """
         if not isinstance(inputs, list):
             inputs = [inputs]
 
         preprocessed_inputs = self.preprocess_inputs(
-            inputs, input_sample_rates, save_to_filesystem
+            inputs, input_sample_rates, save_to_filesystem, return_tensors
         )
         batches = self.batch_audio_tensors(preprocessed_inputs)
 
@@ -46,6 +48,7 @@ class ParakeetPreprocessor(ASRTask):
         inputs: list[np.ndarray | torch.Tensor | str],
         input_sample_rates: list[int] = None,
         save_to_filesystem: bool = True,
+        return_tensors: bool = True,
     ) -> list[PreprocessedInput]:
         """Accepts audio inputs as a list of file paths, np.ndarray, or torch.Tensor, converting to
         torch.Tensor, normalizing, segmenting inputs longer than 20 minutes (just under Parakeet's
@@ -54,6 +57,7 @@ class ParakeetPreprocessor(ASRTask):
         :param inputs: List of np.ndarray or torch.Tensor or str, or a singleton of same types
         :param input_sample_rates: sample rate(s) of audio inputs
         :param save_to_filesystem: whether to save to filesystem
+        :param return_tensors: whether to keep tensors in preprocessed inputs
         :return: List of processed inputs
         """
         preprocessed_inputs = []
@@ -96,6 +100,9 @@ class ParakeetPreprocessor(ASRTask):
                 # Create temporary filesystem reference if applicable
                 if save_to_filesystem:
                     new_file_path = save_tensor(tensor_segment)
+
+                if not return_tensors:
+                    tensor_segment = None
 
                 # Create preprocessed input
                 metadata = InputMetadata(

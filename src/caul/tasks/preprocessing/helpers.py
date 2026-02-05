@@ -2,6 +2,7 @@ import datetime
 import uuid
 
 from dataclasses import dataclass
+from typing import Optional
 
 import torch
 
@@ -27,5 +28,5 @@ class InputMetadata:
 class PreprocessedInput:
     """Preprocessed input wrapper"""
 
-    tensor: torch.Tensor | list
     metadata: InputMetadata
+    tensor: Optional[torch.Tensor | list] = None
