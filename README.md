@@ -27,5 +27,7 @@ of confidence in a transcription in the `range(0, -250)`:
 >>> handler.startup()
 >>> results = handler.transcribe("<...path to some audio file...>")
 >>> print(results)
-[ASRInferenceHandlerResult(transcriptions=[[(0.0, 1.0, "Gr-r-r--there go, my heart's abhorrence! Water your damned flower-pots, do!"), ...], ...], scores=[-250.0, ...])]
+[ASRInferenceHandlerResult(transcription=[(0.0, 1.5, "We're spending too much time here.")], score=-250.0),
+ASRInferenceHandlerResult(transcription=[(1.5, 2.9, "Stay a little longer.")], score=-250.0),
+ASRInferenceHandlerResult(transcription=[(2.9, 4.0, "He'd kill us if he got the chance.")], score=-250.0)]
 ```
