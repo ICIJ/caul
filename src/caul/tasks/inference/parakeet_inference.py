@@ -2,70 +2,12 @@ import torch
 
 import nemo.collections.asr as nemo_asr
 
-from nemo.collections.asr.parts.utils.rnnt_utils import Hypothesis
-
 from caul.constant import DEVICE_CPU
+from caul.model_handlers.helpers import ParakeetModelHandlerResult
 from caul.tasks.inference.asr_inference import (
-    ASRInferenceHandlerResult,
     ASRInferenceHandler,
 )
 from caul.tasks.preprocessing.helpers import PreprocessedInput
-
-
-class ParakeetInferenceHandlerResult(ASRInferenceHandlerResult):
-    """Result handler for ParakeetInferenceHandler objects"""
-
-    def parse_parakeet_hypothesis(
-        self, hypothesis: Hypothesis
-    ) -> ASRInferenceHandlerResult:
-        """Parse a hypothesis returned by a Parakeet RNN model
-
-        :param hypothesis: Parakeet hypothesis
-        :return: copy of self
-        """
-        self.transcription = (
-            [
-                (s["start"], s["end"], s["segment"])
-                for s in hypothesis.timestamp.get("segment")
-            ]
-            if hypothesis.timestamp.get("segment") is not None
-            else [(0.0, 0.0, hypothesis.text)]
-        )
-        self.score = round(hypothesis.score, 2)
-
-        return self
-
-    def concat(
-        self, model_result: ASRInferenceHandlerResult
-    ) -> ASRInferenceHandlerResult:
-        """Left fold with ParakeetInferenceHandlerResult object
-
-        :param model_result: ParakeetInferenceHandlerResult
-        :return: copy of self
-        """
-        if model_result is None:
-            return self
-
-        if self.transcription is None:
-            self.transcription = []
-
-        self.transcription += model_result.transcription
-
-        # We have to weight by total segment len
-        transcription_duration = self.transcription[-1][1]
-        model_result_duration = model_result.transcription[-1][1]
-        total_duration = transcription_duration + model_result_duration
-
-        self.score = round(
-            (
-                self.score * transcription_duration
-                + model_result.score * model_result_duration
-            )
-            / total_duration,
-            2,
-        )
-
-        return self
 
 
 class ParakeetInferenceHandler(ASRInferenceHandler):
@@ -111,7 +53,7 @@ class ParakeetInferenceHandler(ASRInferenceHandler):
         self,
         inputs: list[list[PreprocessedInput]] | list[PreprocessedInput],
         timestamps: bool = True,
-    ) -> list[ParakeetInferenceHandlerResult]:
+    ) -> list[ParakeetModelHandlerResult]:
         """Transcribe a batch of audio tensors or file names of max duration <= 20 minutes
 
         :param inputs: List of np.ndarray or torch.Tensor or str, or singleton of same types
@@ -133,7 +75,7 @@ class ParakeetInferenceHandler(ASRInferenceHandler):
             # Get timestamped segments if available, otherwise default to whole text
             for idx, hyp in enumerate(hypotheses):
                 input_ordering_idx = input_batch[idx].metadata.input_ordering
-                model_result = ParakeetInferenceHandlerResult(
+                model_result = ParakeetModelHandlerResult(
                     input_ordering=input_ordering_idx
                 ).parse_parakeet_hypothesis(hyp)
                 transcriptions.append(model_result)

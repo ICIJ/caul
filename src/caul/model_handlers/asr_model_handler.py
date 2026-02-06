@@ -1,19 +1,11 @@
 from abc import ABC
-from dataclasses import dataclass
 
 import numpy as np
 import torch
 
 from caul.configs.asr import ASRConfig
+from caul.model_handlers.helpers import ASRModelHandlerResult
 from caul.tasks.asr_task import ASRTask
-
-
-@dataclass
-class ASRModelHandlerResult:
-    """ASR model handler result"""
-
-    transcriptions: list[dict]
-    scores: list[float]
 
 
 class ASRModelHandler(ABC):

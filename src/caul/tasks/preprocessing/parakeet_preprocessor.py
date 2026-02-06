@@ -39,8 +39,6 @@ class ParakeetPreprocessor(ASRTask):
 
         :param inputs: List of np.ndarray or torch.Tensor or str, or singleton of same types
         :param input_sample_rates: sample rate(s) of audio inputs
-        :param save_to_filesystem: whether to save to filesystem
-        :param return_tensors: whether to keep tensors in preprocessed inputs
         :return: batches of indexed preprocessed audio tensors (input_idx, preprocessed_input)
         """
         if not isinstance(inputs, list):
@@ -62,8 +60,6 @@ class ParakeetPreprocessor(ASRTask):
 
         :param inputs: List of np.ndarray or torch.Tensor or str, or a singleton of same types
         :param input_sample_rates: sample rate(s) of audio inputs
-        :param save_to_filesystem: whether to save to filesystem
-        :param return_tensors: whether to keep tensors in preprocessed inputs
         :return: List of processed inputs
         """
         preprocessed_inputs = []

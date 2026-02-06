@@ -1,9 +1,6 @@
 from caul.configs import ParakeetConfig
 from caul.constant import EXPECTED_SAMPLE_MINUTE, DEVICE_CPU, DEVICE_MPS
-from caul.model_handlers.parakeet import ParakeetModelHandler
-from caul.tasks.inference.parakeet_inference import (
-    ParakeetInferenceHandlerResult,
-)
+from caul.model_handlers.helpers import ParakeetModelHandlerResult
 from caul.tasks.postprocessing.parakeet_postprocessor import ParakeetPostprocessor
 from caul.tasks.preprocessing.parakeet_preprocessor import ParakeetPreprocessor
 
@@ -35,16 +32,16 @@ def test__parakeet_unbatching():
     postprocessor = ParakeetPostprocessor()
 
     results = [
-        ParakeetInferenceHandlerResult(
+        ParakeetModelHandlerResult(
             input_ordering=2, transcription=[(0, 1, "two one")], score=2.1
         ),
-        ParakeetInferenceHandlerResult(
+        ParakeetModelHandlerResult(
             input_ordering=0, transcription=[(0, 1, "zero")], score=0.0
         ),
-        ParakeetInferenceHandlerResult(
+        ParakeetModelHandlerResult(
             input_ordering=2, transcription=[(1, 2, "two two")], score=2.2
         ),
-        ParakeetInferenceHandlerResult(
+        ParakeetModelHandlerResult(
             input_ordering=1, transcription=[(0, 1, "one")], score=1.0
         ),
     ]
@@ -54,7 +51,7 @@ def test__parakeet_unbatching():
     assert postprocessed_result == [
         results[1],
         results[3],
-        ParakeetInferenceHandlerResult(
+        ParakeetModelHandlerResult(
             input_ordering=2,
             transcription=[(0, 1, "two one"), (1, 2, "two two")],
             score=2.15,

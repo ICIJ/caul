@@ -2,15 +2,15 @@ from functools import reduce
 from itertools import groupby
 
 from caul.tasks.asr_task import ASRTask
-from caul.tasks.inference.parakeet_inference import ParakeetInferenceHandlerResult
+from caul.tasks.inference.parakeet_inference import ParakeetModelHandlerResult
 
 
 class ParakeetPostprocessor(ASRTask):
     """Postprocessing logic for ParakeetInferenceHandler output"""
 
     def process(
-        self, inputs: list[ParakeetInferenceHandlerResult]
-    ) -> list[ParakeetInferenceHandlerResult]:
+        self, inputs: list[ParakeetModelHandlerResult]
+    ) -> list[ParakeetModelHandlerResult]:
         """Process indexed ParakeetInferenceHandler results and return them in their original
         ordering
 
@@ -22,13 +22,13 @@ class ParakeetPostprocessor(ASRTask):
 
     @staticmethod
     def map_results_to_inputs(
-        batched_results: list[ParakeetInferenceHandlerResult],
-    ) -> list[ParakeetInferenceHandlerResult]:
+        batched_results: list[ParakeetModelHandlerResult],
+    ) -> list[ParakeetModelHandlerResult]:
         """Remap unordered and segmented tensors to original inputs for return
 
-        :param batched_results: list of unordered ParakeetInferenceHandlerResult, still
+        :param batched_results: list of unordered ParakeetModelHandlerResult, still
         segmented
-        :return: list[ParakeetInferenceHandlerResult]
+        :return: list[ParakeetModelHandlerResult]
         """
         unbatched_results = []
 

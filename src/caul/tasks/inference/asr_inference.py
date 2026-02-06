@@ -1,27 +1,18 @@
 from abc import abstractmethod
-from dataclasses import dataclass
 
+from caul.model_handlers.asr_model_handler import ASRModelHandlerResult
 from caul.tasks.asr_task import ASRTask
-
-
-@dataclass
-class ASRInferenceHandlerResult:
-    """Base result class for ASR models"""
-
-    input_ordering: int = -1
-    transcription: list[tuple] = None
-    score: float = None
 
 
 class ASRInferenceHandler(ASRTask):
     """Abstract for ASR inference"""
 
     @abstractmethod
-    def process(self, inputs: list, *args, **kwargs) -> list[ASRInferenceHandlerResult]:
+    def process(self, inputs: list, *args, **kwargs) -> list[ASRModelHandlerResult]:
         """
 
         :param inputs: List of inference inputs
-        :return: ASRInferenceHandlerResult
+        :return: ASRModelHandlerResult
         """
 
     @abstractmethod

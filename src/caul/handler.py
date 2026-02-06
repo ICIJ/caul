@@ -13,39 +13,12 @@ from caul.exception import (
 )
 from caul.configs import MODEL_FAMILY_CONFIG_MAP
 from caul.tasks.inference.asr_inference import (
-    ASRInferenceHandlerResult,
+    ASRModelHandlerResult,
 )
 from caul.model_handlers.asr_model_handler import ASRModelHandler, ASRModelHandlerResult
 from caul.utils import dict_key_fuzzy_match
 
 logger = logging.getLogger(__name__)
-
-
-@dataclass
-class ASRHandlerResult:
-    """ASRHandlerResult class"""
-
-    # pylint: disable=R0914
-
-    transcriptions: list[list[tuple[float, str]]] = field(default_factory=list)
-    scores: list[float] = field(default_factory=list)
-
-    def add_transcriptions(
-        self,
-        handler_result: list[ASRInferenceHandlerResult] | ASRInferenceHandlerResult,
-    ):
-        """Parse ASRInferenceHandlerResult
-
-        :param handler_result: List of ASRInferenceHandlerResult
-        """
-        if not isinstance(handler_result, list):
-            handler_result = [handler_result]
-
-        for result in handler_result:
-            self.transcriptions.append(result.transcription)
-            self.scores.append(result.score)
-
-        return self
 
 
 class ASRHandler:

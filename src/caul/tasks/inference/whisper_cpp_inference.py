@@ -1,6 +1,6 @@
 from caul.tasks.inference.asr_inference import (
     ASRInferenceHandler,
-    ASRInferenceHandlerResult,
+    ASRModelHandlerResult,
 )
 
 
@@ -12,7 +12,7 @@ class WhisperCPPInferenceHandler(ASRInferenceHandler):
     def process(
         self,
         inputs: list[str],
-    ) -> list[ASRInferenceHandlerResult]:
+    ) -> list[ASRModelHandlerResult]:
         """List of np.ndarray or torch.Tensor or str, or a singleton of same types
 
         :param inputs: List of np.ndarray or torch.Tensor or str, or a singleton of same types
