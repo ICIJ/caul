@@ -6,11 +6,12 @@ import torch
 
 import numpy as np
 
+from caul.configs.asr import ASRConfig
 from caul.exception import (
     MissingModelSpecificationException,
     UnsupportedModelException,
 )
-from caul.model_handlers import MODEL_FAMILY_HANDLER_MAP
+from caul.configs import MODEL_FAMILY_CONFIG_MAP
 from caul.tasks.inference.asr_inference import (
     ASRInferenceHandlerResult,
 )
@@ -54,7 +55,9 @@ class ASRHandler:
 
     def __init__(
         self,
-        models: list[str | ASRModelHandler] | str | ASRModelHandler,
+        models: (
+            list[str | ASRModelHandler | ASRConfig] | str | ASRModelHandler | ASRConfig
+        ),
         device: torch.device | str = None,
         language_map: dict[str, int] = None,
     ):
@@ -83,14 +86,15 @@ class ASRHandler:
 
         for model in models:
             if isinstance(model, str):
-                supported_model_handler = dict_key_fuzzy_match(
-                    MODEL_FAMILY_HANDLER_MAP, model
+                supported_model_config = dict_key_fuzzy_match(
+                    MODEL_FAMILY_CONFIG_MAP, model
                 )
 
-                if supported_model_handler is None:
+                if supported_model_config is None:
                     raise UnsupportedModelException(f"Unsupported model '{model}'")
 
                 # Set device after instantiation
+                supported_model_handler = supported_model_config.handler_from_config()
                 supported_model_handler.set_device(self.device)
 
                 self.model_handlers.append(supported_model_handler)

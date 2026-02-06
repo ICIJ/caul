@@ -50,4 +50,6 @@ class ParakeetPostprocessor(ASRTask):
             )
             unbatched_results.append(merged_results)
 
+        # TODO: Drop index from result
+
         return unbatched_results

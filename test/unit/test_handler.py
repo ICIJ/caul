@@ -1,6 +1,4 @@
-from dataclasses import astuple
-
-from caul.model_handlers import ParakeetModelHandler
+from caul.configs.parakeet import ParakeetConfig
 from caul.tasks.inference.parakeet_inference import ParakeetInferenceHandler
 from test.unit.constant import (
     PARAKEET_TEST_TRANSCRIPTION,
@@ -20,7 +18,11 @@ from caul.handler import ASRHandler
 @patch.object(ParakeetInferenceHandler, "load", new=lambda _: None)
 def test__handler_with_single_parakeet_model__np_array_input(inference_handler=None):
     """Test standalone Parakeet inference_handler"""
-    model_handler = ParakeetModelHandler()
+    model_config = ParakeetConfig()
+
+    model_config.save_to_filesystem = False
+
+    model_handler = model_config.handler_from_config()
 
     model_handler.inference_handler.model = MockNvidiaASRInferenceHandler()
 

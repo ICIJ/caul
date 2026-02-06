@@ -1,5 +1,6 @@
+from caul.configs import ParakeetConfig
 from caul.constant import EXPECTED_SAMPLE_MINUTE, DEVICE_CPU, DEVICE_MPS
-from caul.model_handlers import ParakeetModelHandler
+from caul.model_handlers.parakeet import ParakeetModelHandler
 from caul.tasks.inference.parakeet_inference import (
     ParakeetInferenceHandlerResult,
 )
@@ -63,7 +64,8 @@ def test__parakeet_unbatching():
 
 def test__parakeet_device_setting():
     """Test parakeet device setting"""
-    handler = ParakeetModelHandler()
+    config = ParakeetConfig()
+    handler = config.handler_from_config()
 
     assert handler.device == torch.device(DEVICE_CPU)
     assert handler.inference_handler.device == torch.device(DEVICE_CPU)

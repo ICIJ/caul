@@ -18,12 +18,22 @@ from caul.tasks.preprocessing.helpers import PreprocessedInput, InputMetadata
 class ParakeetPreprocessor(ASRTask):
     """Preprocessing logic for ParakeetInferenceHandler inputs"""
 
+    def __init__(
+        self,
+        save_to_filesystem: bool = True,
+        return_tensors: bool = True,
+        sample_rate: int = EXPECTED_SAMPLE_RATE,
+    ):
+        super().__init__()
+
+        self.save_to_filesystem = save_to_filesystem
+        self.return_tensors = return_tensors
+        self.sample_rate = sample_rate
+
     def process(
         self,
         inputs: list[np.ndarray | torch.Tensor | str] | np.ndarray | torch.Tensor | str,
         input_sample_rates: list[int] | int = None,
-        save_to_filesystem: bool = True,
-        return_tensors=True,
     ) -> list[list[PreprocessedInput]]:
         """Segment and batch audio inputs
 
@@ -36,9 +46,7 @@ class ParakeetPreprocessor(ASRTask):
         if not isinstance(inputs, list):
             inputs = [inputs]
 
-        preprocessed_inputs = self.preprocess_inputs(
-            inputs, input_sample_rates, save_to_filesystem, return_tensors
-        )
+        preprocessed_inputs = self.preprocess_inputs(inputs, input_sample_rates)
         batches = self.batch_audio_tensors(preprocessed_inputs)
 
         return batches
@@ -47,8 +55,6 @@ class ParakeetPreprocessor(ASRTask):
         self,
         inputs: list[np.ndarray | torch.Tensor | str],
         input_sample_rates: list[int] = None,
-        save_to_filesystem: bool = True,
-        return_tensors: bool = True,
     ) -> list[PreprocessedInput]:
         """Accepts audio inputs as a list of file paths, np.ndarray, or torch.Tensor, converting to
         torch.Tensor, normalizing, segmenting inputs longer than 20 minutes (just under Parakeet's
@@ -85,7 +91,7 @@ class ParakeetPreprocessor(ASRTask):
             if input_sample_rates is not None and len(input_sample_rates) > input_idx:
                 sample_rate = input_sample_rates[input_idx]
             else:
-                sample_rate = EXPECTED_SAMPLE_RATE
+                sample_rate = self.sample_rate
 
             audio_input = self.normalize(audio_input, sample_rate)
 
@@ -98,10 +104,10 @@ class ParakeetPreprocessor(ASRTask):
 
             for tensor_segment in tensor_segments:
                 # Create temporary filesystem reference if applicable
-                if save_to_filesystem:
+                if self.save_to_filesystem:
                     new_file_path = save_tensor(tensor_segment)
 
-                if not return_tensors:
+                if not self.return_tensors:
                     tensor_segment = None
 
                 # Create preprocessed input
@@ -129,7 +135,7 @@ class ParakeetPreprocessor(ASRTask):
         :param sample_rate: input sample rate
         :return: normalized tensor
         """
-        if sample_rate != EXPECTED_SAMPLE_RATE:
+        if sample_rate != self.sample_rate:
             audio_tensor = self.resample_waveform(audio_tensor, sample_rate)
 
         # Stereo dims (channels, aud_length); need mono (aud_length)
@@ -156,6 +162,9 @@ class ParakeetPreprocessor(ASRTask):
         :param frame_len: number of samples per analysis frame
         :param silence_thresh_db: max decibel value
         :param hop_len: number of samples between analysis frames
+        :param kept_silence_len_secs: number of seconds to keep silence
+        :param min_silence_len_secs: minimum seconds to keep silence
+        :param max_segment_len_secs: maximum seconds to keep silence
         :return: list of tensor segments
         """
         # TODO: Implement fallback to overlaps
@@ -240,13 +249,14 @@ class ParakeetPreprocessor(ASRTask):
 
         return bins
 
-    @staticmethod
-    def resample_waveform(waveform: torch.Tensor, sample_rate: int) -> torch.Tensor:
+    def resample_waveform(
+        self, waveform: torch.Tensor, sample_rate: int
+    ) -> torch.Tensor:
         """Resample when sample rate is not 16000
 
         :param waveform: torch.Tensor
         :param sample_rate: int
         :return: resampled torch.Tensor
         """
-        transform = torchaudio.transforms.Resample(sample_rate, EXPECTED_SAMPLE_RATE)
+        transform = torchaudio.transforms.Resample(sample_rate, self.sample_rate)
         return transform(waveform)

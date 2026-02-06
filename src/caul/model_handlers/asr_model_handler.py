@@ -4,6 +4,7 @@ from dataclasses import dataclass
 import numpy as np
 import torch
 
+from caul.configs.asr import ASRConfig
 from caul.tasks.asr_task import ASRTask
 
 
@@ -20,7 +21,8 @@ class ASRModelHandler(ABC):
 
     # pylint: disable=R0903
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, config: "ASRConfig", *args, **kwargs):
+        self.config = config
         self.tasks: list[ASRTask] = []
 
     def process(
