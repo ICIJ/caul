@@ -1,4 +1,4 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 
 import numpy as np
 import torch
@@ -16,6 +16,14 @@ class ASRModelHandler(ABC):
     def __init__(self, config: "ASRConfig", *args, **kwargs):
         self.config = config
         self.tasks: list[ASRTask] = []
+
+    @abstractmethod
+    def startup(self):
+        """Generic method to load ASR resources"""
+
+    @abstractmethod
+    def shutdown(self):
+        """Generic method to unload ASR resources"""
 
     def process(
         self,
