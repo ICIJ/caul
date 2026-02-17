@@ -1,7 +1,7 @@
 [![Lint](https://github.com/ICIJ/caul/actions/workflows/pylint.yml/badge.svg)](https://github.com/ICIJ/caul/actions/workflows/pylint.yml)
 [![Unit tests](https://github.com/ICIJ/caul/actions/workflows/test-unit.yml/badge.svg)](https://github.com/ICIJ/caul/actions/workflows/test-unit.yml)
 ![Supported Python versions](https://img.shields.io/badge/Python-=%3D%203.10-blue)
-![Version](https://img.shields.io/badge/Version-%200.2.0-red)
+![Version](https://img.shields.io/badge/Version-%200.1.0-red)
 
 # caul
 **Automatic speech recognition in Python**
