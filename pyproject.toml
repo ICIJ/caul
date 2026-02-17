@@ -5,11 +5,11 @@ description = "Python implementation of an ASR service"
 requires-python = ">=3.10.0, <3.14.0"
 dependencies = [
     "nemo-toolkit[asr]",
-    "torch>=2.10.0",
     "numpy",
     "torchaudio>=2.10.0",
     "torchcodec>=0.9.1",
     "librosa>=0.11.0",
+    "torch==2.10.0",
 ]
 authors = [
     {name = "Lion Summerbell", email = "lsummerbell@icij.org"}
