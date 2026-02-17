@@ -2,7 +2,7 @@
 name = "caul"
 version = "0.2.0"
 description = "Python implementation of an ASR service"
-requires-python = "<=3.10.19, >=3.10.0"
+requires-python = ">=3.10.0"
 dependencies = [
     "nemo-toolkit[asr]",
     "torch>=2.9.1",
