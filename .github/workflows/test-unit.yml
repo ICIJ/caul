@@ -23,9 +23,11 @@ jobs:
           version: "0.9.24"
           python-version-file: "pyproject.toml"
           enable-cache: true
-      - name: Install the project
+      - name: Install deps
         run: |
           uv sync --all-extras --dev
+      - name: Install ffmpeg
+        run: sudo apt update && sudo apt install -y ffmpeg
       - name: Run tests
         run: |
           uv run --dev --all-extras --frozen pytest -vvv --cache-clear --show-capture=all -r A test
