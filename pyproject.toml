@@ -2,14 +2,15 @@
 name = "caul"
 version = "0.1.0"
 description = "Python implementation of an ASR service"
-requires-python = ">=3.10.0, <3.14.0"
+requires-python = ">=3.11.0, <=3.14.0"
 dependencies = [
     "nemo-toolkit[asr]",
     "torch>=2.10.0",
-    "numpy",
+    "numpy==2.3.0",
     "torchaudio>=2.10.0",
     "torchcodec>=0.9.1",
     "librosa>=0.11.0",
+    "ml-dtypes>=0.5",
 ]
 authors = [
     {name = "Lion Summerbell", email = "lsummerbell@icij.org"}
@@ -17,6 +18,22 @@ authors = [
 [build-system]
 requires = ["uv_build >= 0.9.22, <0.10.0"]
 build-backend = "uv_build"
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = [
+  { index = "pytorch-cpu" }
+]
+torchaudio = [
+  { index = "pytorch-cpu" }
+]
+torchcodec = [
+  { index = "pytorch-cpu" }
+]
 
 [dependency-groups]
 dev = [

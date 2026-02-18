@@ -1,6 +1,6 @@
 [![Lint](https://github.com/ICIJ/caul/actions/workflows/pylint.yml/badge.svg)](https://github.com/ICIJ/caul/actions/workflows/pylint.yml)
 [![Unit tests](https://github.com/ICIJ/caul/actions/workflows/test-unit.yml/badge.svg)](https://github.com/ICIJ/caul/actions/workflows/test-unit.yml)
-![Supported Python versions](https://img.shields.io/badge/Python-=%3D%203.10-blue)
+![Supported Python versions](https://img.shields.io/badge/Python->=%3D%203.11-blue)
 ![Version](https://img.shields.io/badge/Version-%200.1.0-red)
 
 # caul
@@ -12,7 +12,7 @@ Audiofile transcription using NVIDIA's [Parakeet](https://huggingface.co/nvidia/
 models with fallback to [Whisper.cpp](https://https://github.com/ggml-org/whisper.cpp) for languages outside Parakeet's scope. 
 Built with `uv` for package and project management. Installation's as simple as
 ```aiignore
-uv python install 3.10
+uv python install 3.13
 uv sync --dev
 ```
 

@@ -7,6 +7,8 @@ on:
     paths:
       - '**.py'
       - '.github/workflows/test-unit.yml'
+      - 'pyproject.toml'
+      - 'uv.lock'
 
 jobs:
   unit-tests:
@@ -16,17 +18,17 @@ jobs:
       - name: Setup Python project
         uses: actions/setup-python@v6
         with:
-          python-version-file: "pyproject.toml"
+          python-version: "3.13"
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:
           version: "0.9.24"
-          python-version-file: "pyproject.toml"
+          python-version: "3.13"
           enable-cache: true
       - name: Install deps
         run: |
           uv sync --all-extras --dev
-      - name: Install ffmpeg
+      - name: Install torchcodec deps
         run: sudo apt update && sudo apt install -y ffmpeg
       - name: Run tests
         run: |
