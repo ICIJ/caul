@@ -1,6 +1,16 @@
+[build-system]
+requires = ["hatchling", "uv-dynamic-versioning"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
+
+[tool.uv-dynamic-versioning]
+fallback-version = "0.0.0"
+
 [project]
 name = "caul"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Python implementation of an ASR service"
 requires-python = ">=3.11.0, <=3.14.0"
 dependencies = [
@@ -15,9 +25,6 @@ dependencies = [
 authors = [
     {name = "Lion Summerbell", email = "lsummerbell@icij.org"}
 ]
-[build-system]
-requires = ["uv_build >= 0.9.22, <0.10.0"]
-build-backend = "uv_build"
 
 [[tool.uv.index]]
 name = "pytorch-cpu"
