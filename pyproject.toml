@@ -12,7 +12,7 @@ fallback-version = "0.0.0"
 name = "caul"
 dynamic = ["version"]
 description = "Python implementation of an ASR service"
-requires-python = ">=3.11.0, <=3.14.0"
+requires-python = ">=3.11.0, <3.14.0"
 dependencies = [
     "nemo-toolkit[asr]==2.6.2",
     "torch>=2.10.0",
