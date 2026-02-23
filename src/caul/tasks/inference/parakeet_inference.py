@@ -79,8 +79,11 @@ class ParakeetInferenceHandler(ASRInferenceHandler):
             )
             # Get timestamped segments if available, otherwise default to whole text
             for idx, hyps in enumerate(hypotheses):
-                best_hyp = hyps[0]
-                print(best_hyp)
+                best_hyp = hyps
+
+                if isinstance(best_hyp, list) or isinstance(best_hyp, tuple):
+                    best_hyp = hyps[0]
+
                 input_ordering_idx = input_batch[idx].metadata.input_ordering
                 model_result = ParakeetModelHandlerResult(
                     input_ordering=input_ordering_idx
