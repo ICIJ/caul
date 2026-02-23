@@ -24,6 +24,7 @@ class ParakeetModelHandlerResult(ASRModelHandlerResult):
         :param hypothesis: Parakeet hypothesis
         :return: copy of self
         """
+        print(dir(hypothesis))
         self.transcription = (
             [
                 (s["start"], s["end"], s["segment"])

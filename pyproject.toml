@@ -21,6 +21,7 @@ dependencies = [
     "torchcodec>=0.9.1",
     "librosa>=0.11.0",
     "ml-dtypes>=0.5",
+    "kaldialign>=0.9.3",
 ]
 authors = [
     {name = "Lion Summerbell", email = "lsummerbell@icij.org"}
