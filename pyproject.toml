@@ -27,6 +27,9 @@ authors = [
     {name = "Lion Summerbell", email = "lsummerbell@icij.org"}
 ]
 
+[tool.uv]
+override-dependencies = ["kaldialign>=0.9.3"]
+
 [[tool.uv.index]]
 name = "pytorch-cpu"
 url = "https://download.pytorch.org/whl/cpu"
