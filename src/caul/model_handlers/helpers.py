@@ -24,13 +24,12 @@ class ParakeetModelHandlerResult(ASRModelHandlerResult):
         :param hypothesis: Parakeet hypothesis
         :return: copy of self
         """
-        print(dir(hypothesis))
         self.transcription = (
             [
                 (s["start"], s["end"], s["segment"])
-                for s in hypothesis.timestamp.get("segment")
+                for s in hypothesis.timestep.get("segment")
             ]
-            if hypothesis.timestamp.get("segment") is not None
+            if hypothesis.timestep.get("segment") is not None
             else [(0.0, 0.0, hypothesis.text)]
         )
         self.score = round(hypothesis.score, 2)

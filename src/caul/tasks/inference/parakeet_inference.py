@@ -16,13 +16,19 @@ class ParakeetInferenceHandler(ASRInferenceHandler):
     are single-channel with a sample rate of 16000—this last is very important for segmenting.
     """
 
-    def __init__(self, model_name: str, device: str | torch.device = DEVICE_CPU):
+    def __init__(
+        self,
+        model_name: str,
+        device: str | torch.device = DEVICE_CPU,
+        return_timestamps: bool = True,
+    ):
         self.model_name = model_name
 
         if isinstance(device, str):
             device = torch.device(device)
 
         self.device = device
+        self.return_timestamps = return_timestamps
         self.model = None
 
     def load(self):
@@ -52,12 +58,10 @@ class ParakeetInferenceHandler(ASRInferenceHandler):
     def process(
         self,
         inputs: list[list[PreprocessedInput]] | list[PreprocessedInput],
-        timestamps: bool = True,
     ) -> list[ParakeetModelHandlerResult]:
         """Transcribe a batch of audio tensors or file names of max duration <= 20 minutes
 
         :param inputs: List of np.ndarray or torch.Tensor or str, or singleton of same types
-        :param timestamps: Whether to include timestamps with transcriptions
         :return: List of results
         """
         if len(inputs) == 0:
@@ -70,14 +74,17 @@ class ParakeetInferenceHandler(ASRInferenceHandler):
 
         for input_batch in inputs:
             hypotheses = self.model.transcribe(
-                [i.tensor.to(self.device) for i in input_batch], timestamps=timestamps
+                [i.tensor.to(self.device) for i in input_batch],
+                timestamps=self.return_timestamps,
             )
             # Get timestamped segments if available, otherwise default to whole text
-            for idx, hyp in enumerate(hypotheses):
+            for idx, hyps in enumerate(hypotheses):
+                best_hyp = hyps[0]
+                print(best_hyp)
                 input_ordering_idx = input_batch[idx].metadata.input_ordering
                 model_result = ParakeetModelHandlerResult(
                     input_ordering=input_ordering_idx
-                ).parse_parakeet_hypothesis(hyp)
+                ).parse_parakeet_hypothesis(best_hyp)
                 transcriptions.append(model_result)
 
         return transcriptions

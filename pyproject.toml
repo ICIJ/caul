@@ -14,7 +14,7 @@ dynamic = ["version"]
 description = "Python implementation of an ASR service"
 requires-python = ">=3.11.0, <=3.14.0"
 dependencies = [
-    "nemo-toolkit[asr]",
+    "nemo-toolkit[asr]==2.6.2",
     "torch>=2.10.0",
     "numpy==2.3.0",
     "torchaudio>=2.10.0",

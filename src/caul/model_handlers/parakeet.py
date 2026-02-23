@@ -41,7 +41,9 @@ class ParakeetModelHandler(ASRModelHandler):
             return_tensors=config.return_tensors,
         )
         self.inference_handler = ParakeetInferenceHandler(
-            model_name=config.model_name, device=config.device
+            model_name=config.model_name,
+            device=config.device,
+            return_timestamps=config.return_timestamps,
         )
         self.postprocessor = ParakeetPostprocessor()
 

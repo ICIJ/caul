@@ -16,4 +16,5 @@ class ParakeetConfig(ASRConfig):
     model_handler: "ASRModelHandler" = ParakeetModelHandler
     save_to_filesystem: bool = True
     return_tensors: bool = True
+    return_timestamps: bool = True
     sample_rate: int = EXPECTED_SAMPLE_RATE

@@ -14,7 +14,7 @@ class MockNvidiaASRInferenceHandlerResult:
     # pylint: disable=C0115,C0116,R0903
 
     def __init__(self):
-        self.timestamp = {
+        self.timestep = {
             "segment": [
                 {
                     "segment": PARAKEET_TEST_TRANSCRIPTION,
@@ -34,5 +34,5 @@ class MockNvidiaASRInferenceHandler:
         self,
         audio: list[np.ndarray | torch.Tensor | str] | np.ndarray | torch.Tensor | str,
         timestamps: bool,
-    ) -> list[MockNvidiaASRInferenceHandlerResult]:
-        return [MockNvidiaASRInferenceHandlerResult()]
+    ) -> tuple[list[MockNvidiaASRInferenceHandlerResult]]:
+        return ([MockNvidiaASRInferenceHandlerResult()],)
