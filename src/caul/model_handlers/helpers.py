@@ -24,12 +24,17 @@ class ParakeetModelHandlerResult(ASRModelHandlerResult):
         :param hypothesis: Parakeet hypothesis
         :return: copy of self
         """
+
+        # there's some weird inconsistency here between nemo versions
+        # TODO: figure out what's going on
+        timestamp = hypothesis.timestamp if hasattr(hypothesis, "timestamp") else None
+
+        if timestamp is None:
+            timestamp = hypothesis.timestep if hasattr(hypothesis, "timestep") else None
+
         self.transcription = (
-            [
-                (s["start"], s["end"], s["segment"])
-                for s in hypothesis.timestep.get("segment")
-            ]
-            if hypothesis.timestep.get("segment") is not None
+            [(s["start"], s["end"], s["segment"]) for s in timestamp.get("segment")]
+            if timestamp is not None
             else [(0.0, 0.0, hypothesis.text)]
         )
         self.score = round(hypothesis.score, 2)
