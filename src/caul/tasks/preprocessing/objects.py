@@ -1,32 +1,31 @@
 import datetime
 import uuid
 
-from dataclasses import dataclass
 from typing import Optional
 
 import torch
+from pydantic import BaseModel
 
 
-@dataclass
-class InputMetadata:
+class InputMetadata(BaseModel):
     """Preprocessed input metadata"""
 
-    input_ordering: int
-    duration: int
-    start_time: int = 0
-    end_time: int = 0
+    duration: float
+    input_ordering: int = -1
+    start_time: float = 0
+    end_time: float = 0
     preprocessed_at: str = (
         datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0).isoformat()
     )
     uuid: str = uuid.uuid4().hex
-    input_format: str = None
-    input_file_path: str = None
-    preprocessed_file_path: str = None
+    input_format: Optional[str] = None
+    input_file_path: Optional[str] = None
+    preprocessed_file_path: Optional[str] = None
 
 
-@dataclass
-class PreprocessedInput:
+class PreprocessedInput(BaseModel):
     """Preprocessed input wrapper"""
 
+    model_config = {"arbitrary_types_allowed": True}
     metadata: InputMetadata
     tensor: Optional[torch.Tensor | list] = None

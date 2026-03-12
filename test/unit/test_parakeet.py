@@ -1,6 +1,6 @@
 from caul.configs import ParakeetConfig
 from caul.constant import EXPECTED_SAMPLE_MINUTE, DEVICE_CPU, DEVICE_MPS
-from caul.model_handlers.helpers import ParakeetModelHandlerResult
+from caul.model_handlers.objects import ParakeetModelHandlerResult
 from caul.tasks.postprocessing.parakeet_postprocessor import ParakeetPostprocessor
 from caul.tasks.preprocessing.parakeet_preprocessor import ParakeetPreprocessor
 
