@@ -4,7 +4,7 @@ import numpy as np
 import torch
 
 from caul.configs.asr import ASRConfig
-from caul.model_handlers.helpers import ASRModelHandlerResult
+from caul.model_handlers.objects import ASRModelHandlerResult
 from caul.tasks.asr_task import ASRTask
 
 

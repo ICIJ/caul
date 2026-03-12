@@ -12,7 +12,7 @@ from caul.constant import (
 )
 from caul.filesystem import save_tensor
 from caul.tasks.asr_task import ASRTask
-from caul.tasks.preprocessing.helpers import PreprocessedInput, InputMetadata
+from caul.tasks.preprocessing.objects import PreprocessedInput, InputMetadata
 
 
 class ParakeetPreprocessor(ASRTask):

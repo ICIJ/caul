@@ -1,10 +1,10 @@
 from dataclasses import dataclass
 
 from nemo.collections.asr.parts.utils import Hypothesis
+from pydantic import BaseModel
 
 
-@dataclass
-class ASRModelHandlerResult:
+class ASRModelHandlerResult(BaseModel):
     """Base result class for ASR models"""
 
     input_ordering: int = -1
@@ -12,7 +12,6 @@ class ASRModelHandlerResult:
     score: float = None
 
 
-@dataclass
 class ParakeetModelHandlerResult(ASRModelHandlerResult):
     """Result handler for ParakeetInferenceHandler objects"""
 

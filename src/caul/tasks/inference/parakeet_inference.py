@@ -3,11 +3,11 @@ import torch
 import nemo.collections.asr as nemo_asr
 
 from caul.constant import DEVICE_CPU
-from caul.model_handlers.helpers import ParakeetModelHandlerResult
+from caul.model_handlers.objects import ParakeetModelHandlerResult
 from caul.tasks.inference.asr_inference import (
     ASRInferenceHandler,
 )
-from caul.tasks.preprocessing.helpers import PreprocessedInput
+from caul.tasks.preprocessing.objects import PreprocessedInput
 
 
 class ParakeetInferenceHandler(ASRInferenceHandler):
