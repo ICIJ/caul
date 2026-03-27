@@ -15,15 +15,13 @@ class ASRModelHandler(ABC):
 
     def __init__(self, config: "ASRConfig", *args, **kwargs):
         self.config = config
-        self.tasks: list[ASRTask] = []
+        self._tasks: list[ASRTask] = []
 
     @abstractmethod
-    def startup(self):
-        """Generic method to load ASR resources"""
+    def __enter__(self): ...
 
     @abstractmethod
-    def shutdown(self):
-        """Generic method to unload ASR resources"""
+    def __exit__(self, exc_type, exc_val, exc_tb): ...
 
     def process(
         self,
@@ -33,7 +31,7 @@ class ASRModelHandler(ABC):
 
         output = inputs
 
-        for task in self.tasks:
+        for task in self._tasks:
             output = task.process(output)
 
         return output

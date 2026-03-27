@@ -65,9 +65,9 @@ def test__parakeet_device_setting():
     handler = config.handler_from_config()
 
     assert handler.device == torch.device(DEVICE_CPU)
-    assert handler.inference_handler.device == torch.device(DEVICE_CPU)
+    assert handler.test_inference_handler.device == torch.device(DEVICE_CPU)
 
     handler.set_device(DEVICE_MPS)
 
     assert handler.device == torch.device(DEVICE_MPS)
-    assert handler.inference_handler.device == torch.device(DEVICE_MPS)
+    assert handler.test_inference_handler.device == torch.device(DEVICE_MPS)

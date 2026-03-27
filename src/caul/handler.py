@@ -1,6 +1,6 @@
+import gc
 import logging
-
-from dataclasses import dataclass, field
+from contextlib import ExitStack
 
 import torch
 
@@ -12,9 +12,6 @@ from caul.exception import (
     UnsupportedModelException,
 )
 from caul.configs import MODEL_FAMILY_CONFIG_MAP
-from caul.tasks.inference.asr_inference import (
-    ASRModelHandlerResult,
-)
 from caul.model_handlers.asr_model_handler import ASRModelHandler, ASRModelHandlerResult
 from caul.utils import dict_key_fuzzy_match
 
@@ -40,14 +37,15 @@ class ASRHandler:
         :param device: cuda/cpu/mps
         :param language_map: Map from ISO-639-3 language code to index of inference_handler
         """
-        self.device = device
+        self._device = device
 
         if language_map is None:
             language_map = {}
 
-        self.language_map = language_map
+        self._language_map = language_map
 
-        self.model_handlers = []
+        self._model_handlers = []
+        self._exit_stack = ExitStack()
 
         if isinstance(models, list) and len(models) == 0:
             raise MissingModelSpecificationException(
@@ -68,25 +66,26 @@ class ASRHandler:
 
                 # Set device after instantiation
                 supported_model_handler = supported_model_config.handler_from_config()
-                supported_model_handler.set_device(self.device)
+                supported_model_handler.set_device(self._device)
 
-                self.model_handlers.append(supported_model_handler)
+                self._model_handlers.append(supported_model_handler)
             elif isinstance(model, ASRModelHandler):
-                self.model_handlers.append(model)
+                self._model_handlers.append(model)
             else:
                 raise UnsupportedModelException(f"Unsupported model type '{model}'")
 
     def __repr__(self):
-        return f"<ASRHandler " f"models: {self.model_handlers} "
+        return f"<ASRHandler models: {self._model_handlers} "
 
-    def startup(self):
+    def __enter__(self):
         """Run all model handler startup procedures"""
-        for model_handler in self.model_handlers:
-            model_handler.startup()
+        for model_handler in self._model_handlers:
+            self._exit_stack.enter_context(model_handler)
+        return self
 
-    def shutdown(self):
-        """Garbage collect model handlers"""
-        self.model_handlers = []
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self._exit_stack.__exit__(exc_type, exc_val, exc_tb)
+        gc.collect()
 
     def get_handler_by_language(self, language: str) -> ASRModelHandler:
         """Get model_handler from language map or return first reference if language is not mapped
@@ -94,16 +93,16 @@ class ASRHandler:
         :param language: ISO-639-3 language code
         :return: ASRModelHandler
         """
-        reference_idx = self.language_map.get(
+        reference_idx = self._language_map.get(
             language, 0
         )  # default to primary inference_handler when no language given
 
-        if len(self.model_handlers) <= reference_idx:
+        if len(self._model_handlers) <= reference_idx:
             raise UnsupportedModelException(
                 "Language is mapped to a model index which does not exist"
             )
 
-        return self.model_handlers[reference_idx]
+        return self._model_handlers[reference_idx]
 
     def transcribe(
         self,
@@ -117,7 +116,7 @@ class ASRHandler:
         :param languages: List of ISO-639-3 language codes
         :return: HandlerResult
         """
-        if len(self.model_handlers) == 0:
+        if len(self._model_handlers) == 0:
             raise MissingModelSpecificationException(
                 "At least one model name or model handler must be provided"
             )
@@ -132,7 +131,7 @@ class ASRHandler:
 
         if languages is None:
             # Default to first model handler
-            return self.model_handlers[0].process(inputs)
+            return self._model_handlers[0].process(inputs)
 
         # Sort by language where present, preserving original order for returning result
         for idx, aud in enumerate(inputs):

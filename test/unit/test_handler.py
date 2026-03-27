@@ -38,7 +38,7 @@ def test_parakeet_model_handler() -> None:
     assert transcript[2] == PARAKEET_TEST_TRANSCRIPTION
 
 
-@patch.object(ParakeetInferenceHandler, "load", new=lambda _: None)
+@patch.object(ParakeetInferenceHandler, "__enter__", new=lambda _: None)
 def test__handler_with_single_parakeet_model__np_array_input(inference_handler=None):
     """Test standalone Parakeet inference_handler"""
     model_config = ParakeetConfig()
@@ -47,7 +47,7 @@ def test__handler_with_single_parakeet_model__np_array_input(inference_handler=N
 
     model_handler = model_config.handler_from_config()
 
-    model_handler.inference_handler.model = MockNvidiaASRInferenceHandler()
+    model_handler.test_inference_handler.model = MockNvidiaASRInferenceHandler()
 
     handler = ASRHandler(models=model_handler)
 

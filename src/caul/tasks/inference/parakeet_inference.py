@@ -1,10 +1,12 @@
+import gc
+
 import torch
 
 import nemo.collections.asr as nemo_asr
 from nemo.collections.asr.parts.mixins import TranscribeConfig
 from nemo.collections.asr.parts.mixins.transcription import InternalTranscribeConfig
 
-from caul.constant import DEVICE_CPU
+from caul.constant import DEVICE_CPU, DEVICE_GPU
 from caul.model_handlers.objects import ParakeetModelHandlerResult
 from caul.tasks.inference.asr_inference import (
     ASRInferenceHandler,
@@ -35,7 +37,7 @@ class ParakeetInferenceHandler(ASRInferenceHandler):
         self.model = None
         self._batch_size = batch_size
 
-    def load(self):
+    def __enter__(self):
         """Load model; default to CPU where no device is present"""
         device = self.device
 
@@ -45,10 +47,14 @@ class ParakeetInferenceHandler(ASRInferenceHandler):
         self.model = nemo_asr.models.ASRModel.from_pretrained(
             self.model_name, map_location=torch.device(device)
         ).eval()
+        return self
 
-    def unload(self):
+    def __exit__(self, exc_type, exc_val, exc_tb):
         """Unload model"""
         self.model = None
+        if self.device == torch.device(DEVICE_GPU):
+            torch.cuda.empty_cache()
+        gc.collect()
 
     def set_device(self, device: str | torch.device = DEVICE_CPU):
         """Set/change device"""
