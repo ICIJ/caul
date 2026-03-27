@@ -12,20 +12,21 @@ fallback-version = "0.0.0"
 name = "caul"
 dynamic = ["version"]
 description = "Python implementation of an ASR service"
-requires-python = ">=3.11.0, <3.14.0"
-dependencies = [
-    "nemo-toolkit[asr]==2.6.2",
-    "torch>=2.10.0",
-    "numpy==2.3.0",
-    "torchaudio>=2.10.0",
-    "torchcodec>=0.9.1",
-    "librosa>=0.11.0",
-    "ml-dtypes>=0.5",
-    "kaldialign>=0.9.3",
-    "pydantic>=2.12.5",
-]
 authors = [
     {name = "Lion Summerbell", email = "lsummerbell@icij.org"}
+]
+requires-python = ">=3.11.0, <3.14.0"
+dependencies = [
+    "numpy~=2.3",
+    "torchaudio~=2.10",
+    "torchcodec~=0.10.0",
+    "icij-common~=0.7.5",
+]
+
+[project.optional-dependencies]
+nemo = [
+  "nemo-toolkit[asr]~=2.7",
+  "torch~=2.10",
 ]
 
 [tool.uv]

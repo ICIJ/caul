@@ -1,6 +1,3 @@
-from dataclasses import dataclass
-
-from nemo.collections.asr.parts.utils import Hypothesis
 from pydantic import BaseModel
 
 
@@ -16,7 +13,7 @@ class ParakeetModelHandlerResult(ASRModelHandlerResult):
     """Result handler for ParakeetInferenceHandler objects"""
 
     def parse_parakeet_hypothesis(
-        self, hypothesis: Hypothesis
+        self, hypothesis: "Hypothesis"
     ) -> ASRModelHandlerResult:
         """Parse a hypothesis returned by a Parakeet RNN model
 
@@ -25,17 +22,10 @@ class ParakeetModelHandlerResult(ASRModelHandlerResult):
         """
 
         # there's some weird inconsistency here between nemo versions
-        # TODO: figure out what's going on
-        timestamp = hypothesis.timestamp if hasattr(hypothesis, "timestamp") else None
-
-        if timestamp is None:
-            timestamp = hypothesis.timestep if hasattr(hypothesis, "timestep") else None
-
-        self.transcription = (
-            [(s["start"], s["end"], s["segment"]) for s in timestamp.get("segment")]
-            if timestamp is not None
-            else [(0.0, 0.0, hypothesis.text)]
-        )
+        timestamps = hypothesis.timestamp
+        self.transcription = [
+            (s["start"], s["end"], s["segment"]) for s in timestamps["segment"]
+        ]
         self.score = round(hypothesis.score, 2)
 
         return self
