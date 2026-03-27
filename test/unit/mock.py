@@ -1,3 +1,6 @@
+from nemo.collections.asr.parts.mixins import TranscribeConfig
+from nemo.collections.asr.parts.utils import Hypothesis
+
 from test.unit.constant import (
     PARAKEET_TEST_CONFIDENCE,
     PARAKEET_TEST_TRANSCRIPTION,
@@ -27,6 +30,21 @@ class MockNvidiaASRInferenceHandlerResult:
         self.score = PARAKEET_TEST_CONFIDENCE
 
 
+def mock_result() -> Hypothesis:
+    timestamp = {
+        "segment": [
+            {
+                "segment": PARAKEET_TEST_TRANSCRIPTION,
+                "start": PARAKEET_TEST_SEGMENT_START,
+                "end": PARAKEET_TEST_SEGMENT_END,
+            }
+        ]
+    }
+    text = PARAKEET_TEST_TRANSCRIPTION
+    score = PARAKEET_TEST_CONFIDENCE
+    return Hypothesis(timestamp=timestamp, text=text, score=score, y_sequence=[])
+
+
 class MockNvidiaASRInferenceHandler:
     # pylint: disable=C0115,C0116,W0613,R0903
 
@@ -34,5 +52,6 @@ class MockNvidiaASRInferenceHandler:
         self,
         audio: list[np.ndarray | torch.Tensor | str] | np.ndarray | torch.Tensor | str,
         timestamps: bool,
-    ) -> tuple[list[MockNvidiaASRInferenceHandlerResult]]:
-        return ([MockNvidiaASRInferenceHandlerResult()],)
+        override_config: TranscribeConfig | None = None,
+    ) -> tuple[list[Hypothesis]]:
+        return ([mock_result()],)

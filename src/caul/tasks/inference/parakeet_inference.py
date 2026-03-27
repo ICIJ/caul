@@ -1,6 +1,8 @@
 import torch
 
 import nemo.collections.asr as nemo_asr
+from nemo.collections.asr.parts.mixins import TranscribeConfig
+from nemo.collections.asr.parts.mixins.transcription import InternalTranscribeConfig
 
 from caul.constant import DEVICE_CPU
 from caul.model_handlers.objects import ParakeetModelHandlerResult
@@ -21,6 +23,7 @@ class ParakeetInferenceHandler(ASRInferenceHandler):
         model_name: str,
         device: str | torch.device = DEVICE_CPU,
         return_timestamps: bool = True,
+        batch_size: int = 4,
     ):
         self.model_name = model_name
 
@@ -30,6 +33,7 @@ class ParakeetInferenceHandler(ASRInferenceHandler):
         self.device = device
         self.return_timestamps = return_timestamps
         self.model = None
+        self._batch_size = batch_size
 
     def load(self):
         """Load model; default to CPU where no device is present"""
@@ -70,12 +74,24 @@ class ParakeetInferenceHandler(ASRInferenceHandler):
         if isinstance(inputs[0], PreprocessedInput):
             inputs = [inputs]
 
+        transcribe_config = TranscribeConfig(
+            use_lhotse=False,
+            batch_size=self._batch_size,
+            timestamps=self.return_timestamps,
+            return_hypotheses=True,
+            _internal=InternalTranscribeConfig(device=self.device),
+        )
         transcriptions = []
-
         for input_batch in inputs:
+            if not input_batch:
+                continue
+            if input_batch[0].tensor is not None:
+                audios = [i.tensor.to(self.device) for i in input_batch]
+            else:
+                audios = [i.metadata.preprocessed_file_path for i in input_batch]
+
             hypotheses = self.model.transcribe(
-                [i.tensor.to(self.device) for i in input_batch],
-                timestamps=self.return_timestamps,
+                audios, self.return_timestamps, override_config=transcribe_config
             )
             # Get timestamped segments if available, otherwise default to whole text
             for idx, hyps in enumerate(hypotheses):
