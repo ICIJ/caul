@@ -15,10 +15,7 @@ class ASRInferenceHandler(ASRTask):
         :return: ASRModelHandlerResult
         """
 
-    @abstractmethod
-    def load(self):
-        """Load model"""
+    def __enter__(self):
+        return self
 
-    @abstractmethod
-    def unload(self):
-        """Unload model"""
+    def __aexit__(self, exc_type, exc_val, exc_tb): ...
