@@ -1,40 +1,61 @@
-import librosa
-import torch
+from typing import ClassVar, Self, TYPE_CHECKING
 
-import numpy as np
-import torchaudio
+from pydantic import Field
 
+from caul.config import PreprocessorConfig
 from caul.constant import (
+    ASRModel,
     PARAKEET_INFERENCE_MAX_DURATION_KHZ,
     EXPECTED_SAMPLE_MINUTE,
-    EXPECTED_SAMPLE_RATE,
+    DEFAULT_SAMPLE_RATE,
     PARAKEET_INFERENCE_MAX_DURATION_MIN,
 )
 from caul.filesystem import save_tensor
-from caul.tasks.asr_task import ASRTask
-from caul.tasks.preprocessing.objects import PreprocessedInput, InputMetadata
+from caul.objects import (
+    InputMetadata,
+    PreprocessedInput,
+    PreprocessedInputWithTensor,
+    PreprocessorOutput,
+)
+from caul.tasks.asr_task import Preprocessor
+
+if TYPE_CHECKING:
+    import torch
+    import numpy as np
 
 
-class ParakeetPreprocessor(ASRTask):
+class ParakeetPreprocessorConfig(PreprocessorConfig):
+    model: ClassVar[str] = Field(default=ASRModel.PARAKEET)
+    sample_rate: int = DEFAULT_SAMPLE_RATE
+
+
+@Preprocessor.register(ASRModel.PARAKEET)
+class ParakeetPreprocessor(Preprocessor):
     """Preprocessing logic for ParakeetInferenceHandler inputs"""
 
     def __init__(
         self,
+        sample_rate: int = DEFAULT_SAMPLE_RATE,
+        *,
         save_to_filesystem: bool = True,
         return_tensors: bool = True,
-        sample_rate: int = EXPECTED_SAMPLE_RATE,
     ):
         super().__init__()
+        self._save_to_filesystem = save_to_filesystem
+        self._return_tensors = return_tensors
+        self._sample_rate = sample_rate
 
-        self.save_to_filesystem = save_to_filesystem
-        self.return_tensors = return_tensors
-        self.sample_rate = sample_rate
+    @classmethod
+    def _from_config(cls, config: ParakeetPreprocessorConfig, **extras) -> Self:
+        return cls(**config.model_dump(), **extras)
 
     def process(
         self,
-        inputs: list[np.ndarray | torch.Tensor | str] | np.ndarray | torch.Tensor | str,
+        inputs: "list[np.ndarray | torch.Tensor | str] | np.ndarray | torch.Tensor | str",
+        *args,
         input_sample_rates: list[int] | int = None,
-    ) -> list[list[PreprocessedInput]]:
+        **kwargs,
+    ) -> list[list[PreprocessorOutput]]:
         """Segment and batch audio inputs
 
         :param inputs: List of np.ndarray or torch.Tensor or str, or singleton of same types
@@ -49,11 +70,11 @@ class ParakeetPreprocessor(ASRTask):
 
         return batches
 
-    def preprocess_inputs(
+    def preprocess_inputs(  # pylint: disable=too-many-locals
         self,
-        inputs: list[np.ndarray | torch.Tensor | str],
+        inputs: list["np.ndarray | torch.Tensor | str"],
         input_sample_rates: list[int] = None,
-    ) -> list[PreprocessedInput]:
+    ) -> list[PreprocessorOutput]:
         """Accepts audio inputs as a list of file paths, np.ndarray, or torch.Tensor, converting to
         torch.Tensor, normalizing, segmenting inputs longer than 20 minutes (just under Parakeet's
         max) first by silences or with overlaps where not available, and batching segments
@@ -62,6 +83,9 @@ class ParakeetPreprocessor(ASRTask):
         :param input_sample_rates: sample rate(s) of audio inputs
         :return: List of processed inputs
         """
+        import torchaudio  # pylint: disable=import-outside-toplevel
+        import numpy as np  # pylint: disable=import-outside-toplevel
+
         preprocessed_inputs = []
 
         # Load arrays and divide into max_length segments
@@ -81,13 +105,15 @@ class ParakeetPreprocessor(ASRTask):
                 audio_input, sample_rate = torchaudio.load(audio_input)
 
             if isinstance(audio_input, np.ndarray):
+                import torch  # pylint: disable=import-outside-toplevel
+
                 audio_input = torch.Tensor(audio_input)
 
             # Normalize
             if input_sample_rates is not None and len(input_sample_rates) > input_idx:
                 sample_rate = input_sample_rates[input_idx]
             else:
-                sample_rate = self.sample_rate
+                sample_rate = self._sample_rate
 
             audio_input = self.normalize(audio_input, sample_rate)
 
@@ -100,11 +126,8 @@ class ParakeetPreprocessor(ASRTask):
 
             for tensor_segment in tensor_segments:
                 # Create temporary filesystem reference if applicable
-                if self.save_to_filesystem:
+                if self._save_to_filesystem:
                     new_file_path = save_tensor(tensor_segment)
-
-                if not self.return_tensors:
-                    tensor_segment = None
 
                 # Create preprocessed input
                 metadata = InputMetadata(
@@ -114,24 +137,26 @@ class ParakeetPreprocessor(ASRTask):
                     input_file_path=input_file_path,
                     preprocessed_file_path=new_file_path,
                 )
-
-                preprocessed_input = PreprocessedInput(
-                    tensor=tensor_segment,
-                    metadata=metadata,
-                )
-
+                if self._return_tensors:
+                    preprocessed_input = PreprocessedInputWithTensor(
+                        metadata=metadata, tensor=tensor_segment
+                    )
+                else:
+                    preprocessed_input = PreprocessedInput(metadata=metadata)
                 preprocessed_inputs.append(preprocessed_input)
 
         return preprocessed_inputs
 
-    def normalize(self, audio_tensor: torch.Tensor, sample_rate: int) -> torch.Tensor:
+    def normalize(
+        self, audio_tensor: "torch.Tensor", sample_rate: int
+    ) -> "torch.Tensor":
         """Normalize audio_tensor (single channel, sample rate = 16000)
 
         :param audio_tensor: input tensor
         :param sample_rate: input sample rate
         :return: normalized tensor
         """
-        if sample_rate != self.sample_rate:
+        if sample_rate != self._sample_rate:
             audio_tensor = self.resample_waveform(audio_tensor, sample_rate)
 
         # Stereo dims (channels, aud_length); need mono (aud_length)
@@ -141,8 +166,8 @@ class ParakeetPreprocessor(ASRTask):
         return audio_tensor
 
     @staticmethod
-    def segment_audio_tensor(
-        audio_tensor: torch.Tensor,
+    def segment_audio_tensor(  # pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals
+        audio_tensor: "torch.Tensor",
         frame_len: int = 2048,
         silence_thresh_db: int = 35,
         hop_len: int = 512,
@@ -150,7 +175,7 @@ class ParakeetPreprocessor(ASRTask):
         min_silence_len_secs: int = 0.5,
         max_segment_len_secs: int = EXPECTED_SAMPLE_MINUTE
         * PARAKEET_INFERENCE_MAX_DURATION_MIN,
-    ) -> list[torch.Tensor]:
+    ) -> list["torch.Tensor"]:
         """Splits on silences with librosa, falling back to overlaps where min segments
         are not sufficient to safely divide audio.
 
@@ -163,6 +188,8 @@ class ParakeetPreprocessor(ASRTask):
         :param max_segment_len_secs: maximum seconds to keep silence
         :return: list of tensor segments
         """
+        import librosa  # pylint: disable=import-outside-toplevel
+
         # TODO: Implement fallback to overlaps
         tensor_segments = []
 
@@ -213,6 +240,7 @@ class ParakeetPreprocessor(ASRTask):
         :param preprocessed_inputs: list of PreprocessedInput
         :return: list of list[PreprocessedInput]
         """
+        import numpy as np  # pylint: disable=import-outside-toplevel
 
         # Sort by duration
         preprocessed_inputs = sorted(
@@ -246,13 +274,15 @@ class ParakeetPreprocessor(ASRTask):
         return bins
 
     def resample_waveform(
-        self, waveform: torch.Tensor, sample_rate: int
-    ) -> torch.Tensor:
+        self, waveform: "torch.Tensor", sample_rate: int
+    ) -> "torch.Tensor":
         """Resample when sample rate is not 16000
 
         :param waveform: torch.Tensor
         :param sample_rate: int
         :return: resampled torch.Tensor
         """
-        transform = torchaudio.transforms.Resample(sample_rate, self.sample_rate)
+        import torchaudio  # pylint: disable=import-outside-toplevel
+
+        transform = torchaudio.transforms.Resample(sample_rate, self._sample_rate)
         return transform(waveform)

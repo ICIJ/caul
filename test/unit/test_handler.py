@@ -1,7 +1,11 @@
 import pytest
+import numpy as np
 
-from caul.configs.parakeet import ParakeetConfig
-from caul.tasks.inference.parakeet_inference import ParakeetInferenceHandler
+from caul.handler import ASRHandler
+
+from caul.asr_pipeline import ASRPipeline
+from caul.tasks import ParakeetPreprocessorConfig
+from caul.tasks.asr_task import Postprocessor, Preprocessor
 from test.unit import TEST_RESOURCES_PATH
 from test.unit.constant import (
     PARAKEET_TEST_TRANSCRIPTION,
@@ -9,26 +13,21 @@ from test.unit.constant import (
     PARAKEET_TEST_SEGMENT_START,
     PARAKEET_TEST_SEGMENT_END,
 )
-from test.unit.mock import MockNvidiaASRInferenceHandler
-
-from unittest.mock import patch
-
-import numpy as np
-
-from caul.handler import ASRHandler
+from test.unit.mock import (
+    MockNvidiaASRInferenceRunner,
+    MockNvidiaASRInferenceRunnerConfig,
+)
 
 
 @pytest.mark.e2e
 def test_parakeet_model_handler() -> None:
     # Given
-    model_config = ParakeetConfig(save_to_filesystem=False, return_tensors=True)
-    model_handler = model_config.handler_from_config()
-    handler = ASRHandler(models=model_handler)
+    asr_handler = ASRHandler(models=ASRPipeline.parakeet())
     audio_path = TEST_RESOURCES_PATH / "asr_test.wav"
 
     # When
-    handler.startup()
-    result = list(handler.transcribe(str(audio_path)))
+    with asr_handler:
+        result = list(asr_handler.transcribe(str(audio_path)))
 
     # Then
     assert len(result) == 1
@@ -38,22 +37,20 @@ def test_parakeet_model_handler() -> None:
     assert transcript[2] == PARAKEET_TEST_TRANSCRIPTION
 
 
-@patch.object(ParakeetInferenceHandler, "__enter__", new=lambda _: None)
-def test__handler_with_single_parakeet_model__np_array_input(inference_handler=None):
+def test__handler_with_single_parakeet_model__np_array_input():
     """Test standalone Parakeet inference_handler"""
-    model_config = ParakeetConfig()
-
-    model_config.save_to_filesystem = False
-
-    model_handler = model_config.handler_from_config()
-
-    model_handler.test_inference_handler.model = MockNvidiaASRInferenceHandler()
-
-    handler = ASRHandler(models=model_handler)
+    mocked_tasks = [
+        Preprocessor.from_config(ParakeetPreprocessorConfig()),
+        MockNvidiaASRInferenceRunner.from_config(MockNvidiaASRInferenceRunnerConfig()),
+        Postprocessor.from_config(ParakeetPreprocessorConfig()),
+    ]
+    mocked_pipeline = ASRPipeline(mocked_tasks)
+    handler = ASRHandler(models=mocked_pipeline)
 
     # load wav, drop channel dim
-    audio = np.zeros([16000])
-    result = handler.transcribe(audio)[0]
+    with handler:
+        audio = np.zeros([16000])
+        result = handler.transcribe(audio)[0]
 
     assert result.transcription == [
         (

@@ -1,21 +1,26 @@
-import gc
 import logging
 from contextlib import ExitStack
+from typing import TYPE_CHECKING
 
-import torch
 
-import numpy as np
+from caul.asr_pipeline import ASRPipeline, ASRPipelineConfig
+from caul.constant import ASRModel
+from caul.default_configs import MODEL_FAMILY_CONFIG_MAP
+from caul.objects import ASRResult
+from caul.utils import fuzzy_match
 
-from caul.configs.asr import ASRConfig
-from caul.exception import (
-    MissingModelSpecificationException,
-    UnsupportedModelException,
-)
-from caul.configs import MODEL_FAMILY_CONFIG_MAP
-from caul.model_handlers.asr_model_handler import ASRModelHandler, ASRModelHandlerResult
-from caul.utils import dict_key_fuzzy_match
+
+from caul.exception import MissingModelSpecificationException, UnsupportedModelException
+
+if TYPE_CHECKING:
+    import torch
+    import numpy as np
+    from caul.constant import TorchDevice
+
 
 logger = logging.getLogger(__name__)
+
+ASR = str | ASRPipeline | ASRPipelineConfig
 
 
 class ASRHandler:
@@ -25,10 +30,8 @@ class ASRHandler:
 
     def __init__(
         self,
-        models: (
-            list[str | ASRModelHandler | ASRConfig] | str | ASRModelHandler | ASRConfig
-        ),
-        device: torch.device | str = None,
+        models: list[ASR] | ASR,
+        device: "torch._device | TorchDevice" = None,
         language_map: dict[str, int] = None,
     ):
         """Primary application handler class. Handles transcription agnostically.
@@ -57,19 +60,23 @@ class ASRHandler:
 
         for model in models:
             if isinstance(model, str):
-                supported_model_config = dict_key_fuzzy_match(
-                    MODEL_FAMILY_CONFIG_MAP, model
+                matching_keys = fuzzy_match(
+                    model, set(k.value for k in MODEL_FAMILY_CONFIG_MAP)
                 )
-
-                if supported_model_config is None:
+                if len(matching_keys) > 1:
+                    msg = (
+                        f"Ambiguous model key '{model}',"
+                        f" found matching keys: {matching_keys}"
+                    )
+                    raise UnsupportedModelException(msg)
+                if not matching_keys:
                     raise UnsupportedModelException(f"Unsupported model '{model}'")
-
-                # Set device after instantiation
-                supported_model_handler = supported_model_config.handler_from_config()
-                supported_model_handler.set_device(self._device)
-
-                self._model_handlers.append(supported_model_handler)
-            elif isinstance(model, ASRModelHandler):
+                model = ASRModel(model)
+                asr_pipeline = ASRPipeline.from_config(MODEL_FAMILY_CONFIG_MAP[model])
+                self._model_handlers.append(asr_pipeline)
+            elif isinstance(model, ASRPipelineConfig):
+                self._model_handlers.append(ASRPipeline.from_config(model))
+            elif isinstance(model, ASRPipeline):
                 self._model_handlers.append(model)
             else:
                 raise UnsupportedModelException(f"Unsupported model type '{model}'")
@@ -85,9 +92,8 @@ class ASRHandler:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self._exit_stack.__exit__(exc_type, exc_val, exc_tb)
-        gc.collect()
 
-    def get_handler_by_language(self, language: str) -> ASRModelHandler:
+    def get_handler_by_language(self, language: str) -> ASRPipeline:
         """Get model_handler from language map or return first reference if language is not mapped
 
         :param language: ISO-639-3 language code
@@ -106,9 +112,9 @@ class ASRHandler:
 
     def transcribe(
         self,
-        inputs: list[np.ndarray | torch.Tensor | str] | np.ndarray | torch.Tensor | str,
+        inputs: "list[np.ndarray | torch.Tensor | str] | np.ndarray | torch.Tensor | str",
         languages: list[str] = None,
-    ) -> list[ASRModelHandlerResult]:
+    ) -> list[ASRResult]:
         """Transcribe audio tensors or strings. Returns a tuple of (transcription, score). A list
         of languages of len(inputs) may be passed to direct inputs to certain inference_handlers.
 
