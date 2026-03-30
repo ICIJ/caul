@@ -1,10 +1,12 @@
-from caul.configs import ParakeetConfig
-from caul.constant import EXPECTED_SAMPLE_MINUTE, DEVICE_CPU, DEVICE_MPS
-from caul.model_handlers.objects import ParakeetModelHandlerResult
-from caul.tasks.postprocessing.parakeet_postprocessor import ParakeetPostprocessor
-from caul.tasks.preprocessing.parakeet_preprocessor import ParakeetPreprocessor
+import pytest
+
+from caul.asr_pipeline import ASRPipeline
+from caul.constant import EXPECTED_SAMPLE_MINUTE, TorchDevice
+from caul.objects import ASRResult
 
 import torch
+
+from caul.tasks import ParakeetPostprocessor, ParakeetPreprocessor
 
 
 def test__parakeet_batching_unbatching():
@@ -38,42 +40,40 @@ def test__parakeet_unbatching():
     postprocessor = ParakeetPostprocessor()
 
     results = [
-        ParakeetModelHandlerResult(
-            input_ordering=2, transcription=[(0, 1, "two one")], score=2.1
-        ),
-        ParakeetModelHandlerResult(
-            input_ordering=0, transcription=[(0, 1, "zero")], score=0.0
-        ),
-        ParakeetModelHandlerResult(
-            input_ordering=2, transcription=[(1, 2, "two two")], score=2.2
-        ),
-        ParakeetModelHandlerResult(
-            input_ordering=1, transcription=[(0, 1, "one")], score=1.0
-        ),
+        ASRResult(input_ordering=2, transcription=[(1, 2, "two one")], score=2.1),
+        ASRResult(input_ordering=0, transcription=[(0, 1, "zero")], score=0.0),
+        ASRResult(input_ordering=2, transcription=[(2, 3, "two two")], score=2.2),
+        ASRResult(input_ordering=1, transcription=[(0, 1, "one")], score=1.0),
     ]
 
     postprocessed_result = postprocessor.process(results)
 
-    assert postprocessed_result == [
+    expected = [
         results[1],
         results[3],
-        ParakeetModelHandlerResult(
+        ASRResult(
             input_ordering=2,
-            transcription=[(0, 1, "two one"), (1, 2, "two two")],
+            transcription=[(1, 2, "two one"), (2, 3, "two two")],
             score=2.15,
         ),
     ]
+    expected = [r.model_dump() for r in expected]
+    postprocessed_result = [r.model_dump() for r in postprocessed_result]
+    scores = [r.pop("score") for r in postprocessed_result]
+    expected_scores = [expected.pop("score") for expected in expected]
+    assert postprocessed_result == expected
+    assert scores == pytest.approx(expected_scores, abs=1e-6)
 
 
 def test__parakeet_device_setting():
     """Test parakeet device setting"""
-    config = ParakeetConfig()
-    handler = config.handler_from_config()
+    # Given
+    pipeline = ASRPipeline.parakeet(TorchDevice.CPU)
+    assert pipeline.tasks[1].device == torch.device("cpu")
 
-    assert handler.device == torch.device(DEVICE_CPU)
-    assert handler.test_inference_handler.device == torch.device(DEVICE_CPU)
+    # When
+    pipeline.set_device(TorchDevice.MPS)
 
-    handler.set_device(DEVICE_MPS)
-
-    assert handler.device == torch.device(DEVICE_MPS)
-    assert handler.test_inference_handler.device == torch.device(DEVICE_MPS)
+    # Then
+    assert pipeline.device == torch.device("mps")
+    assert pipeline.tasks[1].device == torch.device("mps")

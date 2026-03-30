@@ -4,7 +4,7 @@ from typing import Callable
 import librosa
 import torch
 
-from caul.constant import EXPECTED_SAMPLE_RATE, PARAKEET_INFERENCE_MAX_DURATION_SECS
+from caul.constant import EXPECTED_SAMPLE_RATE, PARAKEET_INFERENCE_MAX_DURATION_S
 from caul.segmentation.objects import TensorSegment
 
 
@@ -46,7 +46,7 @@ def _split_range_fixed(
 def segment_fixed(
     audio_tensor: torch.Tensor,
     sample_rate: int = EXPECTED_SAMPLE_RATE,
-    max_segment_len_secs: float = PARAKEET_INFERENCE_MAX_DURATION_SECS,
+    max_segment_len_secs: float = PARAKEET_INFERENCE_MAX_DURATION_S,
 ) -> list[TensorSegment]:
     """Split an audio tensor into fixed-length chunks.
 
@@ -70,7 +70,7 @@ def segment_by_silence(
     hop_len: int = 512,
     kept_silence_len_secs: float = 0.15,
     min_silence_len_secs: float = 0.5,
-    max_segment_len_secs: float = PARAKEET_INFERENCE_MAX_DURATION_SECS,
+    max_segment_len_secs: float = PARAKEET_INFERENCE_MAX_DURATION_S,
 ) -> list[TensorSegment]:
     """Split an audio tensor on silences using librosa, falling back to fixed splits
     where merged intervals exceed the maximum segment length.
@@ -141,7 +141,7 @@ def segment_by_silero_vad(
     min_speech_duration_ms: int = 250,
     min_silence_duration_ms: int = 100,
     speech_pad_ms: int = 30,
-    max_segment_len_secs: float = PARAKEET_INFERENCE_MAX_DURATION_SECS,
+    max_segment_len_secs: float = PARAKEET_INFERENCE_MAX_DURATION_S,
 ) -> list[TensorSegment]:
     """Split an audio tensor into voiced segments using silero VAD.
 

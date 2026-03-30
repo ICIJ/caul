@@ -1,24 +1,20 @@
 from enum import StrEnum
 
-import torch
 from pydantic import BaseModel, Field, computed_field
 
-from caul.constant import (
-    EXPECTED_SAMPLE_RATE,
-    FIXED_SEGMENT_DEFAULT_LENGTH_SECS,
-    PARAKEET_INFERENCE_MAX_DURATION_SECS,
-)
+from caul.constant import DEFAULT_SAMPLE_RATE, PARAKEET_INFERENCE_MAX_DURATION_S
 
 
 class TensorSegment(BaseModel):
     """An audio tensor segment with position and duration metadata"""
+    import torch
 
     model_config = {"arbitrary_types_allowed": True}
 
     tensor: torch.Tensor
     segment_start: int
     segment_end: int
-    sample_rate: int = EXPECTED_SAMPLE_RATE
+    sample_rate: int = DEFAULT_SAMPLE_RATE
     tensor_id: str = Field(
         description="Unique identifier linking segments to source tensor"
     )
@@ -38,8 +34,8 @@ class SegmentationStrategyEnum(StrEnum):
 
 class SegmentationConfig(BaseModel):
     segmentation_strategy: SegmentationStrategyEnum = SegmentationStrategyEnum.FIXED
-    sample_rate: int = EXPECTED_SAMPLE_RATE
-    max_segment_len_secs: float = PARAKEET_INFERENCE_MAX_DURATION_SECS
+    sample_rate: int = DEFAULT_SAMPLE_RATE
+    max_segment_len_s: float = PARAKEET_INFERENCE_MAX_DURATION_S
 
 
 class FixedSegmentationConfig(SegmentationConfig):

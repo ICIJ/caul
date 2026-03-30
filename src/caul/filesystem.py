@@ -1,12 +1,13 @@
 from tempfile import mkstemp
+from typing import TYPE_CHECKING
 
-import torch
-import torchaudio
+from caul.constant import DEFAULT_SAMPLE_RATE, EXPECTED_FORMAT
 
-from caul.constant import EXPECTED_SAMPLE_RATE, EXPECTED_FORMAT
+if TYPE_CHECKING:
+    import torch
 
 
-def save_tensor(audio_tensor: torch.Tensor) -> str:
+def save_tensor(audio_tensor: "torch.Tensor") -> str:
     """Filesystem routine for audio tensor; defaults to wav
 
     :param audio_tensor: input tensor
@@ -14,6 +15,7 @@ def save_tensor(audio_tensor: torch.Tensor) -> str:
     """
     # TODO: Change paths to run_id + tensor uuid + pagination
     #  Allow for remote paths
+    import torchaudio  # pylint: disable=import-outside-toplevel
 
     _, file_path = mkstemp()
 
@@ -24,10 +26,7 @@ def save_tensor(audio_tensor: torch.Tensor) -> str:
     audio_tensor = audio_tensor.unsqueeze(0)
 
     torchaudio.save(
-        file_path,
-        audio_tensor,
-        sample_rate=EXPECTED_SAMPLE_RATE,
-        format=EXPECTED_FORMAT,
+        file_path, audio_tensor, sample_rate=DEFAULT_SAMPLE_RATE, format=EXPECTED_FORMAT
     )
 
     return file_path
