@@ -1,16 +1,28 @@
-from functools import reduce
 from itertools import groupby
+from typing import ClassVar
 
-from caul.tasks.asr_task import ASRTask
-from caul.tasks.inference.parakeet_inference import ParakeetModelHandlerResult
+from icij_common.registrable import FromConfig
+from pydantic import Field
+
+from caul.config import PostprocessorConfig
+from caul.constant import ASRModel
+from caul.objects import ASRResult
+from caul.tasks.asr_task import Postprocessor
 
 
-class ParakeetPostprocessor(ASRTask):
+class ParakeetPostprocessorConfig(PostprocessorConfig):
+    model: ClassVar[str] = Field(frozen=True, default=ASRModel.PARAKEET)
+
+
+@Postprocessor.register(ASRModel.PARAKEET)
+class ParakeetPostprocessor(Postprocessor):
     """Postprocessing logic for ParakeetInferenceHandler output"""
 
-    def process(
-        self, inputs: list[ParakeetModelHandlerResult]
-    ) -> list[ParakeetModelHandlerResult]:
+    @classmethod
+    def _from_config(cls, config: ParakeetPostprocessorConfig, **extras) -> FromConfig:
+        return cls(**extras)
+
+    def process(self, inputs: list[ASRResult], *args, **kwargs) -> list[ASRResult]:
         """Process indexed ParakeetInferenceHandler results and return them in their original
         ordering
 
@@ -22,8 +34,8 @@ class ParakeetPostprocessor(ASRTask):
 
     @staticmethod
     def map_results_to_inputs(
-        batched_results: list[ParakeetModelHandlerResult],
-    ) -> list[ParakeetModelHandlerResult]:
+        batched_results: list[ASRResult],
+    ) -> list[ASRResult]:
         """Remap unordered and segmented tensors to original inputs for return
 
         :param batched_results: list of unordered ParakeetModelHandlerResult, still
@@ -40,14 +52,10 @@ class ParakeetPostprocessor(ASRTask):
             batched_results, key=lambda r: r.input_ordering
         )
 
-        for _, group_results in results_grouped_by_index:
+        for input_ordering, group_results in results_grouped_by_index:
+            base = ASRResult(input_ordering=input_ordering, transcription=[], score=1.0)
             group_results = list(group_results)
-
-            merged_results = (
-                reduce(lambda l, r: l.concat(r), group_results)
-                if len(group_results) > 1
-                else group_results[0]
-            )
+            merged_results = sum(group_results, base)
             unbatched_results.append(merged_results)
 
         # TODO: Drop index from result

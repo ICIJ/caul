@@ -300,7 +300,7 @@ class TestAudioSegmenter:
     def test_dispatches_to_segment_fixed(self):
         segmenter = AudioSegmenter()
         segments = segmenter.segment(
-            make_silent_tensor(5.0), FixedSegmentationConfig(max_segment_len_secs=2.0)
+            make_silent_tensor(5.0), FixedSegmentationConfig(max_segment_len_s=2.0)
         )
         assert len(segments) == 3
 

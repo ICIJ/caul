@@ -5,6 +5,9 @@ build-backend = "hatchling.build"
 [tool.hatch.version]
 source = "uv-dynamic-versioning"
 
+[tool.hatch.build.targets.wheel]
+packages = ["src/caul"]
+
 [tool.uv-dynamic-versioning]
 fallback-version = "0.0.0"
 
@@ -20,7 +23,8 @@ dependencies = [
     "numpy~=2.3",
     "torchaudio~=2.10",
     "torchcodec~=0.10.0",
-    "icij-common~=0.7.5",
+    "icij-common~=0.7.8",
+    "kaldialign~=0.9",
 ]
 
 [project.optional-dependencies]
@@ -28,9 +32,6 @@ nemo = [
   "nemo-toolkit[asr]~=2.7",
   "torch~=2.10",
 ]
-
-[tool.uv]
-override-dependencies = ["kaldialign>=0.9.3"]
 
 [[tool.uv.index]]
 name = "pytorch-cpu"
@@ -58,7 +59,9 @@ dev = [
 
 [tool.pylint."MESSAGES CONTROL"]
 disable = [
-    "missing-module-docstring"
+    "missing-module-docstring",
+    "missing-class-docstring",
+    "missing-function-docstring",
 ]
 
 [tool.pylint.main]

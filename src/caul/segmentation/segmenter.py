@@ -70,7 +70,7 @@ class AudioSegmenter:
                 return segment_fixed(
                     audio_tensor,
                     sample_rate=segmentation_config.sample_rate,
-                    max_segment_len_secs=segmentation_config.max_segment_len_secs,
+                    max_segment_len_s=segmentation_config.max_segment_len_s,
                 )
 
             case SegmentationStrategyEnum.SILENCE:
@@ -83,7 +83,7 @@ class AudioSegmenter:
                     hop_len=segmentation_config.hop_len,
                     kept_silence_len_secs=segmentation_config.kept_silence_len_secs,
                     min_silence_len_secs=segmentation_config.min_silence_len_secs,
-                    max_segment_len_secs=segmentation_config.max_segment_len_secs,
+                    max_segment_len_s=segmentation_config.max_segment_len_s,
                 )
 
             case SegmentationStrategyEnum.VOICE:
@@ -104,7 +104,7 @@ class AudioSegmenter:
                     min_speech_duration_ms=segmentation_config.min_speech_duration_ms,
                     min_silence_duration_ms=segmentation_config.min_silence_duration_ms,
                     speech_pad_ms=segmentation_config.speech_pad_ms,
-                    max_segment_len_secs=segmentation_config.max_segment_len_secs,
+                    max_segment_len_s=segmentation_config.max_segment_len_s,
                 )
 
             case _:
