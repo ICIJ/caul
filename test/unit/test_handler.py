@@ -50,8 +50,10 @@ def test__handler_with_single_parakeet_model__np_array_input():
     # load wav, drop channel dim
     with handler:
         audio = np.zeros([16000])
-        result = handler.transcribe(audio)[0]
+        result = list(handler.transcribe(audio))
 
+    assert len(result) == 1
+    result = result[0]
     assert result.transcription == [
         (
             PARAKEET_TEST_SEGMENT_START,

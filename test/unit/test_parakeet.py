@@ -7,6 +7,7 @@ from caul.objects import ASRResult
 import torch
 
 from caul.tasks import ParakeetPostprocessor, ParakeetPreprocessor
+from caul.tasks.preprocessing.parakeet import batch_audio_tensors
 
 
 def test__parakeet_batching_unbatching():
@@ -18,7 +19,7 @@ def test__parakeet_batching_unbatching():
         torch.zeros([EXPECTED_SAMPLE_MINUTE * i]) for i in [12, 11, 5, 4, 7, 10, 30]
     ]
 
-    result = preprocessor.batch_audio_tensors(preprocessor.preprocess_inputs(audio))
+    result = batch_audio_tensors(preprocessor.preprocess_inputs(audio))
 
     assert [
         [
@@ -29,10 +30,9 @@ def test__parakeet_batching_unbatching():
     ] == [[(0, 12.0), (3, 4.0)], [(1, 11.0), (2, 5.0)], [(5, 10.0), (4, 7.0)]]
 
 
-def test__parakeet_unbatching():
-    """Test parakeet unbatching including reassembling segmented tensors"""
+def test__parakeet_unbatching_should_raise_for_unordered_inputs():
+    # Given
     postprocessor = ParakeetPostprocessor()
-
     results = [
         ASRResult(input_ordering=2, transcription=[(1, 2, "two one")], score=2.1),
         ASRResult(input_ordering=0, transcription=[(0, 1, "zero")], score=0.0),
@@ -40,11 +40,28 @@ def test__parakeet_unbatching():
         ASRResult(input_ordering=1, transcription=[(0, 1, "one")], score=1.0),
     ]
 
-    postprocessed_result = postprocessor.process(results)
+    # When/Then
+    expected_msg = "expected contiguous batches !"
+    with pytest.raises(ValueError, match=expected_msg):
+        list(postprocessor.process(results))
+
+
+def test__parakeet_unbatching():
+    """Test parakeet unbatching including reassembling segmented tensors"""
+    postprocessor = ParakeetPostprocessor()
+
+    results = [
+        ASRResult(input_ordering=1, transcription=[(0, 1, "one")], score=1.0),
+        ASRResult(input_ordering=0, transcription=[(0, 1, "zero")], score=0.0),
+        ASRResult(input_ordering=2, transcription=[(2, 3, "two two")], score=2.2),
+        ASRResult(input_ordering=2, transcription=[(1, 2, "two one")], score=2.1),
+    ]
+
+    postprocessed_result = list(postprocessor.process(results))
 
     expected = [
+        results[0],
         results[1],
-        results[3],
         ASRResult(
             input_ordering=2,
             transcription=[(1, 2, "two one"), (2, 3, "two two")],

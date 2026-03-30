@@ -1,5 +1,5 @@
 from itertools import groupby
-from typing import ClassVar
+from typing import ClassVar, Iterable
 
 from icij_common.registrable import FromConfig
 from pydantic import Field
@@ -22,42 +22,33 @@ class ParakeetPostprocessor(Postprocessor):
     def _from_config(cls, config: ParakeetPostprocessorConfig, **extras) -> FromConfig:
         return cls(**extras)
 
-    def process(self, inputs: list[ASRResult], *args, **kwargs) -> list[ASRResult]:
+    def process(
+        self, inputs: Iterable[ASRResult], *args, **kwargs
+    ) -> Iterable[ASRResult]:
         """Process indexed ParakeetInferenceHandler results and return them in their original
         ordering
 
         :param inputs: List of parakeet model results
         :return: list of parakeet model results in input ordering
         """
+        yield from _map_results_to_inputs(inputs)
 
-        return self.map_results_to_inputs(inputs)
 
-    @staticmethod
-    def map_results_to_inputs(
-        batched_results: list[ASRResult],
-    ) -> list[ASRResult]:
-        """Remap unordered and segmented tensors to original inputs for return
+def _map_results_to_inputs(batched_results: Iterable[ASRResult]) -> Iterable[ASRResult]:
+    """Remap unordered and segmented tensors to original inputs for return
 
-        :param batched_results: list of unordered ParakeetModelHandlerResult, still
-        segmented
-        :return: list[ParakeetModelHandlerResult]
-        """
-        unbatched_results = []
-
-        # Sort in order before batching
-        batched_results = sorted(batched_results, key=lambda r: r.input_ordering)
-
-        # Concat segmented tensors
-        results_grouped_by_index = groupby(
-            batched_results, key=lambda r: r.input_ordering
-        )
-
-        for input_ordering, group_results in results_grouped_by_index:
-            base = ASRResult(input_ordering=input_ordering, transcription=[], score=1.0)
-            group_results = list(group_results)
-            merged_results = sum(group_results, base)
-            unbatched_results.append(merged_results)
-
-        # TODO: Drop index from result
-
-        return unbatched_results
+    :param batched_results: list of unordered ParakeetModelHandlerResult, still
+    segmented
+    :return: list[ParakeetModelHandlerResult]
+    """
+    # Concat segmented tensors
+    seen = set()
+    results_grouped_by_index = groupby(batched_results, key=lambda r: r.input_ordering)
+    for input_ordering, group_results in results_grouped_by_index:
+        group_results = sorted(group_results, key=lambda r: r.transcription[0])
+        if input_ordering in seen:
+            raise ValueError("expected contiguous batches !")
+        seen.add(input_ordering)
+        base = ASRResult(input_ordering=input_ordering, transcription=[], score=1.0)
+        merged_results = sum(group_results, base)
+        yield merged_results
