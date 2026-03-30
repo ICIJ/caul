@@ -13,9 +13,6 @@ resolution-markers = [
     "python_full_version < '3.12' and sys_platform == 'darwin'",
 ]
 
-[manifest]
-overrides = [{ name = "kaldialign", specifier = ">=0.9.3" }]
-
 [[package]]
 name = "absl-py"
 version = "2.3.1"
@@ -302,6 +299,7 @@ name = "caul"
 source = { editable = "." }
 dependencies = [
     { name = "icij-common" },
+    { name = "kaldialign" },
     { name = "numpy" },
     { name = "torchaudio", version = "2.10.0", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "sys_platform == 'darwin'" },
     { name = "torchaudio", version = "2.10.0+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "sys_platform != 'darwin'" },
@@ -325,7 +323,8 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "icij-common", specifier = "~=0.7.5" },
+    { name = "icij-common", specifier = "~=0.7.8" },
+    { name = "kaldialign", specifier = "~=0.9" },
     { name = "nemo-toolkit", extras = ["asr"], marker = "extra == 'nemo'", specifier = "~=2.7" },
     { name = "numpy", specifier = "~=2.3" },
     { name = "torch", marker = "extra == 'nemo'", specifier = "~=2.10", index = "https://download.pytorch.org/whl/cpu" },
@@ -1153,15 +1152,15 @@ wheels = [
 
 [[package]]
 name = "icij-common"
-version = "0.7.5"
+version = "0.7.8"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pydantic" },
     { name = "pydantic-settings" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/93/94/ee49a69d9aa5ea31a5a5d09301b41c9f2b204858a67b78c9cb7d254b3f64/icij_common-0.7.5.tar.gz", hash = "sha256:004d9e5affcbae9e9c2c6770f808f258b9c412923295c98f7253865f7721a763", size = 15158, upload-time = "2026-03-24T14:36:13.607Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a4/d1/72572873ae5d25321d12eead32148daa8439ec0ac071e99fc2507236860d/icij_common-0.7.8.tar.gz", hash = "sha256:7e2fba01d4f32d692347043fac3dc54446b47ba4acf73b9c4b0e5f97f8e409c3", size = 15263, upload-time = "2026-03-30T10:03:57.592Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/07/08/1c95f34e107cf810c8eae9f6be3b6dba6f3b2057d12b50365f346da62e7b/icij_common-0.7.5-py3-none-any.whl", hash = "sha256:50dfcf274711ac0f09b679f92ed41151e15844775c99e7a33574a612b34a2ac5", size = 19558, upload-time = "2026-03-24T14:36:12.76Z" },
+    { url = "https://files.pythonhosted.org/packages/8e/8b/c46720d09aae6fd52ee68bd78fcbcda21ae17ea4291b40da20c914b249f6/icij_common-0.7.8-py3-none-any.whl", hash = "sha256:05f695fa82d2ca2795143639e2742fb2f89d0f7aa1200ad05ff6d4be841a5227", size = 19680, upload-time = "2026-03-30T10:03:56.809Z" },
 ]
 
 [[package]]
@@ -1312,30 +1311,21 @@ sdist = { url = "https://files.pythonhosted.org/packages/80/45/e3e542ffa8970ebd7
 
 [[package]]
 name = "kaldialign"
-version = "0.9.3"
+version = "0.9.1"
 source = { registry = "https://pypi.org/simple" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/89/ec/5161cb33984f1af8decfe7e2cab3a9b6b0e074137fb31407e6143b6fa5e2/kaldialign-0.9.3-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:f9518e95fc11ee4ffcf987a2be8438877bbbf7a19c4c10c68eb3daf1df7db65f", size = 109950, upload-time = "2026-01-05T14:52:49.045Z" },
-    { url = "https://files.pythonhosted.org/packages/ea/00/5d0b693f358923e65f55b2b88c2a408187dc98cdaaea3b0f6ed19e74d70b/kaldialign-0.9.3-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:961c698f8df485cecf64b36211a17071a25f6b67f6158514d2a51df67cf03362", size = 87262, upload-time = "2026-01-05T14:51:02.825Z" },
-    { url = "https://files.pythonhosted.org/packages/ed/e3/186befd911b0a0e19cc3fc7bf917b0859ce8bf68634f1909b097a4ce5574/kaldialign-0.9.3-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:93e320e1f9870f515ab6bcd7e6b3a998d2196d16fa53c3933815cc8444f461bb", size = 91642, upload-time = "2026-01-05T14:49:23.208Z" },
-    { url = "https://files.pythonhosted.org/packages/10/b4/2a18eae3b1b8453b43caab34823fdfb4de3b1c945c66707c7859de3cb3cb/kaldialign-0.9.3-cp311-cp311-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:6709ab3a0e10f90f6f3f852189d1d479e2aea7e0787f1aa9816287f7f4d960c3", size = 69877, upload-time = "2026-01-05T14:57:40.552Z" },
-    { url = "https://files.pythonhosted.org/packages/41/d2/b2854380882f3f955c1d7b41ce9b3aef96e48c97d36b0f3bc84488c6340f/kaldialign-0.9.3-cp311-cp311-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:b62b264e3ff382f1b4c5a6a1ce798bfceaf459f909e267ac0c549b74d01294d4", size = 76693, upload-time = "2026-01-14T23:06:12.023Z" },
-    { url = "https://files.pythonhosted.org/packages/fc/d2/7498453c7d26a0c2dcf21006fca770550ef64808ec66061e90642b012bf4/kaldialign-0.9.3-cp311-cp311-win32.whl", hash = "sha256:53e3f3d7f35ce992732253ccb484e4d0a88ff9eb2a90af2c0ec38ea07c88af16", size = 66271, upload-time = "2026-01-05T14:50:44.937Z" },
-    { url = "https://files.pythonhosted.org/packages/66/9f/e851a4fde96355d58335be9dc0bc83a8f1d64a9b3ad243eefa0076e25832/kaldialign-0.9.3-cp311-cp311-win_amd64.whl", hash = "sha256:362600f7b4262ddfa10cb565ea90c481a1e5f4c2d497dd548ef160ef79e0b0f5", size = 71586, upload-time = "2026-01-05T14:50:27.187Z" },
-    { url = "https://files.pythonhosted.org/packages/d6/58/777eeb4933b4f98125a85e1c44e7b1e81f31208ae4981803f68364beef72/kaldialign-0.9.3-cp312-cp312-macosx_10_13_universal2.whl", hash = "sha256:18e7cd1f94b88c1608239150cb843d1d4c184757dcd0fec2731c5934767172af", size = 111136, upload-time = "2026-01-05T14:52:40.011Z" },
-    { url = "https://files.pythonhosted.org/packages/8c/c3/6f8a12a3a1a9fa609819b8febac61c1b2359e18c267cd9d816b6a6cb0707/kaldialign-0.9.3-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:11c22ed75c67e6d15a2f015dcd8a365daa3d82756a7e5c7c2c388dc4b957477e", size = 87224, upload-time = "2026-01-05T14:51:13.5Z" },
-    { url = "https://files.pythonhosted.org/packages/94/3e/5d610492f0ba25234a9dc67c3e65b0f3448ac933c0bccb5be933b15da7d0/kaldialign-0.9.3-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:65e853ddedef5ea26ec6aa0776f00f5b6b2b603642a8b83c1f1b6e42fddbfa0f", size = 91863, upload-time = "2026-01-05T14:49:07.617Z" },
-    { url = "https://files.pythonhosted.org/packages/55/f1/0f43eac625ad6b26628c25e679f1a21858d7854eae8eb0527f76f877c4c9/kaldialign-0.9.3-cp312-cp312-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:aaf266b2dc33567e35d81c35e1ccbb3a71e6932ad66afaf5b2ce710727783274", size = 71296, upload-time = "2026-01-05T14:57:48.824Z" },
-    { url = "https://files.pythonhosted.org/packages/0c/8d/27a9f60fd101b3bf579339050d82ee24d93cf2d01bb5855bf9dc63d5a639/kaldialign-0.9.3-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:7f8f0a18dcf0a5bb918eaa66165a6076f52da01d42491047570a3f3182615424", size = 77709, upload-time = "2026-01-14T23:06:08.206Z" },
-    { url = "https://files.pythonhosted.org/packages/dd/95/3131b755701be159cc60a93b40bf1da2da8387f63c6cd58ea782dbd5c4f3/kaldialign-0.9.3-cp312-cp312-win32.whl", hash = "sha256:407cf02cb8ce73d420f6a78c7ef344a7b55003df8ef23bb0c90ba9a02e9e6dc2", size = 66563, upload-time = "2026-01-05T14:49:29.914Z" },
-    { url = "https://files.pythonhosted.org/packages/29/f3/3364b310cb2b16ad9159aeb2131d2cfa9c812239ac8e9de41bfa5dd6a137/kaldialign-0.9.3-cp312-cp312-win_amd64.whl", hash = "sha256:5e1a85f33ffd4acf3c179ed6d60695352a1e6bcc5598fd0bdca42c0cad91300d", size = 72504, upload-time = "2026-01-05T14:49:49.22Z" },
-    { url = "https://files.pythonhosted.org/packages/9e/c1/5b665cd31d294bf53431e22347b530f08c69534edec93f0f4fd8d5e5722e/kaldialign-0.9.3-cp313-cp313-macosx_10_13_universal2.whl", hash = "sha256:191aee838e1065aa47574c0101bd0a4f447061ca0ea86b66c385653bb2dd7cb4", size = 111119, upload-time = "2026-01-05T14:52:54.906Z" },
-    { url = "https://files.pythonhosted.org/packages/4f/47/93dbcd2311b7a0017dce4ddea25bfd87fdbf079e0ac4fe8438ab4c2c73de/kaldialign-0.9.3-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:71af789750bb52dd8453e61ecdea0627e72a479eed024b6bc5c230f3c25b09a7", size = 87462, upload-time = "2026-01-05T14:51:11.216Z" },
-    { url = "https://files.pythonhosted.org/packages/a1/43/efef97785bf77106e7cd9e7eb310276726071ad18cfd7bfedc203adb4617/kaldialign-0.9.3-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:7af6d54caadd479946b750a84a098bbf4b9070c89ee0c3dd0a77653e64f7477d", size = 92140, upload-time = "2026-01-05T14:49:35.102Z" },
-    { url = "https://files.pythonhosted.org/packages/13/7c/4076d6dea3e32891b5e3e66ac9552ea6c11c63f1113800e956611335ec7b/kaldialign-0.9.3-cp313-cp313-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:20453959da4576eb61abe0ca7827d87e96d01082a52aed850928152287243c03", size = 71289, upload-time = "2026-01-05T14:57:39.727Z" },
-    { url = "https://files.pythonhosted.org/packages/e2/fa/33c53dded0b57d66bd170e97f75de32bb83265081c12449b20b05b7037c8/kaldialign-0.9.3-cp313-cp313-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:22c798b0830a45d3e2539dac7fdc00a870d6ba9b7b86a6befcc255c8e5dc8903", size = 77710, upload-time = "2026-01-14T23:06:03.96Z" },
-    { url = "https://files.pythonhosted.org/packages/d3/33/be6c1dc7c7113235355202e8c78f73b7bddc37bfecc05f07124f15d440f1/kaldialign-0.9.3-cp313-cp313-win32.whl", hash = "sha256:85ef5bca5ee88cd946185831a0307f17bec70ff3b0a43c265b6c49d1320d440f", size = 66557, upload-time = "2026-01-05T14:49:40.336Z" },
-    { url = "https://files.pythonhosted.org/packages/33/7b/2d7bd6593a773f143c9d9b125d5f93c416eeae9143df9623122dbb46194d/kaldialign-0.9.3-cp313-cp313-win_amd64.whl", hash = "sha256:1577539103b648de413283d7af189f063f0b679a9a6194efc5e7a3579e568636", size = 72516, upload-time = "2026-01-05T14:49:50Z" },
+    { url = "https://files.pythonhosted.org/packages/1d/6f/5d4ecd96842e5a6ba1288095daa35264e79d3e72fac326a7a2a80d1220f9/kaldialign-0.9.1-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:14991bef6400fe6f93f6ebbc5923b9baa5bb5f979baa66cb5e116496b030192d", size = 113339, upload-time = "2024-03-17T23:16:29.101Z" },
+    { url = "https://files.pythonhosted.org/packages/a5/d9/1effbcd3e7b8a5975d9661ea232f28d1694748676184e5ce21a61398a940/kaldialign-0.9.1-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:886386e06bee54929b5a56ac7693bcd22dd6568e257a0e15a58946eb5cb64bd9", size = 87375, upload-time = "2024-03-17T23:25:30.547Z" },
+    { url = "https://files.pythonhosted.org/packages/86/2c/6adf305326f48bac470985069036e2eb1ed198fcbd8a5ca04d8055c4373f/kaldialign-0.9.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:49a7eb2790acfa9e50409c4253fd785e0ecb0a23cc123bc97f1b06caf6382f8f", size = 91755, upload-time = "2024-03-17T23:16:44.306Z" },
+    { url = "https://files.pythonhosted.org/packages/5a/60/ddd1d78f85bd093d92eee78a4ae38dc778be8b73918a44153767c5d5c85d/kaldialign-0.9.1-cp311-cp311-win32.whl", hash = "sha256:5b03ee410c8829db325cc4b64a3cebb0614b9a500e41335a0e70604a227c5a29", size = 61841, upload-time = "2024-03-17T23:18:36.946Z" },
+    { url = "https://files.pythonhosted.org/packages/76/41/7b0d974b0104d232e69bd30350ce92d7de60ae65f33bbe92ad5d834d81aa/kaldialign-0.9.1-cp311-cp311-win_amd64.whl", hash = "sha256:c31e613c81fcbdd18496ed79066d44b1a44273eab223327c51e03964f5f561f2", size = 70082, upload-time = "2024-03-17T23:21:37.391Z" },
+    { url = "https://files.pythonhosted.org/packages/42/99/207f45fd2b02f431c40e620cc41b3c6af8078a192482668840df52dad592/kaldialign-0.9.1-cp312-cp312-macosx_10_9_universal2.whl", hash = "sha256:7112ff9f52c960825293cd3e8586094d700344c625cd4e75138408ace780402e", size = 115212, upload-time = "2024-03-17T23:16:52.041Z" },
+    { url = "https://files.pythonhosted.org/packages/f0/e4/b2c2b4dfb88677b1868ed9366ed415d93360c47615a53e189d375b986de4/kaldialign-0.9.1-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:cdaf85389756a1caf6ad95754480768195aea30e57f4ce741b6d385a84c6efd9", size = 87336, upload-time = "2024-03-17T23:23:14.787Z" },
+    { url = "https://files.pythonhosted.org/packages/a1/25/acca269c3b9e219d4611c7f9b966e884521b61c899750343b3548bc6393b/kaldialign-0.9.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:e9dc8455832caf4316a7674676098e4e9cc2c0f50428c7105e24c1c767bebd6e", size = 91977, upload-time = "2024-03-17T23:17:26.3Z" },
+    { url = "https://files.pythonhosted.org/packages/87/56/4a9cd8468c6a3afd32ee29059e36e9b28dab41c37e49be979def88697166/kaldialign-0.9.1-cp312-cp312-win32.whl", hash = "sha256:c28620c352ecfb016b35579c3b52a4d049aba54c1e9a448d4bef88de1a8566c8", size = 62314, upload-time = "2024-03-17T23:20:01.936Z" },
+    { url = "https://files.pythonhosted.org/packages/83/b2/aac02ff83128f8068898ad37eb0077cecad0548d1207ec0ff5f61107f8e2/kaldialign-0.9.1-cp312-cp312-win_amd64.whl", hash = "sha256:c6090ef4ebdaf95fa78b46d7eda05b7367d8d889228a67696217487d4ceb783c", size = 70822, upload-time = "2024-03-17T23:22:40.849Z" },
+    { url = "https://files.pythonhosted.org/packages/da/32/a565d6828502782fc31d07d7676dc39adb16df5b64eec11f2225ac8a2d21/kaldialign-0.9.1-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:9b6e8122ca31f1bab2690d225f74cf0493387c4e6794ff02d2425d2800117fd4", size = 92152, upload-time = "2025-05-14T19:40:03.882Z" },
+    { url = "https://files.pythonhosted.org/packages/c4/e1/940a24ce5f164fa53fcb07ff9889dbb2ad131784e3fab4085ad6f3e13b5c/kaldialign-0.9.1-cp313-cp313-win_amd64.whl", hash = "sha256:2bd9647cc76d294fa0e35cc27f2fb96f88077c5a03f07475fd80a7216f6b334b", size = 74749, upload-time = "2025-05-14T19:41:20.461Z" },
 ]
 
 [[package]]
