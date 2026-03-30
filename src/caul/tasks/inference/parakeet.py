@@ -2,9 +2,7 @@ from typing import ClassVar
 
 import gc
 
-import torch
 
-import nemo.collections.asr as nemo_asr
 from nemo.collections.asr.parts.mixins import TranscribeConfig
 from nemo.collections.asr.parts.mixins.transcription import InternalTranscribeConfig
 from icij_common.registrable import FromConfig
@@ -32,10 +30,12 @@ class ParakeetInferenceRunner(InferenceRunner):
     def __init__(
         self,
         model_name: str,
-        device: TorchDevice | torch.device = TorchDevice.CPU,
+        device: "TorchDevice | torch.device" = TorchDevice.CPU,
         return_timestamps: bool = True,
         batch_size: int = 4,
     ):
+        import torch  # pylint: disable=import-outside-toplevel
+
         self.model_name = model_name
 
         if isinstance(device, str):
@@ -57,6 +57,9 @@ class ParakeetInferenceRunner(InferenceRunner):
         )
 
     def __enter__(self):
+        import nemo.collections.asr as nemo_asr  # pylint: disable=import-outside-toplevel
+        import torch  # pylint: disable=import-outside-toplevel
+
         device = self._device
         self._model = nemo_asr.models.ASRModel.from_pretrained(
             self.model_name, map_location=torch.device(device)
@@ -64,6 +67,8 @@ class ParakeetInferenceRunner(InferenceRunner):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        import torch  # pylint: disable=import-outside-toplevel
+
         self._model = None
         if self._device == torch.device(TorchDevice.GPU):
             torch.cuda.empty_cache()
@@ -73,8 +78,9 @@ class ParakeetInferenceRunner(InferenceRunner):
     def device(self) -> "torch.device":
         return self._device
 
-    def set_device(self, device: TorchDevice | torch.device = TorchDevice.CPU):
-        """Set/change device"""
+    def set_device(self, device: "TorchDevice | torch.device" = TorchDevice.CPU):
+        import torch  # pylint: disable=import-outside-toplevel
+
         if isinstance(device, TorchDevice):
             device = torch.device(device)
 
