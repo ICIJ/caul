@@ -1,7 +1,7 @@
 import pytest
 
 from caul.asr_pipeline import ASRPipeline
-from caul.constant import EXPECTED_SAMPLE_MINUTE, TorchDevice
+from caul.constant import DEFAULT_SAMPLE_RATE, TorchDevice
 from caul.objects import ASRResult
 
 import torch
@@ -13,18 +13,14 @@ def test__parakeet_batching_unbatching():
     # pylint: disable=R1728
     """Test audio segmentation with batching (max length 20 minutes) and unbatching"""
     preprocessor = ParakeetPreprocessor()
+    samples_per_min = DEFAULT_SAMPLE_RATE * 60
 
-    audio = [
-        torch.zeros([EXPECTED_SAMPLE_MINUTE * i]) for i in [12, 11, 5, 4, 7, 10, 30]
-    ]
+    audio = [torch.zeros([samples_per_min * i]) for i in [12, 11, 5, 4, 7, 10, 30]]
 
     result = preprocessor.batch_audio_tensors(preprocessor.preprocess_inputs(audio))
 
     assert [
-        [
-            (r.metadata.input_ordering, r.tensor.shape[-1] / EXPECTED_SAMPLE_MINUTE)
-            for r in re
-        ]
+        [(r.metadata.input_ordering, r.tensor.shape[-1] / samples_per_min) for r in re]
         for re in result
     ] == [
         [(6, 20.0)],

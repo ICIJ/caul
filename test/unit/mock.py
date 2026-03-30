@@ -5,8 +5,11 @@ from nemo.collections.asr.parts.utils import Hypothesis
 from pydantic import Field
 
 from caul.constant import TorchDevice
-from caul.tasks import InferenceRunner, ParakeetInferenceRunner, \
-    ParakeetInferenceRunnerConfig
+from caul.tasks import (
+    InferenceRunner,
+    ParakeetInferenceRunner,
+    ParakeetInferenceRunnerConfig,
+)
 from test.unit.constant import (
     PARAKEET_TEST_CONFIDENCE,
     PARAKEET_TEST_TRANSCRIPTION,
@@ -76,4 +79,6 @@ class MockNvidiaASRInferenceRunner(ParakeetInferenceRunner):
         batch_size: int = 4,
     ):
         super().__init__(model_name, device, return_timestamps, batch_size)
+
+    def __enter__(self):
         self._model = MockParakeetModel()

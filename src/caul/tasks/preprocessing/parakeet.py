@@ -1,5 +1,4 @@
 from typing import ClassVar, Self, TYPE_CHECKING
-import torch
 
 from pydantic import Field
 
@@ -7,10 +6,9 @@ from caul.config import PreprocessorConfig
 from caul.segmentation.segmenter import segment_by_silence
 from caul.constant import (
     ASRModel,
-    PARAKEET_INFERENCE_MAX_DURATION_KHZ,
-    EXPECTED_SAMPLE_MINUTE,
+    PARAKEET_INFERENCE_MAX_DURATION_S,
+    PARAKEET_INFERENCE_MAX_FRAMES,
     DEFAULT_SAMPLE_RATE,
-    PARAKEET_INFERENCE_MAX_DURATION_MIN,
 )
 from caul.filesystem import save_tensor
 from caul.objects import (
@@ -120,10 +118,10 @@ class ParakeetPreprocessor(Preprocessor):
             audio_input = self.normalize(audio_input, sample_rate)
 
             # Segment where necessary
-            duration_khz = audio_input.shape[-1]
+            n_frames = audio_input.shape[-1]
             tensor_segments = [audio_input]
 
-            if duration_khz > PARAKEET_INFERENCE_MAX_DURATION_KHZ:
+            if n_frames > PARAKEET_INFERENCE_MAX_FRAMES:
                 tensor_segments = [s.tensor for s in segment_by_silence(audio_input)]
 
             for tensor_segment in tensor_segments:
@@ -134,7 +132,7 @@ class ParakeetPreprocessor(Preprocessor):
                 # Create preprocessed input
                 metadata = InputMetadata(
                     input_ordering=input_idx,
-                    duration=duration_khz / EXPECTED_SAMPLE_MINUTE,
+                    duration_s=n_frames / DEFAULT_SAMPLE_RATE,
                     input_format=input_format,
                     input_file_path=input_file_path,
                     preprocessed_file_path=new_file_path,
@@ -173,10 +171,9 @@ class ParakeetPreprocessor(Preprocessor):
         frame_len: int = 2048,
         silence_thresh_db: int = 35,
         hop_len: int = 512,
-        kept_silence_len_secs: int = 0.15,
-        min_silence_len_secs: int = 0.5,
-        max_segment_len_secs: int = EXPECTED_SAMPLE_MINUTE
-        * PARAKEET_INFERENCE_MAX_DURATION_MIN,
+        kept_silence_len_s: int = 0.15,
+        min_silence_len_s: int = 0.5,
+        max_segment_len_s: int = PARAKEET_INFERENCE_MAX_DURATION_S,
     ) -> list["torch.Tensor"]:
         """Splits on silences with librosa, falling back to overlaps where min segments
         are not sufficient to safely divide audio.
@@ -185,9 +182,9 @@ class ParakeetPreprocessor(Preprocessor):
         :param frame_len: number of samples per analysis frame
         :param silence_thresh_db: max decibel value
         :param hop_len: number of samples between analysis frames
-        :param kept_silence_len_secs: number of seconds to keep silence
-        :param min_silence_len_secs: minimum seconds to keep silence
-        :param max_segment_len_secs: maximum seconds to keep silence
+        :param kept_silence_len_s: number of seconds to keep silence
+        :param min_silence_len_s: minimum seconds to keep silence
+        :param max_segment_len_s: maximum seconds to keep silence
         :return: list of tensor segments
         """
         import librosa  # pylint: disable=import-outside-toplevel
@@ -196,7 +193,7 @@ class ParakeetPreprocessor(Preprocessor):
         tensor_segments = []
 
         # Intervals between silences
-        nonsilent_intervals = librosa.effects.split(
+        nonsilent_intervals = librosa.effects.split(  # pylint: disable=duplicate-code
             audio_tensor.numpy(),
             top_db=silence_thresh_db,
             frame_length=frame_len,
@@ -204,9 +201,9 @@ class ParakeetPreprocessor(Preprocessor):
         )
 
         merged = []
-        min_silence_sample_len = int(min_silence_len_secs * EXPECTED_SAMPLE_MINUTE)
-        kept_silence_sample_len = int(kept_silence_len_secs * EXPECTED_SAMPLE_MINUTE)
-        max_segment_sample_len = int(max_segment_len_secs * EXPECTED_SAMPLE_MINUTE)
+        min_silence_sample_len = int(min_silence_len_s * DEFAULT_SAMPLE_RATE)
+        kept_silence_sample_len = int(kept_silence_len_s * DEFAULT_SAMPLE_RATE)
+        max_segment_sample_len = int(max_segment_len_s * DEFAULT_SAMPLE_RATE)
 
         # Merge intervals separated by short silences
         for start, end in nonsilent_intervals:
@@ -246,7 +243,7 @@ class ParakeetPreprocessor(Preprocessor):
 
         # Sort by duration
         preprocessed_inputs = sorted(
-            preprocessed_inputs, key=lambda p: p.metadata.duration, reverse=True
+            preprocessed_inputs, key=lambda p: p.metadata.duration_s, reverse=True
         )
 
         # Now this becomes a bin-packing minimization problem. We'll use a variant of best-fit
@@ -257,21 +254,17 @@ class ParakeetPreprocessor(Preprocessor):
 
         # With each pass, choose a bin by maximizing remaining space
         for preprocessed_input in preprocessed_inputs:
-            bin_len_diffs = []
-
-            for bin_len in bins_len:
-                bin_len_diffs.append(PARAKEET_INFERENCE_MAX_DURATION_MIN - bin_len)
-
-            if max(bin_len_diffs) <= preprocessed_input.metadata.duration:
+            remaining_spaces = [
+                PARAKEET_INFERENCE_MAX_DURATION_S - bin_len for bin_len in bins_len
+            ]
+            input_duration_s = preprocessed_input.metadata.duration_s
+            if input_duration_s > max(remaining_spaces):
                 bins.append([])
                 bins_len.append(0)
-                bin_len_diffs.append(PARAKEET_INFERENCE_MAX_DURATION_MIN)
-
-            max_diff_idx = np.argmax(bin_len_diffs)
-
-            bins[max_diff_idx].append(preprocessed_input)
-
-            bins_len[max_diff_idx] += preprocessed_input.metadata.duration
+                remaining_spaces.append(PARAKEET_INFERENCE_MAX_DURATION_S)
+            most_empty_bin = np.argmax(remaining_spaces)
+            bins[most_empty_bin].append(preprocessed_input)
+            bins_len[most_empty_bin] += input_duration_s
 
         return bins
 
