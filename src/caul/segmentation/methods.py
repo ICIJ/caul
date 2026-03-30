@@ -1,15 +1,16 @@
 import uuid
-from typing import Callable
+from typing import Callable, TYPE_CHECKING
 
-import librosa
-import torch
-
-from caul.constant import EXPECTED_SAMPLE_RATE, PARAKEET_INFERENCE_MAX_DURATION_S
+from caul.constant import DEFAULT_SAMPLE_RATE, PARAKEET_INFERENCE_MAX_DURATION_S
 from caul.segmentation.objects import TensorSegment
 
+if TYPE_CHECKING:
+    import torch
 
-def _split_range_fixed(
-    audio_tensor: torch.Tensor,
+
+def _split_range_fixed(  # pylint: disable=too-many-arguments
+    audio_tensor: "torch.Tensor",
+    *,
     seg_start: int,
     seg_end: int,
     chunk_samples: int,
@@ -44,33 +45,40 @@ def _split_range_fixed(
 
 
 def segment_fixed(
-    audio_tensor: torch.Tensor,
-    sample_rate: int = EXPECTED_SAMPLE_RATE,
-    max_segment_len_secs: float = PARAKEET_INFERENCE_MAX_DURATION_S,
+    audio_tensor: "torch.Tensor",
+    *,
+    sample_rate: int = DEFAULT_SAMPLE_RATE,
+    max_segment_len_s: float = PARAKEET_INFERENCE_MAX_DURATION_S,
 ) -> list[TensorSegment]:
     """Split an audio tensor into fixed-length chunks.
 
     :param audio_tensor: 1D input tensor
     :param sample_rate: sample rate of the audio
-    :param max_segment_len_secs: duration of each segment in seconds
+    :param max_segment_len_s: duration of each segment in seconds
     :return: list of TensorSegment
     """
     tensor_id = uuid.uuid4().hex
-    chunk_samples = int(max_segment_len_secs * sample_rate)
+    chunk_samples = int(max_segment_len_s * sample_rate)
     return _split_range_fixed(
-        audio_tensor, 0, audio_tensor.shape[-1], chunk_samples, sample_rate, tensor_id
+        audio_tensor,
+        seg_start=0,
+        seg_end=audio_tensor.shape[-1],
+        chunk_samples=chunk_samples,
+        sample_rate=sample_rate,
+        tensor_id=tensor_id,
     )
 
 
-def segment_by_silence(
-    audio_tensor: torch.Tensor,
-    sample_rate: int = EXPECTED_SAMPLE_RATE,
+def segment_by_silence(  # pylint: disable=too-many-arguments,too-many-locals
+    audio_tensor: "torch.Tensor",
+    *,
+    sample_rate: int = DEFAULT_SAMPLE_RATE,
     frame_len: int = 2048,
     silence_thresh_db: int = 35,
     hop_len: int = 512,
-    kept_silence_len_secs: float = 0.15,
-    min_silence_len_secs: float = 0.5,
-    max_segment_len_secs: float = PARAKEET_INFERENCE_MAX_DURATION_S,
+    kept_silence_len_s: float = 0.15,
+    min_silence_len_s: float = 0.5,
+    max_segment_len_s: float = PARAKEET_INFERENCE_MAX_DURATION_S,
 ) -> list[TensorSegment]:
     """Split an audio tensor on silences using librosa, falling back to fixed splits
     where merged intervals exceed the maximum segment length.
@@ -80,12 +88,14 @@ def segment_by_silence(
     :param frame_len: number of samples per librosa analysis frame
     :param silence_thresh_db: dB threshold below which audio is considered silent
     :param hop_len: number of samples between analysis frames
-    :param kept_silence_len_secs: seconds of silence to retain at segment boundaries
-    :param min_silence_len_secs: minimum silence duration to split on
-    :param max_segment_len_secs: maximum segment duration in seconds; segments
+    :param kept_silence_len_s: seconds of silence to retain at segment boundaries
+    :param min_silence_len_s: minimum silence duration to split on
+    :param max_segment_len_s: maximum segment duration in seconds; segments
         exceeding this are split at fixed intervals as a fallback
     :return: list of TensorSegment
     """
+    import librosa  # pylint: disable=import-outside-toplevel
+
     tensor_id = uuid.uuid4().hex
 
     nonsilent_intervals = librosa.effects.split(
@@ -95,21 +105,21 @@ def segment_by_silence(
         hop_length=hop_len,
     )
 
-    min_silence_samples = int(min_silence_len_secs * sample_rate)
-    kept_silence_samples = int(kept_silence_len_secs * sample_rate)
-    max_segment_samples = int(max_segment_len_secs * sample_rate)
+    min_silence_samples = int(min_silence_len_s * sample_rate)
+    kept_silence_samples = int(kept_silence_len_s * sample_rate)
+    max_segment_samples = int(max_segment_len_s * sample_rate)
 
     # Merge intervals separated by silences shorter than the minimum
-    merged: list[list[int]] = []
+    merged: list[tuple[int, int]] = []
     for start, end in nonsilent_intervals:
         if len(merged) == 0:
-            merged.append([start, end])
+            merged.append((start, end))
         else:
             prev_end = merged[-1][1]
             if start - prev_end < min_silence_samples:
-                merged[-1][1] = end
+                merged[-1] = (merged[-1][0], end)
             else:
-                merged.append([start, end])
+                merged.append((start, end))
 
     total_samples = audio_tensor.shape[-1]
     segments = []
@@ -121,27 +131,28 @@ def segment_by_silence(
         segments.extend(
             _split_range_fixed(
                 audio_tensor,
-                seg_start,
-                seg_end,
-                max_segment_samples,
-                sample_rate,
-                tensor_id,
+                seg_start=seg_start,
+                seg_end=seg_end,
+                chunk_samples=max_segment_samples,
+                sample_rate=sample_rate,
+                tensor_id=tensor_id,
             )
         )
 
     return segments
 
 
-def segment_by_silero_vad(
-    audio_tensor: torch.Tensor,
-    vad_model: torch.nn.Module,
+def segment_by_silero_vad(  # pylint: disable=too-many-arguments
+    audio_tensor: "torch.Tensor",
+    vad_model: "torch.nn.Module",
     vad_parser_fn: Callable,
-    sample_rate: int = EXPECTED_SAMPLE_RATE,
+    *,
+    sample_rate: int = DEFAULT_SAMPLE_RATE,
     threshold: float = 0.5,
     min_speech_duration_ms: int = 250,
     min_silence_duration_ms: int = 100,
     speech_pad_ms: int = 30,
-    max_segment_len_secs: float = PARAKEET_INFERENCE_MAX_DURATION_S,
+    max_segment_len_s: float = PARAKEET_INFERENCE_MAX_DURATION_S,
 ) -> list[TensorSegment]:
     """Split an audio tensor into voiced segments using silero VAD.
 
@@ -153,12 +164,12 @@ def segment_by_silero_vad(
     :param min_speech_duration_ms: minimum speech segment duration in ms
     :param min_silence_duration_ms: minimum silence duration to split on in ms
     :param speech_pad_ms: padding added around each speech segment in ms
-    :param max_segment_len_secs: maximum segment duration in seconds; segments
+    :param max_segment_len_s: maximum segment duration in seconds; segments
         exceeding this are split at fixed intervals as a fallback
     :return: list of TensorSegment
     """
     tensor_id = uuid.uuid4().hex
-    max_segment_samples = int(max_segment_len_secs * sample_rate)
+    max_segment_samples = int(max_segment_len_s * sample_rate)
 
     speech_timestamps = vad_parser_fn(
         audio_tensor,
@@ -177,11 +188,11 @@ def segment_by_silero_vad(
         segments.extend(
             _split_range_fixed(
                 audio_tensor,
-                ts["start"],
-                ts["end"],
-                max_segment_samples,
-                sample_rate,
-                tensor_id,
+                seg_start=ts["start"],
+                seg_end=ts["end"],
+                chunk_samples=max_segment_samples,
+                sample_rate=sample_rate,
+                tensor_id=tensor_id,
             )
         )
     return segments

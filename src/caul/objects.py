@@ -74,10 +74,8 @@ def _uuid() -> str:
 class InputMetadata(BaseModel):
     """Preprocessed input metadata"""
 
-    duration: float
+    duration_s: float
     input_ordering: int = -1
-    start_time: float = 0.0
-    end_time: float = 0.0
     preprocessed_at: datetime.datetime = Field(default_factory=_utc_now)
     uuid: str = Field(default_factory=_uuid)
     input_format: str | None = None
