@@ -1,6 +1,5 @@
-from typing import ClassVar
+from typing import ClassVar, Iterable, Self
 
-from icij_common.registrable import FromConfig
 from pydantic import Field
 
 from caul.constant import ASRModel
@@ -16,17 +15,16 @@ class WhisperCppInferenceRunnerConfig(InferenceRunnerConfig):
 @InferenceRunner.register(ASRModel.WHISPER_CPP)
 class WhisperCppInferenceRunner(InferenceRunner):
     """Handler for WhisperCPP; wrapper round subprocess calls"""
+
     @classmethod
-    def _from_config(
-        cls, config: WhisperCppInferenceRunnerConfig, **extras
-    ) -> FromConfig:
+    def _from_config(cls, config: WhisperCppInferenceRunnerConfig, **extras) -> Self:
         return cls()
 
     # pylint: disable=R0903
 
     def process(
-        self, inputs: list[PreprocessorOutput], *args, **kwargs
-    ) -> list[ASRResult]:
+        self, inputs: Iterable[PreprocessorOutput], *args, **kwargs
+    ) -> Iterable[ASRResult]:
         """List of np.ndarray or torch.Tensor or str, or a singleton of same types
 
         :param inputs: List of np.ndarray or torch.Tensor or str, or a singleton of same types

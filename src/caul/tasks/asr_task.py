@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from contextlib import AbstractContextManager
-from typing import Any, TYPE_CHECKING
+from typing import Any, Iterable, TYPE_CHECKING
 
 from icij_common.registrable import RegistrableFromConfig
 
@@ -20,7 +20,9 @@ class ASRTask(AbstractContextManager, ABC):
     # pylint: disable=R0903
 
     @abstractmethod
-    def process(self, inputs: Any, *args, **kwargs) -> list[PreprocessorOutput]:
+    def process(
+        self, inputs: Iterable[Any], *args, **kwargs
+    ) -> Iterable[PreprocessorOutput]:
         """Generic processing task"""
 
     def __enter__(self):
@@ -36,10 +38,10 @@ class Preprocessor(ASRTask, RegistrableFromConfig):
     @abstractmethod
     def process(
         self,
-        inputs: "list[np.ndarray | torch.Tensor | str] | np.ndarray | torch.Tensor | str",
+        inputs: "Iterable[np.ndarray | torch.Tensor | str] | np.ndarray | torch.Tensor | str",
         *args,
         **kwargs,
-    ) -> list[PreprocessorOutput]:
+    ) -> Iterable[list[PreprocessorOutput]]:
         """Generic processing task"""
 
 
@@ -48,11 +50,11 @@ class InferenceRunner(ASRTask, RegistrableFromConfig):
 
     @abstractmethod
     def process(
-        self, inputs: list[PreprocessorOutput], *args, **kwargs
-    ) -> list[ASRResult]: ...
+        self, inputs: Iterable[PreprocessorOutput], *args, **kwargs
+    ) -> Iterable[ASRResult]: ...
 
 
 class Postprocessor(ASRTask, RegistrableFromConfig):
     def process(
-        self, inputs: list[PreprocessorOutput], *args, **kwargs
-    ) -> list[ASRResult]: ...
+        self, inputs: Iterable[PreprocessorOutput], *args, **kwargs
+    ) -> Iterable[ASRResult]: ...
