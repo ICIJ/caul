@@ -1,4 +1,4 @@
-from typing import ClassVar
+from typing import ClassVar, Iterable
 
 import gc
 
@@ -88,10 +88,10 @@ class ParakeetInferenceRunner(InferenceRunner):
 
     def process(  # pylint: disable=too-many-locals
         self,
-        inputs: list[list[PreprocessorOutput]] | list[PreprocessorOutput],
+        inputs: Iterable[PreprocessorOutput],
         *args,
         **kwargs,
-    ) -> list[ASRResult]:
+    ) -> Iterable[ASRResult]:
         """Transcribe a batch of audio tensors or file names of max duration <= 20 minutes
 
         :param inputs: List of np.ndarray or torch.Tensor or str, or singleton of same types
@@ -103,10 +103,7 @@ class ParakeetInferenceRunner(InferenceRunner):
             InternalTranscribeConfig,
         )
 
-        if len(inputs) == 0:
-            return []
-
-        if not isinstance(inputs, list):
+        if isinstance(inputs, PreprocessorOutput):
             inputs = [inputs]
 
         transcribe_config = TranscribeConfig(
@@ -116,7 +113,6 @@ class ParakeetInferenceRunner(InferenceRunner):
             return_hypotheses=True,
             _internal=InternalTranscribeConfig(device=self._device),
         )
-        transcriptions = []
         for input_batch in inputs:
             if not input_batch:
                 continue
@@ -139,6 +135,4 @@ class ParakeetInferenceRunner(InferenceRunner):
                 model_result = ASRResult.from_parakeet_hypothesis(
                     best_hyp, input_ordering=input_ordering_idx
                 )
-                transcriptions.append(model_result)
-
-        return transcriptions
+                yield model_result

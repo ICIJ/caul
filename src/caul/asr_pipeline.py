@@ -1,6 +1,6 @@
 from contextlib import ExitStack
 from copy import copy
-from typing import Annotated, Self, TYPE_CHECKING
+from typing import Annotated, Iterable, Self, TYPE_CHECKING
 
 from icij_common.pydantic_utils import make_enum_discriminator, tagged_union
 from pydantic import Discriminator
@@ -83,13 +83,13 @@ class ASRPipeline:
 
     def process(
         self,
-        inputs: "list[np.ndarray | torch.Tensor | str] | np.ndarray | torch.Tensor | str",
-    ) -> list[ASRResult]:
+        inputs: "Iterable[np.ndarray | torch.Tensor | str] | np.ndarray | torch.Tensor | str",
+    ) -> Iterable[ASRResult]:
         """Generic sequential processing method for ASR model handlers"""
         output = inputs
         for task in self._tasks:
             output = task.process(output)
-        return output
+        yield from output
 
     @classmethod
     def parakeet(cls, device: "TorchDevice | torch._device" = TorchDevice.CPU) -> Self:
