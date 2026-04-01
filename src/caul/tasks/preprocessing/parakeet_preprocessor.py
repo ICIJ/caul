@@ -1,9 +1,9 @@
-import librosa
 import torch
 
 import numpy as np
 import torchaudio
 
+from caul.segmentation.segmenter import segment_by_silence
 from caul.constant import (
     PARAKEET_INFERENCE_MAX_DURATION_KHZ,
     EXPECTED_SAMPLE_MINUTE,
@@ -96,7 +96,7 @@ class ParakeetPreprocessor(ASRTask):
             tensor_segments = [audio_input]
 
             if duration_khz > PARAKEET_INFERENCE_MAX_DURATION_KHZ:
-                tensor_segments = self.segment_audio_tensor(audio_input)
+                tensor_segments = [s.tensor for s in segment_by_silence(audio_input)]
 
             for tensor_segment in tensor_segments:
                 # Create temporary filesystem reference if applicable
@@ -139,69 +139,6 @@ class ParakeetPreprocessor(ASRTask):
             audio_tensor = audio_tensor.squeeze(0)
 
         return audio_tensor
-
-    @staticmethod
-    def segment_audio_tensor(
-        audio_tensor: torch.Tensor,
-        frame_len: int = 2048,
-        silence_thresh_db: int = 35,
-        hop_len: int = 512,
-        kept_silence_len_secs: int = 0.15,
-        min_silence_len_secs: int = 0.5,
-        max_segment_len_secs: int = EXPECTED_SAMPLE_MINUTE
-        * PARAKEET_INFERENCE_MAX_DURATION_MIN,
-    ) -> list[torch.Tensor]:
-        """Splits on silences with librosa, falling back to overlaps where min segments
-        are not sufficient to safely divide audio.
-
-        :param audio_tensor: input tensor
-        :param frame_len: number of samples per analysis frame
-        :param silence_thresh_db: max decibel value
-        :param hop_len: number of samples between analysis frames
-        :param kept_silence_len_secs: number of seconds to keep silence
-        :param min_silence_len_secs: minimum seconds to keep silence
-        :param max_segment_len_secs: maximum seconds to keep silence
-        :return: list of tensor segments
-        """
-        # TODO: Implement fallback to overlaps
-        tensor_segments = []
-
-        # Intervals between silences
-        nonsilent_intervals = librosa.effects.split(
-            audio_tensor.numpy(),
-            top_db=silence_thresh_db,
-            frame_length=frame_len,
-            hop_length=hop_len,
-        )
-
-        merged = []
-        min_silence_sample_len = int(min_silence_len_secs * EXPECTED_SAMPLE_MINUTE)
-        kept_silence_sample_len = int(kept_silence_len_secs * EXPECTED_SAMPLE_MINUTE)
-        max_segment_sample_len = int(max_segment_len_secs * EXPECTED_SAMPLE_MINUTE)
-
-        # Merge intervals separated by short silences
-        for start, end in nonsilent_intervals:
-            if len(merged) == 0:
-                merged.append((start, end))
-            else:
-                _, prev_end = merged[-1]
-                if start - prev_end < min_silence_sample_len:
-                    merged[-1][1] = end
-                else:
-                    merged.append((start, end))
-
-        # Segment controlling max length
-        for start, end in merged:
-            start = max(0, start - kept_silence_sample_len)
-            end = min(audio_tensor.shape[-1], end + kept_silence_sample_len)
-
-            while end - start > max_segment_sample_len:
-                segment_end = start + max_segment_sample_len
-                tensor_segment = audio_tensor[start:segment_end]
-
-                tensor_segments.append(tensor_segment)
-
-        return tensor_segments
 
     @staticmethod
     def batch_audio_tensors(  # pylint: disable=R0914
