@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field, computed_field
 from caul.constant import (
     EXPECTED_SAMPLE_RATE,
     FIXED_SEGMENT_DEFAULT_LENGTH_MS,
-    PARAKEET_INFERENCE_MAX_DURATION_SEC,
+    PARAKEET_INFERENCE_MAX_DURATION_SECS,
 )
 
 
@@ -55,11 +55,12 @@ class SilenceSegmentationConfig(SegmentationConfig):
     hop_len: int = 512
     kept_silence_len_secs: float = 0.15
     min_silence_len_secs: float = 0.5
-    max_segment_len_secs: float = PARAKEET_INFERENCE_MAX_DURATION_SEC
+    max_segment_len_secs: float = PARAKEET_INFERENCE_MAX_DURATION_SECS
 
 
 class SileroVoiceSegmentationConfig(SegmentationConfig):
-    """Voice segmentation parameters using silero VAD; see silero for explanation of parameters"""
+    """Voice segmentation parameters using silero VAD;
+    see silero for explanation of parameters"""
 
     segmentation_strategy: SegmentationStrategyEnum = SegmentationStrategyEnum.VOICE
     threshold: float = 0.5

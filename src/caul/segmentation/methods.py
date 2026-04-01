@@ -4,14 +4,14 @@ from typing import Callable
 import librosa
 import torch
 
-from caul.constant import EXPECTED_SAMPLE_RATE, PARAKEET_INFERENCE_MAX_DURATION_SEC
+from caul.constant import EXPECTED_SAMPLE_RATE, PARAKEET_INFERENCE_MAX_DURATION_SECS
 from caul.segmentation.objects import TensorSegment
 
 
 def segment_fixed(
     audio_tensor: torch.Tensor,
     sample_rate: int = EXPECTED_SAMPLE_RATE,
-    segment_duration_secs: float = PARAKEET_INFERENCE_MAX_DURATION_SEC,
+    segment_duration_secs: float = PARAKEET_INFERENCE_MAX_DURATION_SECS,
 ) -> list[TensorSegment]:
     """Split an audio tensor into fixed-length chunks.
 
@@ -50,10 +50,10 @@ def segment_by_silence(
     hop_len: int = 512,
     kept_silence_len_secs: float = 0.15,
     min_silence_len_secs: float = 0.5,
-    max_segment_len_secs: float = PARAKEET_INFERENCE_MAX_DURATION_SEC,
+    max_segment_len_secs: float = PARAKEET_INFERENCE_MAX_DURATION_SECS,
 ) -> list[TensorSegment]:
-    """Split an audio tensor on silences using librosa, falling back to fixed splits where
-    merged intervals exceed the maximum segment length.
+    """Split an audio tensor on silences using librosa, falling back to fixed splits
+    where merged intervals exceed the maximum segment length.
 
     :param audio_tensor: 1D input tensor
     :param sample_rate: sample rate of the audio
@@ -81,7 +81,7 @@ def segment_by_silence(
     # Merge intervals separated by silences shorter than the minimum
     merged: list[list[int]] = []
     for start, end in nonsilent_intervals:
-        if not merged:
+        if len(merged) == 0:
             merged.append([start, end])
         else:
             prev_end = merged[-1][1]

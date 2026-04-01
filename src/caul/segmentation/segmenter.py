@@ -33,6 +33,7 @@ def _load_vad_model() -> tuple[torch.nn.Module, Callable]:
 
 class AudioSegmenter:
     """Segments an audio tensor using the provided segmentation strategy.
+
     Will default to fixed-length segments in the absence of an explicit config."""
 
     def __init__(self):
