@@ -59,6 +59,8 @@ class SilenceSegmentationConfig(SegmentationConfig):
 
 
 class SileroVoiceSegmentationConfig(SegmentationConfig):
+    """Voice segmentation parameters using silero VAD; see silero for explanation of parameters"""
+
     segmentation_strategy: SegmentationStrategyEnum = SegmentationStrategyEnum.VOICE
     threshold: float = 0.5
     min_speech_duration_ms: int = 250
