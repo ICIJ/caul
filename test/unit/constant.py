@@ -7,3 +7,5 @@ PARAKEET_TEST_SEGMENT_END = 1.26
 PARAKEET_TEST_TRANSCRIPTION = "To embrace the chaos that they fought in this battle."
 
 PARAKEET_TEST_CONFIDENCE = -248
+
+TEST_TIMESTAMPS = [{"start": 0, "end": 8000}]

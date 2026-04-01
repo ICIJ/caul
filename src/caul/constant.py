@@ -17,11 +17,15 @@ EXPECTED_SAMPLE_MINUTE = EXPECTED_SAMPLE_RATE * 60
 PARAKEET_MODEL_REF = "nvidia/parakeet-tdt-0.6b-v3"
 
 PARAKEET_INFERENCE_MAX_DURATION_MIN = (
-    20  # actually 24, but we want to give ourselves some room
+    20  # actually 24, but we want to give ourselves some room to avoid CUDA OOMs
 )
 
 PARAKEET_INFERENCE_MAX_DURATION_KHZ = (
     PARAKEET_INFERENCE_MAX_DURATION_MIN * EXPECTED_SAMPLE_MINUTE
+)
+
+PARAKEET_INFERENCE_MAX_DURATION_SECS = (
+    PARAKEET_INFERENCE_MAX_DURATION_KHZ / EXPECTED_SAMPLE_RATE
 )
 
 PARAKEET = "parakeet"
@@ -29,3 +33,13 @@ PARAKEET = "parakeet"
 # Whisper
 
 WHISPER_CPP = "whisper-cpp"
+
+# Segmenter
+
+FIXED_SEGMENT_DEFAULT_LENGTH_MS = 25000
+
+# Silero
+
+SILERO_TORCH_HUB_REPO = "snakers4/silero-vad"
+
+SILERO_MODEL = "silero_vad"
