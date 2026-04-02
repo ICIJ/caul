@@ -82,42 +82,42 @@ class TestTensorSegment:
 class TestSegmentFixed:
     def test_single_chunk_shorter_than_segment_duration(self):
         tensor = make_silent_tensor(5.0)
-        segments = segment_fixed(tensor, segment_duration_secs=10.0)
+        segments = segment_fixed(tensor, max_segment_len_secs=10.0)
         assert len(segments) == 1
         assert segments[0].segment_start == 0
         assert segments[0].segment_end == tensor.shape[-1]
 
     def test_exact_multiple_produces_correct_num_segments(self):
         tensor = make_silent_tensor(10.0)
-        segments = segment_fixed(tensor, segment_duration_secs=5.0)
+        segments = segment_fixed(tensor, max_segment_len_secs=5.0)
         assert len(segments) == 2
 
     def test_inexact_includes_remainder(self):
         tensor = make_silent_tensor(11.0)
-        segments = segment_fixed(tensor, segment_duration_secs=5.0)
+        segments = segment_fixed(tensor, max_segment_len_secs=5.0)
         assert len(segments) == 3
 
     def test_segments_are_contiguous_and_non_overlapping(self):
         tensor = make_silent_tensor(13.0)
-        segments = segment_fixed(tensor, segment_duration_secs=5.0)
+        segments = segment_fixed(tensor, max_segment_len_secs=5.0)
         for i in range(1, len(segments)):
             assert segments[i].segment_start == segments[i - 1].segment_end
 
     def test_tensor_content_matches_slice(self):
         tensor = torch.arange(float(EXPECTED_SAMPLE_RATE * 3))
-        segments = segment_fixed(tensor, segment_duration_secs=1.0)
+        segments = segment_fixed(tensor, max_segment_len_secs=1.0)
         for seg in segments:
             assert torch.equal(seg.tensor, tensor[seg.segment_start : seg.segment_end])
 
     def test_all_segments_share_tensor_id(self):
-        segments = segment_fixed(make_silent_tensor(6.0), segment_duration_secs=2.0)
+        segments = segment_fixed(make_silent_tensor(6.0), max_segment_len_secs=2.0)
         tensor_ids = {s.tensor_id for s in segments}
         assert len(tensor_ids) == 1
 
     def test_separate_calls_produce_different_tensor_ids(self):
         tensor = make_silent_tensor(3.0)
-        segments_a = segment_fixed(tensor, segment_duration_secs=1.0)
-        segments_b = segment_fixed(tensor, segment_duration_secs=1.0)
+        segments_a = segment_fixed(tensor, max_segment_len_secs=1.0)
+        segments_b = segment_fixed(tensor, max_segment_len_secs=1.0)
         assert segments_a[0].tensor_id != segments_b[0].tensor_id
 
 
@@ -300,7 +300,7 @@ class TestAudioSegmenter:
     def test_dispatches_to_segment_fixed(self):
         segmenter = AudioSegmenter()
         segments = segmenter.segment(
-            make_silent_tensor(5.0), FixedSegmentationConfig(segment_duration_secs=2.0)
+            make_silent_tensor(5.0), FixedSegmentationConfig(max_segment_len_secs=2.0)
         )
         assert len(segments) == 3
 

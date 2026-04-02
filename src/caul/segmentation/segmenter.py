@@ -70,7 +70,7 @@ class AudioSegmenter:
                 return segment_fixed(
                     audio_tensor,
                     sample_rate=segmentation_config.sample_rate,
-                    segment_duration_secs=segmentation_config.segment_duration_secs,
+                    max_segment_len_secs=segmentation_config.max_segment_len_secs,
                 )
 
             case SegmentationStrategyEnum.SILENCE:
