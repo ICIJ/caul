@@ -9,7 +9,7 @@ import torch
 
 def test__parakeet_batching_unbatching():
     # pylint: disable=R1728
-    """Test audio segmentation with batching (max length 24 minutes) and unbatching"""
+    """Test audio segmentation with batching (max length 20 minutes) and unbatching"""
     preprocessor = ParakeetPreprocessor()
 
     audio = [
@@ -24,7 +24,13 @@ def test__parakeet_batching_unbatching():
             for r in re
         ]
         for re in result
-    ] == [[(0, 12.0), (3, 4.0)], [(1, 11.0), (2, 5.0)], [(5, 10.0), (4, 7.0)]]
+    ] == [
+        [(6, 20.0)],
+        [(6, 10.0)],
+        [(0, 12.0), (3, 4.0)],
+        [(1, 11.0), (2, 5.0)],
+        [(5, 10.0), (4, 7.0)],
+    ]
 
 
 def test__parakeet_unbatching():
