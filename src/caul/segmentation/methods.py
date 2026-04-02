@@ -167,6 +167,7 @@ def segment_by_silero_vad(
         threshold=threshold,
         min_speech_duration_ms=min_speech_duration_ms,
         min_silence_duration_ms=min_silence_duration_ms,
+        max_speech_duration_s=max_segment_len_secs,
         speech_pad_ms=speech_pad_ms,
         return_seconds=False,
     )
