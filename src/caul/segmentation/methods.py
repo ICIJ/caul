@@ -46,17 +46,17 @@ def _split_range_fixed(
 def segment_fixed(
     audio_tensor: torch.Tensor,
     sample_rate: int = EXPECTED_SAMPLE_RATE,
-    segment_duration_secs: float = PARAKEET_INFERENCE_MAX_DURATION_SECS,
+    max_segment_len_secs: float = PARAKEET_INFERENCE_MAX_DURATION_SECS,
 ) -> list[TensorSegment]:
     """Split an audio tensor into fixed-length chunks.
 
     :param audio_tensor: 1D input tensor
     :param sample_rate: sample rate of the audio
-    :param segment_duration_secs: duration of each segment in seconds
+    :param max_segment_len_secs: duration of each segment in seconds
     :return: list of TensorSegment
     """
     tensor_id = uuid.uuid4().hex
-    chunk_samples = int(segment_duration_secs * sample_rate)
+    chunk_samples = int(max_segment_len_secs * sample_rate)
     return _split_range_fixed(
         audio_tensor, 0, audio_tensor.shape[-1], chunk_samples, sample_rate, tensor_id
     )
@@ -167,7 +167,6 @@ def segment_by_silero_vad(
         threshold=threshold,
         min_speech_duration_ms=min_speech_duration_ms,
         min_silence_duration_ms=min_silence_duration_ms,
-        max_speech_duration_s=max_segment_len_secs,
         speech_pad_ms=speech_pad_ms,
         return_seconds=False,
     )

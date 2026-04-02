@@ -39,11 +39,11 @@ class SegmentationStrategyEnum(StrEnum):
 class SegmentationConfig(BaseModel):
     segmentation_strategy: SegmentationStrategyEnum = SegmentationStrategyEnum.FIXED
     sample_rate: int = EXPECTED_SAMPLE_RATE
+    max_segment_len_secs: float = PARAKEET_INFERENCE_MAX_DURATION_SECS
 
 
 class FixedSegmentationConfig(SegmentationConfig):
     segmentation_strategy: SegmentationStrategyEnum = SegmentationStrategyEnum.FIXED
-    segment_duration_secs: float = FIXED_SEGMENT_DEFAULT_LENGTH_SECS
 
 
 class SilenceSegmentationConfig(SegmentationConfig):
@@ -55,7 +55,6 @@ class SilenceSegmentationConfig(SegmentationConfig):
     hop_len: int = 512
     kept_silence_len_secs: float = 0.15
     min_silence_len_secs: float = 0.5
-    max_segment_len_secs: float = PARAKEET_INFERENCE_MAX_DURATION_SECS
 
 
 class SileroVoiceSegmentationConfig(SegmentationConfig):
@@ -67,4 +66,3 @@ class SileroVoiceSegmentationConfig(SegmentationConfig):
     min_speech_duration_ms: int = 250
     min_silence_duration_ms: int = 100
     speech_pad_ms: int = 30
-    max_segment_len_secs: float = PARAKEET_INFERENCE_MAX_DURATION_SECS
