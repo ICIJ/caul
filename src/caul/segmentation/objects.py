@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field, computed_field
 
 from caul.constant import (
     EXPECTED_SAMPLE_RATE,
-    FIXED_SEGMENT_DEFAULT_LENGTH_MS,
+    FIXED_SEGMENT_DEFAULT_LENGTH_SECS,
     PARAKEET_INFERENCE_MAX_DURATION_SECS,
 )
 
@@ -43,7 +43,7 @@ class SegmentationConfig(BaseModel):
 
 class FixedSegmentationConfig(SegmentationConfig):
     segmentation_strategy: SegmentationStrategyEnum = SegmentationStrategyEnum.FIXED
-    segment_duration_secs: float = FIXED_SEGMENT_DEFAULT_LENGTH_MS
+    segment_duration_secs: float = FIXED_SEGMENT_DEFAULT_LENGTH_SECS
 
 
 class SilenceSegmentationConfig(SegmentationConfig):
