@@ -211,11 +211,37 @@ class TestSegmentBySileroVad:
             speech_pad_ms=50,
         )
         call_kwargs = vad_parser_fn.call_args.kwargs
-        assert call_kwargs["sample_rate"] == 8000
+        assert call_kwargs["sampling_rate"] == 8000
         assert call_kwargs["threshold"] == 0.7
         assert call_kwargs["min_speech_duration_ms"] == 500
         assert call_kwargs["min_silence_duration_ms"] == 200
         assert call_kwargs["speech_pad_ms"] == 50
+
+    def test_oversized_segment_is_split(self):
+        # One 4-second timestamp with a 2-second cap should produce 2 segments
+        timestamps = [{"start": 0, "end": EXPECTED_SAMPLE_RATE * 4}]
+        model, vad_parser_fn = _make_silero_mock(timestamps)
+        segments = segment_by_silero_vad(
+            make_silent_tensor(4.0),
+            vad_model=model,
+            vad_parser_fn=vad_parser_fn,
+            max_segment_len_secs=2.0,
+        )
+        assert len(segments) == 2
+        assert segments[0].segment_end == EXPECTED_SAMPLE_RATE * 2
+        assert segments[1].segment_start == EXPECTED_SAMPLE_RATE * 2
+
+    def test_segments_do_not_exceed_max_length(self):
+        timestamps = [{"start": 0, "end": EXPECTED_SAMPLE_RATE * 10}]
+        model, vad_parser_fn = _make_silero_mock(timestamps)
+        segments = segment_by_silero_vad(
+            make_silent_tensor(10.0),
+            vad_model=model,
+            vad_parser_fn=vad_parser_fn,
+            max_segment_len_secs=3.0,
+        )
+        for seg in segments:
+            assert seg.duration <= 3.0
 
     def test_all_segments_share_tensor_id(self):
         timestamps = [{"start": 0, "end": 8000}, {"start": 16000, "end": 24000}]

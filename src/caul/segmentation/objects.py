@@ -67,3 +67,4 @@ class SileroVoiceSegmentationConfig(SegmentationConfig):
     min_speech_duration_ms: int = 250
     min_silence_duration_ms: int = 100
     speech_pad_ms: int = 30
+    max_segment_len_secs: float = PARAKEET_INFERENCE_MAX_DURATION_SECS

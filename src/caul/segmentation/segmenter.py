@@ -104,6 +104,7 @@ class AudioSegmenter:
                     min_speech_duration_ms=segmentation_config.min_speech_duration_ms,
                     min_silence_duration_ms=segmentation_config.min_silence_duration_ms,
                     speech_pad_ms=segmentation_config.speech_pad_ms,
+                    max_segment_len_secs=segmentation_config.max_segment_len_secs,
                 )
 
             case _:
