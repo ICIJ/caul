@@ -51,11 +51,11 @@ class InferenceRunner(ASRTask, RegistrableFromConfig):
 
     @abstractmethod
     def process(
-        self, inputs: Iterable[PreprocessorOutput], *args, **kwargs
+        self, inputs: Iterable[list[PreprocessorOutput]], *args, **kwargs
     ) -> Iterable[ASRResult]: ...
 
 
 class Postprocessor(ASRTask, RegistrableFromConfig):
     def process(
-        self, inputs: Iterable[PreprocessorOutput], *args, **kwargs
+        self, inputs: Iterable[ASRResult], *args, **kwargs
     ) -> Iterable[ASRResult]: ...

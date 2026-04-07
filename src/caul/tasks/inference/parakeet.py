@@ -88,7 +88,7 @@ class ParakeetInferenceRunner(InferenceRunner):
 
     def process(  # pylint: disable=too-many-locals
         self,
-        inputs: Iterable[PreprocessorOutput],
+        inputs: Iterable[list[PreprocessorOutput]],
         *args,
         **kwargs,
     ) -> Iterable[ASRResult]:
