@@ -29,6 +29,9 @@ _NoneType = type(None)
 
 class ParakeetPreprocessorConfig(PreprocessorConfig):
     model: ClassVar[str] = Field(default=ASRModel.PARAKEET)
+
+    save_to_filesystem: bool = True
+    return_tensors: bool = True
     sample_rate: int = DEFAULT_SAMPLE_RATE
 
 
@@ -273,6 +276,7 @@ def batch_audio_tensors(  # pylint: disable=R0914
         bins_len[most_empty_bin] += input_duration_s
 
     yield from bins
+
 
 def _resample_waveform(
     waveform: "torch.Tensor", sample_rate: int, *, target_rate: int
