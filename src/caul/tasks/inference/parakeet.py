@@ -116,7 +116,7 @@ class ParakeetInferenceRunner(InferenceRunner):
         for input_batch in inputs:
             if not input_batch:
                 continue
-            if input_batch[0].tensor is not None:
+            if hasattr(input_batch[0], "tensor"):
                 audios = [i.tensor.to(self._device) for i in input_batch]
             else:
                 audios = [i.metadata.preprocessed_file_path for i in input_batch]
