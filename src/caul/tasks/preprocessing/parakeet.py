@@ -53,7 +53,11 @@ class ParakeetPreprocessor(Preprocessor):
 
     @classmethod
     def _from_config(cls, config: ParakeetPreprocessorConfig, **extras) -> Self:
-        return cls(**config.model_dump(), **extras)
+        return cls(
+            sample_rate=config.sample_rate,
+            save_to_filesystem=config.save_to_filesystem,
+            return_tensors=config.return_tensors,
+        )
 
     def process(
         self,
