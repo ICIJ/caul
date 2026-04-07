@@ -119,7 +119,7 @@ class ParakeetInferenceRunner(InferenceRunner):
             if hasattr(input_batch[0], "tensor"):
                 audios = [i.tensor.to(self._device) for i in input_batch]
             else:
-                audios = [i.metadata.preprocessed_file_path for i in input_batch]
+                audios = [str(i.metadata.preprocessed_file_path) for i in input_batch]
 
             hypotheses = self._model.transcribe(
                 audios, self._return_timestamps, override_config=transcribe_config
