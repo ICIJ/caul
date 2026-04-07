@@ -23,7 +23,7 @@ dependencies = [
     "numpy~=2.3",
     "torchaudio~=2.10",
     "torchcodec~=0.10.0",
-    "icij-common~=0.7.8",
+    "icij-common~=0.8.1",
     "kaldialign~=0.9",
 ]
 
