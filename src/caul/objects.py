@@ -1,12 +1,16 @@
 import datetime
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Self
+from typing import Self, TYPE_CHECKING
 
 import uuid
 
 from icij_common.pydantic_utils import icij_config, merge_configs, no_enum_values_config
 from pydantic import BaseModel as _BaseModel, Field
+
+
+if TYPE_CHECKING:
+    import torch
 
 
 class BaseModel(_BaseModel):
@@ -90,10 +94,9 @@ class PreprocessedInput(BaseModel):
 @dataclass(frozen=True)
 class PreprocessedInputWithTensor:
     # Avoid importing torch when importing objects
-    import torch  # pylint: disable=import-outside-toplevel
 
     metadata: InputMetadata
-    tensor: torch.Tensor | list | None = None
+    tensor: "torch.Tensor | list | None" = None
 
 
 PreprocessorOutput = PreprocessedInput | PreprocessedInputWithTensor
