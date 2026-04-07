@@ -1,10 +1,9 @@
 from contextlib import ExitStack
 from copy import copy
-from typing import Annotated, Iterable, Self, TYPE_CHECKING
+from typing import Iterable, Self, TYPE_CHECKING
 
 from icij_common.pydantic_utils import make_enum_discriminator, tagged_union
-from pydantic import Discriminator
-
+from pydantic import Discriminator, Field
 
 from .config import InferenceRunnerConfig
 from .constant import ASRModel, TorchDevice
@@ -34,9 +33,16 @@ model_discriminator = make_enum_discriminator("model", ASRModel)
 
 class ASRPipelineConfig(BaseModel):  # pylint: disable=too-few-public-methods
     device: TorchDevice = TorchDevice.CPU
-    preprocessing: ParakeetPreprocessorConfig
-    inference: Annotated[InferenceRunnerConfig_, Discriminator(model_discriminator)]
-    postprocessing: ParakeetPostprocessorConfig
+    preprocessing: ParakeetPreprocessorConfig = Field(
+        default_factory=ParakeetPreprocessorConfig
+    )
+    inference: InferenceRunnerConfig_ = Field(
+        default_factory=ParakeetInferenceRunnerConfig,
+        discriminator=Discriminator(model_discriminator),
+    )
+    postprocessing: ParakeetPostprocessorConfig = Field(
+        default_factory=ParakeetPostprocessorConfig
+    )
 
 
 class ASRPipeline:
