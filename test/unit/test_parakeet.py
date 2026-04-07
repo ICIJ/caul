@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 
 from caul.asr_pipeline import ASRPipeline
@@ -30,6 +32,20 @@ def test__parakeet_batching_unbatching():
         [(1, 11.0), (2, 5.0)],
         [(5, 10.0), (4, 7.0)],
     ]
+
+
+def test__parakeet_preprocess_inputs_to_fs(tmpdir):
+    # Given
+    output_dir = Path(tmpdir)
+    preprocessor = ParakeetPreprocessor()
+    audio = [torch.zeros([1])]
+    # When
+    result = list(preprocessor.preprocess_inputs(audio, output_dir=output_dir))
+    # Then
+    assert len(result) == 1
+    result = result[0]
+    save_path = output_dir / result.metadata.preprocessed_file_path
+    assert save_path.exists()
 
 
 def test__parakeet_unbatching_should_raise_for_unordered_inputs():

@@ -1,5 +1,9 @@
+import uuid
 from itertools import repeat
+from pathlib import Path
 from typing import ClassVar, Iterable, Self, TYPE_CHECKING
+
+from hashlib import sha256
 
 from pydantic import Field
 
@@ -30,8 +34,6 @@ _NoneType = type(None)
 class ParakeetPreprocessorConfig(PreprocessorConfig):
     model: ClassVar[str] = Field(default=ASRModel.PARAKEET)
 
-    save_to_filesystem: bool = True
-    return_tensors: bool = True
     sample_rate: int = DEFAULT_SAMPLE_RATE
 
 
@@ -39,31 +41,19 @@ class ParakeetPreprocessorConfig(PreprocessorConfig):
 class ParakeetPreprocessor(Preprocessor):
     """Preprocessing logic for ParakeetInferenceHandler inputs"""
 
-    def __init__(
-        self,
-        sample_rate: int = DEFAULT_SAMPLE_RATE,
-        *,
-        save_to_filesystem: bool = True,
-        return_tensors: bool = True,
-    ):
+    def __init__(self, sample_rate: int = DEFAULT_SAMPLE_RATE):
         super().__init__()
-        self._save_to_filesystem = save_to_filesystem
-        self._return_tensors = return_tensors
         self._sample_rate = sample_rate
 
     @classmethod
     def _from_config(cls, config: ParakeetPreprocessorConfig, **extras) -> Self:
-        return cls(
-            sample_rate=config.sample_rate,
-            save_to_filesystem=config.save_to_filesystem,
-            return_tensors=config.return_tensors,
-        )
+        return cls(sample_rate=config.sample_rate)
 
     def process(
         self,
         inputs: "Iterable[np.ndarray | torch.Tensor | str] | np.ndarray | torch.Tensor | str",
-        *args,
         input_sample_rates: Iterable[int] | int = None,
+        output_dir: Path | None = None,
         **kwargs,
     ) -> Iterable[list[PreprocessorOutput]]:
         """Segment and batch audio inputs
@@ -75,7 +65,9 @@ class ParakeetPreprocessor(Preprocessor):
         if not isinstance(inputs, list):
             inputs = [inputs]
 
-        preprocessed_inputs = self.preprocess_inputs(inputs, input_sample_rates)
+        preprocessed_inputs = self.preprocess_inputs(
+            inputs, input_sample_rates, output_dir=output_dir
+        )
         # TODO: ideally _batch_audio_tensors should stream for real
         batches = batch_audio_tensors(preprocessed_inputs)
         return batches
@@ -84,6 +76,7 @@ class ParakeetPreprocessor(Preprocessor):
         self,
         inputs: Iterable["np.ndarray | torch.Tensor | str"],
         input_sample_rates: Iterable[int] | int | None = None,
+        output_dir: Path | None = None,
     ) -> Iterable[PreprocessorOutput]:
         """Accepts audio inputs as a list of file paths, np.ndarray, or torch.Tensor, converting to
         torch.Tensor, normalizing, segmenting inputs longer than 20 minutes (just under Parakeet's
@@ -105,7 +98,7 @@ class ParakeetPreprocessor(Preprocessor):
         # Load arrays and divide into max_length segments
         for input_idx, (audio_input, sample_rate) in enumerate(inputs_and_sample_rates):
             input_file_path = None
-            new_file_path = None
+            preprocessed_file_path = None
             input_format = None
 
             # Load audio files as arrays
@@ -136,20 +129,28 @@ class ParakeetPreprocessor(Preprocessor):
             if n_frames > PARAKEET_INFERENCE_MAX_FRAMES:
                 tensor_segments = [s.tensor for s in segment_by_silence(audio_input)]
 
-            for tensor_segment in tensor_segments:
+            original_file = (
+                _displayable_path(audio_input).encode()
+                if isinstance(audio_input, str)
+                else uuid.uuid4().hex.encode()
+            )
+            for seg_i, tensor_segment in enumerate(tensor_segments):
+                segment_path = None
                 # Create temporary filesystem reference if applicable
-                if self._save_to_filesystem:
-                    new_file_path = save_tensor(tensor_segment)
-
+                if output_dir is not None:
+                    segment_name = f"{original_file}-{seg_i}.wav"
+                    segment_path = output_dir / segment_name
+                    save_tensor(tensor_segment, segment_path)
+                    segment_path = segment_path.relative_to(output_dir)
                 # Create preprocessed input
                 metadata = InputMetadata(
                     input_ordering=input_idx,
                     duration_s=n_frames / DEFAULT_SAMPLE_RATE,
                     input_format=input_format,
                     input_file_path=input_file_path,
-                    preprocessed_file_path=new_file_path,
+                    preprocessed_file_path=segment_path,
                 )
-                if self._return_tensors:
+                if metadata.preprocessed_file_path is None:
                     preprocessed_input = PreprocessedInputWithTensor(
                         metadata=metadata, tensor=tensor_segment
                     )
@@ -295,3 +296,10 @@ def _resample_waveform(
 
     transform = torchaudio.transforms.Resample(sample_rate, target_rate)
     return transform(waveform)
+
+
+def _displayable_path(path: str, component_size_limit: int = 10) -> str:
+    path = Path(path)
+    displayable_file_name = [c[:component_size_limit] for c in path.parts]
+    uuid = sha256(str(path).encode()).hexdigest()[:20]
+    return f"{'__'.join(displayable_file_name)}-{uuid}"

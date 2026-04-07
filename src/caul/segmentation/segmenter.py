@@ -42,7 +42,9 @@ class SegmentationFn(Protocol):  # pylint: disable=too-few-public-methods
 class AudioSegmenter(RegistrableFromConfig):
     def __init__(self, config: SegmentationConfig):
         self._config = config
-        self._args = self._config.model_dump()
+        args = self._config.model_dump()
+        args.pop(SegmentationConfig.registry_key.default)
+        self._args = args
         self._segmentation_fn: SegmentationFn | None = None
 
     def __enter__(self) -> Self: ...

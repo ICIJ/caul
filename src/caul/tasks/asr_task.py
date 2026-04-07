@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from contextlib import AbstractContextManager
+from pathlib import Path
 from typing import Any, Iterable, TYPE_CHECKING
 
 from icij_common.registrable import RegistrableFromConfig
@@ -39,7 +40,7 @@ class Preprocessor(ASRTask, RegistrableFromConfig):
     def process(
         self,
         inputs: "Iterable[np.ndarray | torch.Tensor | str] | np.ndarray | torch.Tensor | str",
-        *args,
+        output_dir: Path | None = None,
         **kwargs,
     ) -> Iterable[list[PreprocessorOutput]]:
         """Generic processing task"""
