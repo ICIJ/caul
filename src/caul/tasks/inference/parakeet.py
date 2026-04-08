@@ -1,5 +1,3 @@
-import multiprocessing
-import platform
 from typing import ClassVar, Iterable
 
 import gc
@@ -45,7 +43,6 @@ class ParakeetInferenceRunner(InferenceRunner):
         self._return_timestamps = return_timestamps
         self._model = None
         self._batch_size = batch_size
-        self._original_mp_start_method: str | None = None
 
     @classmethod
     def _from_config(
@@ -61,10 +58,6 @@ class ParakeetInferenceRunner(InferenceRunner):
         import nemo.collections.asr as nemo_asr  # pylint: disable=import-outside-toplevel
         import torch  # pylint: disable=import-outside-toplevel
 
-        self._original_mp_start_method = multiprocessing.get_start_method()
-        if platform.system() == "Darwin" and self._original_mp_start_method != "fork":
-            multiprocessing.set_start_method("fork", force=True)
-
         device = self._device
         self._model = nemo_asr.models.ASRModel.from_pretrained(
             self.model_name, map_location=torch.device(device)
@@ -78,8 +71,6 @@ class ParakeetInferenceRunner(InferenceRunner):
         if self._device == torch.device(TorchDevice.GPU):
             torch.cuda.empty_cache()
         gc.collect()
-        if platform.system() == "Darwin" and self._original_mp_start_method != None:
-            multiprocessing.set_start_method(self._original_mp_start_method, force=True)
 
     @property
     def device(self) -> "torch.device":
