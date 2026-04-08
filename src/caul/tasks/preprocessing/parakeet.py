@@ -126,9 +126,9 @@ class ParakeetPreprocessor(Preprocessor):
                 tensor_segments = [s.tensor for s in segment_by_silence(audio_input)]
 
             original_file = (
-                _displayable_path(audio_input)
-                if isinstance(audio_input, str)
-                else uuid.uuid4().hex.encode()
+                _displayable_path(input_file_path)
+                if input_file_path is not None
+                else uuid.uuid4().hex
             )
             for seg_i, tensor_segment in enumerate(tensor_segments):
                 segment_path = None
