@@ -296,6 +296,6 @@ def _resample_waveform(
 
 def _displayable_prefix(path: str, component_size_limit: int = 10) -> str:
     path = Path(path)
-    displayable_file_name = path.name[:component_size_limit]
+    displayable_file_name = path.name[:component_size_limit].replace(".", "__")
     uuid = sha256(str(path).encode()).hexdigest()[:20]
     return f"{displayable_file_name}-{uuid}"
