@@ -126,7 +126,7 @@ class ParakeetPreprocessor(Preprocessor):
                 tensor_segments = [s.tensor for s in segment_by_silence(audio_input)]
 
             original_file = (
-                _displayable_path(input_file_path)
+                _displayable_prefix(input_file_path)
                 if input_file_path is not None
                 else uuid.uuid4().hex
             )
@@ -294,8 +294,8 @@ def _resample_waveform(
     return transform(waveform)
 
 
-def _displayable_path(path: str, component_size_limit: int = 10) -> str:
+def _displayable_prefix(path: str, component_size_limit: int = 10) -> str:
     path = Path(path)
-    displayable_file_name = [c[:component_size_limit] for c in path.parts]
+    displayable_file_name = path.name[:component_size_limit]
     uuid = sha256(str(path).encode()).hexdigest()[:20]
-    return f"{'__'.join(displayable_file_name)}-{uuid}"
+    return f"{displayable_file_name}-{uuid}"
