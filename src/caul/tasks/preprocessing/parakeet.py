@@ -130,7 +130,7 @@ class ParakeetPreprocessor(Preprocessor):
                 tensor_segments = [s.tensor for s in segment_by_silence(audio_input)]
 
             original_file = (
-                _displayable_path(audio_input).encode()
+                _displayable_path(audio_input)
                 if isinstance(audio_input, str)
                 else uuid.uuid4().hex.encode()
             )
