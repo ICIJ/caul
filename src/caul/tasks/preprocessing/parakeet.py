@@ -62,9 +62,6 @@ class ParakeetPreprocessor(Preprocessor):
         :param input_sample_rates: sample rate(s) of audio inputs
         :return: batches of indexed preprocessed audio tensors (input_idx, preprocessed_input)
         """
-        if not isinstance(inputs, list):
-            inputs = [inputs]
-
         preprocessed_inputs = self.preprocess_inputs(
             inputs, input_sample_rates, output_dir=output_dir
         )
@@ -98,7 +95,6 @@ class ParakeetPreprocessor(Preprocessor):
         # Load arrays and divide into max_length segments
         for input_idx, (audio_input, sample_rate) in enumerate(inputs_and_sample_rates):
             input_file_path = None
-            preprocessed_file_path = None
             input_format = None
 
             # Load audio files as arrays
