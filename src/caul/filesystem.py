@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from caul.constant import DEFAULT_SAMPLE_RATE, TARGET_FORMAT
+from caul.constants import DEFAULT_SAMPLE_RATE, TARGET_FORMAT
 
 if TYPE_CHECKING:
     import torch

@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 
 from caul.asr_pipeline import ASRPipeline
-from caul.constant import DEFAULT_SAMPLE_RATE, TorchDevice
+from caul.constants import DEFAULT_SAMPLE_RATE, TorchDevice
 from caul.objects import ASRResult
 
 import torch

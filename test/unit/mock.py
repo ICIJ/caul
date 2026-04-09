@@ -4,7 +4,7 @@ from nemo.collections.asr.parts.mixins import TranscribeConfig
 from nemo.collections.asr.parts.utils import Hypothesis
 from pydantic import Field
 
-from caul.constant import TorchDevice
+from caul.constants import TorchDevice
 from caul.tasks import (
     InferenceRunner,
     ParakeetInferenceRunner,

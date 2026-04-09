@@ -5,7 +5,7 @@ from typing import Iterable, TYPE_CHECKING
 
 
 from caul.asr_pipeline import ASRPipeline, ASRPipelineConfig
-from caul.constant import ASRModel
+from caul.constants import ASRModel
 from caul.default_configs import MODEL_FAMILY_CONFIG_MAP
 from caul.objects import ASRResult
 from caul.utils import fuzzy_match
@@ -16,7 +16,7 @@ from caul.exception import MissingModelSpecificationException, UnsupportedModelE
 if TYPE_CHECKING:
     import torch
     import numpy as np
-    from caul.constant import TorchDevice
+    from caul.constants import TorchDevice
 
 
 logger = logging.getLogger(__name__)
