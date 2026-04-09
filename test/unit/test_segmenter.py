@@ -62,7 +62,7 @@ def _make_silero_mock(speech_timestamps: list[dict]):
 
 
 def _make_pyannote_mock(speech_intervals_s: list[tuple[float, float]]):
-    """Create a mock pyannote pipeline returning the given speech intervals (in seconds)."""
+    """Create a mock pyannote pipeline returning the given speech intervals (in seconds)"""
 
     class _Seg:
         def __init__(self, start: float, end: float):
