@@ -1,6 +1,7 @@
 import uuid
 from typing import Callable, TYPE_CHECKING
 
+from torch import float32
 from caul.constants import DEFAULT_SAMPLE_RATE, PARAKEET_INFERENCE_MAX_DURATION_S
 from caul.segmentation.objects import TensorSegment
 
@@ -222,8 +223,6 @@ def segment_by_pyannote_vad(  # pylint: disable=too-many-arguments
         exceeding this are split at fixed intervals as a fallback
     :return: list of TensorSegment
     """
-    import torch  # pylint: disable=import-outside-toplevel
-
     tensor_id = uuid.uuid4().hex
     max_segment_samples = int(max_segment_len_s * sample_rate)
 
@@ -237,7 +236,7 @@ def segment_by_pyannote_vad(  # pylint: disable=too-many-arguments
     )
 
     # pyannote expects a 2D tensor (channels x samples)
-    waveform = audio_tensor.unsqueeze(0).to(torch.float32)
+    waveform = audio_tensor.unsqueeze(0).to(float32)
     output = pipeline({"waveform": waveform, "sample_rate": sample_rate})
 
     # Fallback for segments over max_segment_len_s
