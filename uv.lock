@@ -341,7 +341,7 @@ requires-dist = [
     { name = "numpy", specifier = "~=2.3" },
     { name = "torch", marker = "extra == 'nemo'", specifier = "~=2.10", index = "https://download.pytorch.org/whl/cpu" },
     { name = "torchaudio", specifier = "~=2.10", index = "https://download.pytorch.org/whl/cpu" },
-    { name = "torchcodec", specifier = "~=0.10.0", index = "https://download.pytorch.org/whl/cpu" },
+    { name = "torchcodec", specifier = ">=0.10.0,<0.12", index = "https://download.pytorch.org/whl/cpu" },
 ]
 provides-extras = ["nemo"]
 
