@@ -1,11 +1,12 @@
 import gc
 from functools import partial
-from typing import Callable, Protocol, Self, TYPE_CHECKING
+from typing import Any, Callable, Protocol, Self, TYPE_CHECKING
 
 from icij_common.registrable import RegistrableFromConfig
 
-from caul.constant import SILERO_TORCH_HUB_REPO, VadModel
+from caul.constants import SILERO_TORCH_HUB_REPO, VadModel
 from caul.segmentation.methods import (
+    segment_by_pyannote_vad,
     segment_by_silence,
     segment_fixed,
     segment_by_silero_vad,
@@ -14,6 +15,7 @@ from caul.segmentation.objects import (
     SegmentationConfig,
     TensorSegment,
     SegmentationStrategy,
+    PyannoteVoiceSegmentationConfig,
 )
 
 if TYPE_CHECKING:
@@ -56,7 +58,9 @@ class AudioSegmenter(RegistrableFromConfig):
         return cls(config)
 
     def segment(self, audio_tensor: "torch.Tensor") -> list[TensorSegment]:
-        return self._segmentation_fn(audio_tensor, **self._args)  # pylint: disable=not-callable
+        return self._segmentation_fn(
+            audio_tensor, **self._args
+        )  # pylint: disable=not-callable
 
 
 @AudioSegmenter.register(SegmentationStrategy.FIXED)
@@ -73,7 +77,7 @@ class SilenceAudioSegmenter(AudioSegmenter):
         return self
 
 
-@AudioSegmenter.register(SegmentationStrategy.VOICE)
+@AudioSegmenter.register(SegmentationStrategy.VOICE_SILERO)
 class VoiceAudioSegmenter(AudioSegmenter):
     def __init__(self, config: SegmentationConfig):
         import torch  # pylint: disable=import-outside-toplevel
@@ -102,6 +106,35 @@ class VoiceAudioSegmenter(AudioSegmenter):
         try:
             # Depending on the exact accelerator running might fail to empty the cache
             # but that's OK
+            torch.accelerator.empty_cache()
+        except RuntimeError:
+            pass
+        gc.collect()
+
+
+@AudioSegmenter.register(SegmentationStrategy.VOICE_PYANNOTE)
+class PyannoteAudioSegmenter(AudioSegmenter):
+    def __init__(self, config: PyannoteVoiceSegmentationConfig):
+        super().__init__(config)
+        self._pipeline: Any | None = None
+
+    def __enter__(self) -> Self:
+        self._pipeline = self._load_pipeline()
+        self._segmentation_fn = partial(
+            segment_by_pyannote_vad, pipeline=self._pipeline
+        )
+        return self
+
+    def _load_pipeline(self) -> Any:
+        from pyannote.audio import Pipeline  # pylint: disable=import-outside-toplevel
+
+        return Pipeline.from_pretrained(VadModel.PYANNOTE_MODEL)
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        import torch  # pylint: disable=import-outside-toplevel
+
+        self._pipeline = None
+        try:
             torch.accelerator.empty_cache()
         except RuntimeError:
             pass

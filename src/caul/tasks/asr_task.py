@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     import torch
     import numpy as np
 
-    from caul.constant import TorchDevice
+    from caul.constants import TorchDevice
 
 
 class ASRTask(AbstractContextManager, ABC):
@@ -31,7 +31,9 @@ class ASRTask(AbstractContextManager, ABC):
 
     def __exit__(self, exc_type, exc_val, exc_tb): ...
 
-    def set_device(self, device: "TorchDevice | torch._device") -> None:  # pylint: disable=unused-argument
+    def set_device(
+        self, device: "TorchDevice | torch._device"
+    ) -> None:  # pylint: disable=unused-argument
         pass
 
 

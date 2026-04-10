@@ -2,7 +2,7 @@ from typing import ClassVar, Iterable, Self
 
 from pydantic import Field
 
-from caul.constant import ASRModel
+from caul.constants import ASRModel
 from caul.objects import ASRResult, PreprocessorOutput
 from ..asr_task import InferenceRunner
 from ...config import InferenceRunnerConfig

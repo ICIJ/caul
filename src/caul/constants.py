@@ -8,6 +8,7 @@ class ASRModel(StrEnum):
 
 class VadModel(StrEnum):
     SILERO_MODEL = "silero_vad"
+    PYANNOTE_MODEL = "pyannote/voice-activity-detection"
 
 
 class TorchDevice(StrEnum):

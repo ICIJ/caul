@@ -1,7 +1,8 @@
 import uuid
 from typing import Callable, TYPE_CHECKING
 
-from caul.constant import DEFAULT_SAMPLE_RATE, PARAKEET_INFERENCE_MAX_DURATION_S
+from torch import float32
+from caul.constants import DEFAULT_SAMPLE_RATE, PARAKEET_INFERENCE_MAX_DURATION_S
 from caul.segmentation.objects import TensorSegment
 
 if TYPE_CHECKING:
@@ -190,6 +191,64 @@ def segment_by_silero_vad(  # pylint: disable=too-many-arguments
                 audio_tensor,
                 seg_start=ts["start"],
                 seg_end=ts["end"],
+                chunk_samples=max_segment_samples,
+                sample_rate=sample_rate,
+                tensor_id=tensor_id,
+            )
+        )
+    return segments
+
+
+def segment_by_pyannote_vad(  # pylint: disable=too-many-arguments
+    audio_tensor: "torch.Tensor",
+    pipeline: "pyannote.audio.Pipeline",
+    *,
+    sample_rate: int = DEFAULT_SAMPLE_RATE,
+    onset: float = 0.5,
+    offset: float = 0.5,
+    min_speech_duration_ms: int = 100,
+    min_silence_duration_ms: int = 100,
+    max_segment_len_s: float = PARAKEET_INFERENCE_MAX_DURATION_S,
+) -> list[TensorSegment]:
+    """Split an audio tensor into voiced segments using pyannote VAD.
+
+    :param audio_tensor: 1D input tensor
+    :param pipeline: pyannote voice activity detection pipeline
+    :param sample_rate: sample rate of the audio
+    :param onset: speech onset probability threshold [0, 1)
+    :param offset: speech offset probability threshold [0, 1)
+    :param min_speech_duration_ms: minimum speech segment duration in ms
+    :param min_silence_duration_ms: minimum silence duration to split on in ms
+    :param max_segment_len_s: maximum segment duration in seconds; segments
+        exceeding this are split at fixed intervals as a fallback
+    :return: list of TensorSegment
+    """
+    tensor_id = uuid.uuid4().hex
+    max_segment_samples = int(max_segment_len_s * sample_rate)
+
+    pipeline.instantiate(
+        {
+            "onset": onset,
+            "offset": offset,
+            "min_duration_on": min_speech_duration_ms * 1000,  # seconds expected
+            "min_duration_off": min_silence_duration_ms * 1000,  # seconds expected
+        }
+    )
+
+    # pyannote expects a 2D tensor (channels x samples)
+    waveform = audio_tensor.unsqueeze(0).to(float32)
+    output = pipeline({"waveform": waveform, "sample_rate": sample_rate})
+
+    # Fallback for segments over max_segment_len_s
+    segments = []
+    for segment in output.get_timeline().support():
+        start_sample = int(segment.start * sample_rate)
+        end_sample = int(segment.end * sample_rate)
+        segments.extend(
+            _split_range_fixed(
+                audio_tensor,
+                seg_start=start_sample,
+                seg_end=end_sample,
                 chunk_samples=max_segment_samples,
                 sample_rate=sample_rate,
                 tensor_id=tensor_id,

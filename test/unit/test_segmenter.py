@@ -4,17 +4,20 @@ from unittest.mock import MagicMock
 import pytest
 import torch
 
-from caul.constant import DEFAULT_SAMPLE_RATE
+from caul.constants import DEFAULT_SAMPLE_RATE
 from caul.segmentation.objects import (
     FixedSegmentationConfig,
+    PyannoteVoiceSegmentationConfig,
     SegmentationConfig,
     SilenceSegmentationConfig,
     SileroVoiceSegmentationConfig,
 )
 from caul.segmentation.segmenter import (
     AudioSegmenter,
+    PyannoteAudioSegmenter,
     TensorSegment,
     VoiceAudioSegmenter,
+    segment_by_pyannote_vad,
     segment_by_silence,
     segment_by_silero_vad,
     segment_fixed,
@@ -56,6 +59,24 @@ def _make_silero_mock(speech_timestamps: list[dict]):
     vad_model = MagicMock()
     vad_parser_fn = MagicMock(return_value=speech_timestamps)
     return vad_model, vad_parser_fn
+
+
+def _make_pyannote_mock(speech_intervals_s: list[tuple[float, float]]):
+    """Create a mock pyannote pipeline returning the given speech intervals (in seconds)"""
+
+    class _Seg:
+        def __init__(self, start: float, end: float):
+            self.start = start
+            self.end = end
+
+    segs = [_Seg(s, e) for s, e in speech_intervals_s]
+    timeline = MagicMock()
+    timeline.support.return_value = segs
+    annotation = MagicMock()
+    annotation.get_timeline.return_value = timeline
+    pipeline = MagicMock()
+    pipeline.return_value = annotation
+    return pipeline
 
 
 # TensorSegment
@@ -299,6 +320,87 @@ class TestSegmentBySileroVad:
             assert torch.equal(seg.tensor, tensor[ts["start"] : ts["end"]])
 
 
+class TestSegmentByPyannoteVad:
+    def test_returns_tensor_segment_per_speech_interval(self):
+        intervals_s = [(0.0, 0.5), (1.0, 1.5)]
+        pipeline = _make_pyannote_mock(intervals_s)
+        tensor = make_silent_tensor(2.0)
+        segments = segment_by_pyannote_vad(tensor, pipeline=pipeline)
+
+        assert len(segments) == 2
+        assert segments[0].segment_start == 0
+        assert segments[0].segment_end == int(0.5 * DEFAULT_SAMPLE_RATE)
+        assert segments[1].segment_start == int(1.0 * DEFAULT_SAMPLE_RATE)
+        assert segments[1].segment_end == int(1.5 * DEFAULT_SAMPLE_RATE)
+
+    def test_no_speech_returns_empty(self):
+        pipeline = _make_pyannote_mock([])
+        segments = segment_by_pyannote_vad(make_silent_tensor(1.0), pipeline=pipeline)
+        assert segments == []
+
+    def test_pipeline_instantiate_called_with_correct_params(self):
+        pipeline = _make_pyannote_mock([(0.0, 0.5)])
+        segment_by_pyannote_vad(
+            make_silent_tensor(1.0),
+            pipeline=pipeline,
+            onset=0.6,
+            offset=0.4,
+            min_speech_duration_ms=200,
+            min_silence_duration_ms=150,
+        )
+        call_args = pipeline.instantiate.call_args[0][0]
+        assert call_args["onset"] == 0.6
+        assert call_args["offset"] == 0.4
+        assert call_args["min_duration_on"] == 200 * 1000
+        assert call_args["min_duration_off"] == 150 * 1000
+
+    def test_oversized_segment_is_split(self):
+        # One 4-second interval with a 2-second cap should produce 2 segments
+        pipeline = _make_pyannote_mock([(0.0, 4.0)])
+        tensor = make_silent_tensor(4.0)
+        segments = segment_by_pyannote_vad(
+            tensor, pipeline=pipeline, max_segment_len_s=2.0
+        )
+        assert len(segments) == 2
+        assert segments[0].segment_end == DEFAULT_SAMPLE_RATE * 2
+        assert segments[1].segment_start == DEFAULT_SAMPLE_RATE * 2
+
+    def test_segments_do_not_exceed_max_length(self):
+        pipeline = _make_pyannote_mock([(0.0, 10.0)])
+        segments = segment_by_pyannote_vad(
+            make_silent_tensor(10.0), pipeline=pipeline, max_segment_len_s=3.0
+        )
+        for seg in segments:
+            assert seg.duration <= 3.0
+
+    def test_all_segments_share_tensor_id(self):
+        pipeline = _make_pyannote_mock([(0.0, 0.5), (1.0, 1.5)])
+        segments = segment_by_pyannote_vad(make_silent_tensor(2.0), pipeline=pipeline)
+        tensor_ids = {s.tensor_id for s in segments}
+        assert len(tensor_ids) == 1
+
+    def test_separate_calls_produce_different_tensor_ids(self):
+        tensor = make_silent_tensor(1.0)
+        segments_a = segment_by_pyannote_vad(
+            tensor, pipeline=_make_pyannote_mock([(0.0, 0.5)])
+        )
+        segments_b = segment_by_pyannote_vad(
+            tensor, pipeline=_make_pyannote_mock([(0.0, 0.5)])
+        )
+        assert segments_a[0].tensor_id != segments_b[0].tensor_id
+
+    def test_tensor_content_matches_slice(self):
+        intervals_s = [(0.0, 0.5), (1.0, 1.5)]
+        pipeline = _make_pyannote_mock(intervals_s)
+        tensor = torch.arange(float(DEFAULT_SAMPLE_RATE * 2))
+        segments = segment_by_pyannote_vad(tensor, pipeline=pipeline)
+
+        for seg, (start_s, end_s) in zip(segments, intervals_s):
+            start_sample = int(start_s * DEFAULT_SAMPLE_RATE)
+            end_sample = int(end_s * DEFAULT_SAMPLE_RATE)
+            assert torch.equal(seg.tensor, tensor[start_sample:end_sample])
+
+
 # AudioSegmenter dispatch
 
 
@@ -313,6 +415,20 @@ class _MockSileroVADSegmenter(VoiceAudioSegmenter):
 
     def _load_vad_model(self) -> tuple["torch.nn.Module", Callable]:
         return _make_silero_mock(self._timestamps)
+
+
+@AudioSegmenter.register("mock_pyannote")
+class _MockPyannoteSegmenter(PyannoteAudioSegmenter):
+    def __init__(
+        self,
+        config: PyannoteVoiceSegmentationConfig,
+        intervals_s: list[tuple[float, float]] | None = None,
+    ) -> None:
+        super().__init__(config)
+        self._intervals_s = intervals_s or []
+
+    def _load_pipeline(self):
+        return _make_pyannote_mock(self._intervals_s)
 
 
 class TestAudioSegmenter:
@@ -350,6 +466,16 @@ class TestAudioSegmenter:
         with segmenter:
             segments = segmenter.segment(tensor)
 
+        assert len(segments) == 3
+
+    def test_dispatches_to_segment_by_pyannote_vad(self):
+        intervals_s = [(0.0, 1.0), (2.0, 3.5), (4.0, 4.8)]
+        tensor = make_silent_tensor(5.0)
+        segmenter = _MockPyannoteSegmenter(
+            PyannoteVoiceSegmentationConfig(), intervals_s
+        )
+        with segmenter:
+            segments = segmenter.segment(tensor)
         assert len(segments) == 3
 
     def test_context_manager_clears_vad_model_on_exit(self):

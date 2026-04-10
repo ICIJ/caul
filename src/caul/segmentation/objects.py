@@ -5,10 +5,7 @@ from typing import ClassVar, TYPE_CHECKING
 from icij_common.registrable import RegistrableConfig
 from pydantic import Field
 
-from caul.constant import (
-    DEFAULT_SAMPLE_RATE,
-    PARAKEET_INFERENCE_MAX_DURATION_S
-)
+from caul.constants import DEFAULT_SAMPLE_RATE, PARAKEET_INFERENCE_MAX_DURATION_S
 
 if TYPE_CHECKING:
     import torch
@@ -17,6 +14,7 @@ if TYPE_CHECKING:
 @dataclass(frozen=True)
 class TensorSegment:
     """An audio tensor segment with position and duration metadata"""
+
     tensor: "torch.Tensor"
     segment_start: int
     segment_end: int
@@ -33,7 +31,8 @@ class TensorSegment:
 class SegmentationStrategy(StrEnum):
     FIXED = "fixed"
     SILENCE = "silence"
-    VOICE = "voice"
+    VOICE_SILERO = "voice"
+    VOICE_PYANNOTE = "pyannote"
 
 
 class SegmentationConfig(RegistrableConfig):
@@ -50,7 +49,6 @@ class FixedSegmentationConfig(SegmentationConfig):
     )
 
 
-
 class SilenceSegmentationConfig(SegmentationConfig):
     """Silence segmentation parameters; see librosa for explanation of parameters"""
 
@@ -64,14 +62,30 @@ class SilenceSegmentationConfig(SegmentationConfig):
     min_silence_len_s: float = 0.5
 
 
-class SileroVoiceSegmentationConfig(SegmentationConfig):
+class VoiceSegmentationConfig(SegmentationConfig):
+    """Generic VAD config"""
+
+    min_speech_duration_ms: int = 250
+    min_silence_duration_ms: int = 100
+
+
+class SileroVoiceSegmentationConfig(VoiceSegmentationConfig):
     """Voice segmentation parameters using silero VAD;
     see silero for explanation of parameters"""
 
     strategy: ClassVar[SegmentationStrategy] = Field(
-        frozen=True, default=SegmentationStrategy.VOICE
+        frozen=True, default=SegmentationStrategy.VOICE_SILERO
     )
     threshold: float = 0.5
-    min_speech_duration_ms: int = 250
-    min_silence_duration_ms: int = 100
     speech_pad_ms: int = 30
+
+
+class PyannoteVoiceSegmentationConfig(VoiceSegmentationConfig):
+    """Voice segmentation parameters using pyannote VAD;
+    see pyannote for explanation of parameters"""
+
+    strategy: ClassVar[SegmentationStrategy] = Field(
+        frozen=True, default=SegmentationStrategy.VOICE_PYANNOTE
+    )
+    onset: float = 0.5
+    offset: float = 0.5

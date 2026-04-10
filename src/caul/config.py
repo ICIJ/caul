@@ -4,7 +4,7 @@ from typing import ClassVar
 from icij_common.registrable import RegistrableConfig
 from pydantic import Field
 
-from .constant import ASRModel
+from .constants import ASRModel
 from .objects import BaseModel
 
 
