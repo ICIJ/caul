@@ -12,7 +12,7 @@ from pydantic import BaseModel as _BaseModel, Field, GetCoreSchemaHandler, TypeA
 from pydantic_core import core_schema
 from pydantic_extra_types.language_code import LanguageAlpha2
 
-from caul.constants import PARAKEET_TDT_0_6B_V3_LANGUAGES
+from caul.constants import PARAKEET_TDT_0_6B_V3_LANGUAGES, FIREREDASR2_LANGUAGES
 
 if TYPE_CHECKING:
     import torch
@@ -43,10 +43,15 @@ _VALIDATED_PARAKEET_LANGUAGES = {
     for lang in PARAKEET_TDT_0_6B_V3_LANGUAGES
 }
 
+_VALIDATED_FIREREDASR2_LANGUAGES = {
+    _LANGUAGE_TYPE_ADAPTER.validate_python(lang) for lang in FIREREDASR2_LANGUAGES
+}
+
 
 class ASRModel(StrEnum):
     PARAKEET = "parakeet"
     WHISPER_CPP = "whisper_cpp"
+    FIREREDASR2_AED = "fireredasr2_aed"
 
     def supported_languages(self) -> set[ASRLanguage]:
         match self:
@@ -54,6 +59,8 @@ class ASRModel(StrEnum):
                 return _VALIDATED_PARAKEET_LANGUAGES
             case ASRModel.WHISPER_CPP:
                 return set()
+            case ASRModel.FIREREDASR2_AED:
+                return _VALIDATED_FIREREDASR2_LANGUAGES
             case _:
                 msg = f"model {self} should expose supported languages"
                 raise NotImplementedError(msg)
@@ -92,6 +99,26 @@ class ASRResult(BaseModel):
             (s["start"], s["end"], s["segment"]) for s in timestamps["segment"]
         ]
         score = round(hypothesis.score, 2)
+        return cls(transcription=transcription, score=score, **extra)
+
+    @classmethod
+    def from_fireredasr2_result(cls, result: dict, **extra) -> Self:
+        """Parse a result dict returned by a FireRedASR2 AED model
+
+        :param result: dict with keys 'text', 'confidence', 'dur_s', 'timestamp'
+        :return: ASRResult
+        """
+        text = result.get("text") or ""
+        timestamp = result.get("timestamp") or []
+        if timestamp:
+            start_s = float(timestamp[0][1])
+            end_s = float(timestamp[-1][2])
+        else:
+            start_s = 0.0
+            end_s = float(result.get("dur_s") or 0.0)
+        transcription = [(start_s, end_s, text)] if text.strip() else []
+        confidence = result.get("confidence")
+        score = round(float(confidence), 4) if confidence is not None else 1.0
         return cls(transcription=transcription, score=score, **extra)
 
     def __add__(self, other: Self) -> Self:

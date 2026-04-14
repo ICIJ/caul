@@ -8,6 +8,9 @@ source = "uv-dynamic-versioning"
 [tool.hatch.build.targets.wheel]
 packages = ["src/caul"]
 
+[tool.hatch.metadata]
+allow-direct-references = true
+
 [tool.uv-dynamic-versioning]
 fallback-version = "0.0.0"
 
@@ -36,6 +39,9 @@ nemo = [
 ]
 pyannote = [
     "pyannote-audio>=4.0.4",
+]
+fireredasr2 = [
+  "fireredasr2s @ git+https://github.com/FireRedTeam/FireRedASR2S.git",
 ]
 
 [[tool.uv.index]]

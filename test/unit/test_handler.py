@@ -4,7 +4,7 @@ import numpy as np
 from caul.handler import ASRHandler
 
 from caul.asr_pipeline import ASRPipeline
-from caul.tasks import ParakeetPreprocessorConfig
+from caul.tasks import ParakeetPreprocessorConfig, ParakeetPostprocessorConfig
 from caul.tasks.asr_task import Postprocessor, Preprocessor
 from test.unit import TEST_RESOURCES_PATH
 from test.unit.constant import (
@@ -42,7 +42,7 @@ def test__handler_with_single_parakeet_model__np_array_input():
     mocked_tasks = [
         Preprocessor.from_config(ParakeetPreprocessorConfig()),
         MockNvidiaASRInferenceRunner.from_config(MockNvidiaASRInferenceRunnerConfig()),
-        Postprocessor.from_config(ParakeetPreprocessorConfig()),
+        Postprocessor.from_config(ParakeetPostprocessorConfig()),
     ]
     mocked_pipeline = ASRPipeline(mocked_tasks)
     handler = ASRHandler(models=mocked_pipeline)

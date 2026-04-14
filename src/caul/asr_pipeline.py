@@ -5,9 +5,9 @@ from typing import Iterable, Self, TYPE_CHECKING
 from icij_common.pydantic_utils import make_enum_discriminator, tagged_union
 from pydantic import Discriminator, Field
 
-from .config import InferenceRunnerConfig
+from .config import InferenceRunnerConfig, PostprocessorConfig, PreprocessorConfig
 from .constants import TorchDevice
-from .objects import ASRModel, ASRResult, BaseModel
+from .objects import ASRResult, BaseModel, ASRModel
 from .tasks import (
     ASRTask,
     InferenceRunner,
@@ -16,6 +16,9 @@ from .tasks import (
     ParakeetPreprocessorConfig,
     Postprocessor,
     Preprocessor,
+    FireRedASR2PreprocessorConfig,
+    FireRedASR2InferenceRunnerConfig,
+    FireRedASR2PostprocessorConfig,
 )
 
 
@@ -24,8 +27,16 @@ if TYPE_CHECKING:
     import torch
 
 
+PreprocessorConfig_ = tagged_union(
+    PreprocessorConfig.__subclasses__(), lambda t: t.model.default.value
+)
+
 InferenceRunnerConfig_ = tagged_union(
     InferenceRunnerConfig.__subclasses__(), lambda t: t.model.default.value
+)
+
+PostprocessorConfig_ = tagged_union(
+    PostprocessorConfig.__subclasses__(), lambda t: t.model.default.value
 )
 
 model_discriminator = make_enum_discriminator("model", ASRModel)
@@ -33,15 +44,15 @@ model_discriminator = make_enum_discriminator("model", ASRModel)
 
 class ASRPipelineConfig(BaseModel):  # pylint: disable=too-few-public-methods
     device: TorchDevice = TorchDevice.CPU
-    preprocessing: ParakeetPreprocessorConfig = Field(
-        default_factory=ParakeetPreprocessorConfig
-    )
-    inference: InferenceRunnerConfig_ = Field(
-        default_factory=ParakeetInferenceRunnerConfig,
+    preprocessing: PreprocessorConfig_ = Field(
         discriminator=Discriminator(model_discriminator),
     )
-    postprocessing: ParakeetPostprocessorConfig = Field(
-        default_factory=ParakeetPostprocessorConfig
+    inference: InferenceRunnerConfig_ = Field(
+        default_factory=InferenceRunnerConfig,
+        discriminator=Discriminator(model_discriminator),
+    )
+    postprocessing: PostprocessorConfig_ = Field(
+        discriminator=Discriminator(model_discriminator),
     )
 
 
@@ -58,7 +69,7 @@ class ASRPipeline:
         tasks = [
             Preprocessor.from_config(config.preprocessing),
             InferenceRunner.from_config(config.inference, device=config.device),
-            Postprocessor.from_config(config.preprocessing),
+            Postprocessor.from_config(config.postprocessing),
         ]
         return cls(tasks, device=config.device)
 
@@ -105,5 +116,18 @@ class ASRPipeline:
                 preprocessing=ParakeetPreprocessorConfig(),
                 inference=ParakeetInferenceRunnerConfig(),
                 postprocessing=ParakeetPostprocessorConfig(),
+            )
+        )
+
+    @classmethod
+    def fireredasr2(
+        cls, device: "TorchDevice | torch._device" = TorchDevice.CPU
+    ) -> Self:
+        return cls.from_config(
+            ASRPipelineConfig(
+                device=device,
+                preprocessing=FireRedASR2PreprocessorConfig(),
+                inference=FireRedASR2InferenceRunnerConfig(),
+                postprocessing=FireRedASR2PostprocessorConfig(),
             )
         )
