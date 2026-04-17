@@ -10,14 +10,13 @@ from pydantic import Field
 from caul.config import PreprocessorConfig
 from caul.segmentation.segmenter import segment_by_silence
 from caul.constants import (
-    ASRModel,
     PARAKEET_INFERENCE_MAX_DURATION_S,
     PARAKEET_INFERENCE_MAX_FRAMES,
     DEFAULT_SAMPLE_RATE,
 )
 from caul.filesystem import save_tensor
 from caul.objects import (
-    InputMetadata,
+    ASRModel, InputMetadata,
     PreprocessedInput,
     PreprocessedInputWithTensor,
     PreprocessorOutput,

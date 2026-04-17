@@ -6,8 +6,8 @@ from icij_common.pydantic_utils import make_enum_discriminator, tagged_union
 from pydantic import Discriminator, Field
 
 from .config import InferenceRunnerConfig
-from .constants import ASRModel, TorchDevice
-from .objects import ASRResult, BaseModel
+from .constants import TorchDevice
+from .objects import ASRModel, ASRResult, BaseModel
 from .tasks import (
     ASRTask,
     InferenceRunner,

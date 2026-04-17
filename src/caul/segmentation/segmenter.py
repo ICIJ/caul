@@ -4,7 +4,8 @@ from typing import Any, Callable, Protocol, Self, TYPE_CHECKING
 
 from icij_common.registrable import RegistrableFromConfig
 
-from caul.constants import SILERO_TORCH_HUB_REPO, VadModel
+from caul.constants import SILERO_TORCH_HUB_REPO
+from caul.objects import VadModel
 from caul.segmentation.methods import (
     segment_by_pyannote_vad,
     segment_by_silence,
@@ -58,9 +59,9 @@ class AudioSegmenter(RegistrableFromConfig):
         return cls(config)
 
     def segment(self, audio_tensor: "torch.Tensor") -> list[TensorSegment]:
-        return self._segmentation_fn(
+        return self._segmentation_fn(  # pylint: disable=not-callable
             audio_tensor, **self._args
-        )  # pylint: disable=not-callable
+        )
 
 
 @AudioSegmenter.register(SegmentationStrategy.FIXED)

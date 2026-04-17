@@ -1,16 +1,6 @@
 from enum import StrEnum
 
 
-class ASRModel(StrEnum):
-    PARAKEET = "parakeet"
-    WHISPER_CPP = "whisper_cpp"
-
-
-class VadModel(StrEnum):
-    SILERO_MODEL = "silero_vad"
-    PYANNOTE_MODEL = "pyannote/voice-activity-detection"
-
-
 class TorchDevice(StrEnum):
     CPU = "cpu"
     GPU = "cuda"
@@ -29,3 +19,31 @@ PARAKEET_INFERENCE_MAX_FRAMES = PARAKEET_INFERENCE_MAX_DURATION_S * DEFAULT_SAMP
 
 # Silero
 SILERO_TORCH_HUB_REPO = "snakers4/silero-vad"
+
+PARAKEET_TDT_0_6B_V3_LANGUAGES = {
+    "bg",
+    "hr",
+    "cs",
+    "da",
+    "nl",
+    "en",
+    "et",
+    "fi",
+    "fr",
+    "de",
+    "el",
+    "hu",
+    "it",
+    "lv",
+    "lt",
+    "mt",
+    "pl",
+    "pt",
+    "ro",
+    "sk",
+    "sl",
+    "es",
+    "sv",
+    "ru",
+    "uk",
+}
