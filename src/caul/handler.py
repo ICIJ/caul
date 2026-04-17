@@ -5,9 +5,8 @@ from typing import Iterable, TYPE_CHECKING
 
 
 from caul.asr_pipeline import ASRPipeline, ASRPipelineConfig
-from caul.constants import ASRModel
 from caul.default_configs import MODEL_FAMILY_CONFIG_MAP
-from caul.objects import ASRResult
+from caul.objects import ASRModel, ASRResult
 from caul.utils import fuzzy_match
 
 
@@ -131,7 +130,7 @@ class ASRHandler:
                 "At least one model name or model pipeline must be provided"
             )
 
-        if not isinstance(inputs, (np.ndarray, torch.Tensor, str)):
+        if isinstance(inputs, (np.ndarray, torch.Tensor, str)):
             inputs = [inputs]
 
         if languages is None:

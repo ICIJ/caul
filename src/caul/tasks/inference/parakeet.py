@@ -6,8 +6,8 @@ import gc
 from icij_common.registrable import FromConfig
 from pydantic import Field
 
-from caul.constants import ASRModel, PARAKEET_MODEL_REF, TorchDevice
-from caul.objects import ASRResult, PreprocessorOutput
+from caul.constants import PARAKEET_MODEL_REF, TorchDevice
+from caul.objects import ASRModel, ASRResult, PreprocessorOutput
 from ..asr_task import InferenceRunner
 from ...config import InferenceRunnerConfig
 

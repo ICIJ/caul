@@ -1,13 +1,18 @@
 import datetime
 from dataclasses import dataclass
+from enum import StrEnum
 from pathlib import Path
 from typing import Self, TYPE_CHECKING
 
 import uuid
 
+import langcodes
 from icij_common.pydantic_utils import icij_config, merge_configs, no_enum_values_config
-from pydantic import BaseModel as _BaseModel, Field
+from pydantic import BaseModel as _BaseModel, Field, GetCoreSchemaHandler, TypeAdapter
+from pydantic_core import core_schema
+from pydantic_extra_types.language_code import LanguageAlpha2
 
+from caul.constants import PARAKEET_TDT_0_6B_V3_LANGUAGES
 
 if TYPE_CHECKING:
     import torch
@@ -15,6 +20,48 @@ if TYPE_CHECKING:
 
 class BaseModel(_BaseModel):
     model_config = merge_configs(icij_config(), no_enum_values_config())
+
+
+class IETFLanguage(str):
+    @classmethod
+    def __get_pydantic_core_schema__(cls, source, handler: GetCoreSchemaHandler):
+        return core_schema.no_info_plain_validator_function(cls.validate)
+
+    @classmethod
+    def validate(cls, v):
+        tag = langcodes.get(str(v))
+        if not tag.is_valid():
+            raise ValueError(f"Invalid IETF language: {v}")
+        return cls(v)
+
+
+ASRLanguage = IETFLanguage | LanguageAlpha2
+_LANGUAGE_TYPE_ADAPTER = TypeAdapter(ASRLanguage)
+
+_VALIDATED_PARAKEET_LANGUAGES = {
+    _LANGUAGE_TYPE_ADAPTER.validate_python(lang)
+    for lang in PARAKEET_TDT_0_6B_V3_LANGUAGES
+}
+
+
+class ASRModel(StrEnum):
+    PARAKEET = "parakeet"
+    WHISPER_CPP = "whisper_cpp"
+
+    def supported_languages(self) -> set[ASRLanguage]:
+        match self:
+            case ASRModel.PARAKEET:
+                return _VALIDATED_PARAKEET_LANGUAGES
+            case ASRModel.WHISPER_CPP:
+                return set()
+            case _:
+                msg = f"model {self} should expose supported languages"
+                raise NotImplementedError(msg)
+
+
+class VadModel(StrEnum):
+    SILERO_MODEL = "silero_vad"
+    PYANNOTE_MODEL = "pyannote/voice-activity-detection"
 
 
 class ASRResult(BaseModel):

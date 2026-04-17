@@ -5,8 +5,7 @@ from icij_common.registrable import FromConfig
 from pydantic import Field
 
 from caul.config import PostprocessorConfig
-from caul.constants import ASRModel
-from caul.objects import ASRResult
+from caul.objects import ASRModel, ASRResult
 from caul.tasks.asr_task import Postprocessor
 
 

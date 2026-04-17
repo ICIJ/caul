@@ -1,5 +1,4 @@
 from caul.asr_pipeline import ASRPipeline
-from caul.constants import ASRModel
-
+from caul.objects import ASRModel
 
 MODEL_FAMILY_CONFIG_MAP = {ASRModel.PARAKEET: ASRPipeline.parakeet()}
