@@ -5,6 +5,7 @@ import torch
 
 from caul.constants import DEFAULT_SAMPLE_RATE, FIREREDASR2_INFERENCE_MAX_DURATION_S
 from caul.objects import ASRResult
+from caul.tasks import FireRedASR2InferenceRunnerConfig
 from caul.tasks.inference.fireredasr import (
     FireRedASR2InferenceRunner,
 )
@@ -88,23 +89,24 @@ class TestASRResultFromFireRedASR2:
 
 
 class TestFireRedASR2Preprocessor:
+    def __init__(self):
+        self._preprocessor = FireRedASR2Preprocessor()
+
     def test__short_audio_single_segment(self):
         """Audio shorter than 60 seconds should produce exactly one segment"""
-        preprocessor = FireRedASR2Preprocessor()
         audio = [torch.zeros(SAMPLES_PER_S * 10)]  # 10 s
 
-        result = list(preprocessor.preprocess_inputs(audio))
+        result = list(self._preprocessor.preprocess_inputs(audio))
 
         assert len(result) == 1
         assert result[0].metadata.input_ordering == 0
 
     def test__long_audio_gets_segmented(self):
         """Audio longer than 60 seconds must be split into multiple segments"""
-        preprocessor = FireRedASR2Preprocessor()
         # 70 s of silence — segment_by_silence will fall back to fixed splits
         audio = [torch.zeros(SAMPLES_PER_S * 70)]
 
-        result = list(preprocessor.preprocess_inputs(audio))
+        result = list(self._preprocessor.preprocess_inputs(audio))
 
         assert len(result) > 1
         for seg in result:
@@ -112,10 +114,9 @@ class TestFireRedASR2Preprocessor:
 
     def test__multiple_inputs_ordering(self):
         """input_ordering must match the original list index"""
-        preprocessor = FireRedASR2Preprocessor()
         audio = [torch.zeros(SAMPLES_PER_S * 5), torch.zeros(SAMPLES_PER_S * 3)]
 
-        result = list(preprocessor.preprocess_inputs(audio))
+        result = list(self._preprocessor.preprocess_inputs(audio))
 
         orderings = [r.metadata.input_ordering for r in result]
         assert orderings == [0, 1]
@@ -123,10 +124,11 @@ class TestFireRedASR2Preprocessor:
     def test__write_wavs_to_fs(self, tmpdir):
         """When output_dir is provided, wav files are written to disk"""
         output_dir = Path(tmpdir)
-        preprocessor = FireRedASR2Preprocessor()
         audio = [torch.zeros(SAMPLES_PER_S * 2)]
 
-        result = list(preprocessor.preprocess_inputs(audio, output_dir=output_dir))
+        result = list(
+            self._preprocessor.preprocess_inputs(audio, output_dir=output_dir)
+        )
 
         assert len(result) == 1
         saved = output_dir / result[0].metadata.preprocessed_file_path
@@ -137,16 +139,20 @@ class TestFireRedASR2Preprocessor:
 
 
 class TestFireRedASR2InferenceRunner:
+    def __init__(self):
+        mock_config = FireRedASR2InferenceRunnerConfig(model_dir="/dummy")
+
+        self._inference_runner = MockFireRedASR2InferenceRunner(config=mock_config)
+
     def test__yields_asr_results(self):
         """Inference runner should yield one ASRResult per segment in the batch"""
-        runner = MockFireRedASR2InferenceRunner(model_dir="/dummy")
         preprocessor = FireRedASR2Preprocessor(batch_size=4)
         audio = [torch.zeros(SAMPLES_PER_S * 2), torch.zeros(SAMPLES_PER_S * 3)]
 
         batches = list(preprocessor.process(audio))
 
-        with runner:
-            results = list(runner.process(batches))
+        with self._inference_runner:
+            results = list(self._inference_runner.process(batches))
 
         assert len(results) == 2
         assert all(isinstance(r, ASRResult) for r in results)
@@ -154,14 +160,12 @@ class TestFireRedASR2InferenceRunner:
 
     def test__skips_empty_batches(self):
         """Empty batches should not cause errors and should be silently skipped"""
-        runner = MockFireRedASR2InferenceRunner(model_dir="/dummy")
-        with runner:
-            results = list(runner.process([[], []]))
+        with self._inference_runner:
+            results = list(self._inference_runner.process([[], []]))
         assert results == []
 
     def test__writes_temp_files_for_tensors(self):
         """Tensor inputs must be written to temp wav files that are cleaned up"""
-        runner = MockFireRedASR2InferenceRunner(model_dir="/dummy")
         preprocessor = FireRedASR2Preprocessor()
         audio = [torch.zeros(SAMPLES_PER_S)]
         batches = list(preprocessor.process(audio))
@@ -169,8 +173,8 @@ class TestFireRedASR2InferenceRunner:
         # Confirm inputs are tensor-backed (no output_dir was given)
         assert hasattr(batches[0][0], "tensor")
 
-        with runner:
-            results = list(runner.process(batches))
+        with self._inference_runner:
+            results = list(self._inference_runner.process(batches))
 
         assert len(results) == 1
 
@@ -179,15 +183,17 @@ class TestFireRedASR2InferenceRunner:
 
 
 class TestFireRedASR2Postprocessor:
+    def __init__(self):
+        self._postprocessor = FireRedASR2Postprocessor()
+
     def test__merges_segments(self):
         """Segments belonging to the same input_ordering are merged in time order"""
-        postprocessor = FireRedASR2Postprocessor()
         results = [
             ASRResult(input_ordering=0, transcription=[(0.0, 1.0, "你好")], score=0.9),
             ASRResult(input_ordering=0, transcription=[(1.0, 2.0, "世界")], score=0.8),
         ]
 
-        merged = list(postprocessor.process(results))
+        merged = list(self._postprocessor.process(results))
 
         assert len(merged) == 1
         assert merged[0].input_ordering == 0
@@ -195,33 +201,30 @@ class TestFireRedASR2Postprocessor:
 
     def test__multiple_inputs(self):
         """Each unique input_ordering yields exactly one merged result"""
-        postprocessor = FireRedASR2Postprocessor()
         results = [
             ASRResult(input_ordering=0, transcription=[(0.0, 1.0, "你好")], score=0.9),
             ASRResult(input_ordering=1, transcription=[(0.0, 2.0, "世界")], score=0.8),
         ]
 
-        merged = list(postprocessor.process(results))
+        merged = list(self._postprocessor.process(results))
 
         assert len(merged) == 2
         assert {r.input_ordering for r in merged} == {0, 1}
 
     def test__drops_empty_transcription_segments(self):
         """Segments with empty transcriptions must be dropped before merging"""
-        postprocessor = FireRedASR2Postprocessor()
         results = [
             ASRResult(input_ordering=0, transcription=[], score=1.0),  # silent segment
             ASRResult(input_ordering=0, transcription=[(0.5, 1.5, "你好")], score=0.9),
         ]
 
-        merged = list(postprocessor.process(results))
+        merged = list(self._postprocessor.process(results))
 
         assert len(merged) == 1
         assert merged[0].transcription == [(0.5, 1.5, "你好")]
 
     def test__raises_for_non_contiguous(self):
         """Non-contiguous ordering (interleaved groups) should raise ValueError"""
-        postprocessor = FireRedASR2Postprocessor()
         results = [
             ASRResult(input_ordering=0, transcription=[(0.0, 1.0, "a")], score=1.0),
             ASRResult(input_ordering=1, transcription=[(0.0, 1.0, "b")], score=1.0),
@@ -229,17 +232,16 @@ class TestFireRedASR2Postprocessor:
         ]
 
         with pytest.raises(ValueError, match="expected contiguous batches"):
-            list(postprocessor.process(results))
+            list(self._postprocessor.process(results))
 
     def test__inputs_all_silent(self):
         """An input whose segments are silent should yield an empty transcription"""
-        postprocessor = FireRedASR2Postprocessor()
         results = [
             ASRResult(input_ordering=0, transcription=[], score=1.0),
             ASRResult(input_ordering=0, transcription=[], score=1.0),
         ]
 
-        merged = list(postprocessor.process(results))
+        merged = list(self._postprocessor.process(results))
 
         assert len(merged) == 1
         assert merged[0].transcription == []
