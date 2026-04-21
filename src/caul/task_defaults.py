@@ -5,7 +5,7 @@ from caul.constants import DEFAULT_BATCH_SIZE
 from caul.objects import ASRResult, PreprocessorOutput
 
 
-def _generic_batching_fn(
+def generic_batching_fn(
     preprocessed_inputs: Iterable[PreprocessorOutput],
     batch_size: int = DEFAULT_BATCH_SIZE,
 ) -> Iterable[list[PreprocessorOutput]]:
@@ -25,7 +25,7 @@ def _generic_batching_fn(
         yield batch
 
 
-def _generic_unbatching_fn(batched_results: Iterable[ASRResult]) -> Iterable[ASRResult]:
+def generic_unbatching_fn(batched_results: Iterable[ASRResult]) -> Iterable[ASRResult]:
     """Remap unordered and segmented tensors to original inputs for return
 
     :param batched_results: list of unordered results

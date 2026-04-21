@@ -7,7 +7,7 @@ from hashlib import sha256
 
 from pydantic import Field
 
-from caul._task_defaults import _generic_batching_fn
+from caul.task_defaults import generic_batching_fn
 from caul.config import PreprocessorConfig
 from caul.segmentation.methods import segment_by_silence
 from caul.constants import (
@@ -36,7 +36,7 @@ class ASRPreprocessor(Preprocessor):
 
     def __init__(
         self,
-        batching_fn: Callable = _generic_batching_fn,
+        batching_fn: Callable = generic_batching_fn,
         max_frames: int = DEFAULT_MAX_FRAMES,
         batch_size: int = DEFAULT_BATCH_SIZE,
         sample_rate: int = DEFAULT_SAMPLE_RATE,
