@@ -72,18 +72,6 @@ class ParakeetInferenceRunner(InferenceRunner):
             torch.cuda.empty_cache()
         gc.collect()
 
-    @property
-    def device(self) -> "torch.device":
-        return self._device
-
-    def set_device(self, device: "TorchDevice | torch.device" = TorchDevice.CPU):
-        import torch  # pylint: disable=import-outside-toplevel
-
-        if isinstance(device, TorchDevice):
-            device = torch.device(device)
-
-        self._device = device
-
         return self
 
     def process(  # pylint: disable=too-many-locals

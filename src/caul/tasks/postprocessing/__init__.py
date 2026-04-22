@@ -1,4 +1,11 @@
 try:
     from .parakeet import ParakeetPostprocessor, ParakeetPostprocessorConfig
 except ModuleNotFoundError:
-    ParakeetPostprocessorConfig, ParakeetPostprocessor = None, None
+    ParakeetPostprocessor, ParakeetPostprocessorConfig = (
+        None,
+        None,
+    )  # pylint: disable=invalid-name
+try:
+    from .fireredasr import FireRedASR2Postprocessor, FireRedASR2PostprocessorConfig
+except ModuleNotFoundError:
+    FireRedASR2Postprocessor, FireRedASR2PostprocessorConfig = None, None

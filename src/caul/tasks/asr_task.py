@@ -5,14 +5,13 @@ from typing import Any, Iterable, TYPE_CHECKING
 
 from icij_common.registrable import RegistrableFromConfig
 
+from caul.constants import TorchDevice
 from caul.objects import ASRResult, PreprocessorOutput
 
 
 if TYPE_CHECKING:
     import torch
     import numpy as np
-
-    from caul.constants import TorchDevice
 
 
 class ASRTask(AbstractContextManager, ABC):
@@ -51,10 +50,32 @@ class Preprocessor(ASRTask, RegistrableFromConfig):
 class InferenceRunner(ASRTask, RegistrableFromConfig):
     """Abstract for ASR inference"""
 
+    def __init__(self, device: "TorchDevice | torch._device" = TorchDevice.CPU):
+        import torch  # pylint: disable=import-outside-toplevel
+
+        if isinstance(device, str):
+            device = torch.device(device)
+
+        self._device = device
+
     @abstractmethod
     def process(
         self, inputs: Iterable[list[PreprocessorOutput]], *args, **kwargs
     ) -> Iterable[ASRResult]: ...
+
+    @property
+    def device(self) -> "torch.device":
+        return self._device
+
+    def set_device(self, device: "TorchDevice | torch.device" = TorchDevice.CPU):
+        import torch  # pylint: disable=import-outside-toplevel
+
+        if isinstance(device, TorchDevice):
+            device = torch.device(device)
+
+        self._device = device
+
+        return self
 
 
 class Postprocessor(ASRTask, RegistrableFromConfig):
