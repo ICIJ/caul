@@ -4,7 +4,7 @@ import pytest
 import torch
 
 from caul.constants import DEFAULT_SAMPLE_RATE, FIREREDASR2_INFERENCE_MAX_DURATION_S
-from caul.objects import ASRResult
+from caul.objects import ASRResult, PreprocessedInput, InputMetadata
 from caul.tasks import FireRedASR2InferenceRunnerConfig
 from caul.tasks.inference.fireredasr import (
     FireRedASR2InferenceRunner,
@@ -140,7 +140,7 @@ class TestFireRedASR2Preprocessor:
 
 class TestFireRedASR2InferenceRunner:
     def __init__(self):
-        mock_config = FireRedASR2InferenceRunnerConfig(model_dir="/dummy")
+        mock_config = FireRedASR2InferenceRunnerConfig(model_dir="test")
 
         self._inference_runner = MockFireRedASR2InferenceRunner(config=mock_config)
 
@@ -177,6 +177,26 @@ class TestFireRedASR2InferenceRunner:
             results = list(self._inference_runner.process(batches))
 
         assert len(results) == 1
+
+    def test__processes_input_without_output_dir_with_tmp_dirs_enabled(self):
+        mock_config = FireRedASR2InferenceRunnerConfig(
+            model_dir="test", tmp_dir_fallback=True
+        )
+        inference_runner = MockFireRedASR2InferenceRunner(config=mock_config)
+        batches = [[PreprocessedInput(metadata=InputMetadata(duration_s=1))]]
+
+        with inference_runner:
+            results = inference_runner.process(batches)
+
+        assert len(results) == 1
+
+    def test__does_not_process_input_without_output_dir_with_tmp_dirs_disabled(self):
+        batches = [[PreprocessedInput(metadata=InputMetadata(duration_s=1))]]
+
+        with self._inference_runner:
+            results = self._inference_runner.process(batches)
+
+        assert len(results) == 0
 
 
 # Postprocessing
