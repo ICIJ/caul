@@ -98,8 +98,7 @@ class ASRResult(BaseModel):
         transcription = [
             (s["start"], s["end"], s["segment"]) for s in timestamps["segment"]
         ]
-        score = round(hypothesis.score, 2)
-        return cls(transcription=transcription, score=score, **extra)
+        return cls(transcription=transcription, score=hypothesis.score, **extra)
 
     @classmethod
     def from_fireredasr2_result(cls, result: dict, **extra) -> Self:
@@ -118,7 +117,7 @@ class ASRResult(BaseModel):
             end_s = float(result.get("dur_s") or 0.0)
         transcription = [(start_s, end_s, text)] if text.strip() else []
         confidence = result.get("confidence")
-        score = round(float(confidence), 4) if confidence is not None else 1.0
+        score = float(confidence) if confidence is not None else -1.0
         return cls(transcription=transcription, score=score, **extra)
 
     def __add__(self, other: Self) -> Self:
