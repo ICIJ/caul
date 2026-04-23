@@ -96,6 +96,13 @@ def segment_by_silence(  # pylint: disable=too-many-arguments,too-many-locals
     """
     import librosa  # pylint: disable=import-outside-toplevel
 
+    if len(audio_tensor.shape) != 1:
+        msg = (
+            f"expected 1D input tensor, got {audio_tensor} of shape"
+            f" {len(audio_tensor.shape)}"
+        )
+        raise ValueError(msg)
+
     tensor_id = uuid.uuid4().hex
 
     nonsilent_intervals = librosa.effects.split(
@@ -223,6 +230,7 @@ def segment_by_pyannote_vad(  # pylint: disable=too-many-arguments
     :return: list of TensorSegment
     """
     from torch import float32
+
     tensor_id = uuid.uuid4().hex
     max_segment_samples = int(max_segment_len_s * sample_rate)
 
