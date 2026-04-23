@@ -8,7 +8,5 @@ from caul.asr_pipeline import ASRPipelineConfig
     ["parakeet", "fireredasr2"],
 )
 def test_asr_pipeline_config(model: str):
-    try:
-        getattr(ASRPipelineConfig, model)
-    except Exception:
-        pytest.fail(f"failed to initialize pipeline config for {model}")
+    config = getattr(ASRPipelineConfig, model)
+    assert isinstance(config, ASRPipelineConfig)
