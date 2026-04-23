@@ -10,6 +10,7 @@ PARAKEET_TEST_SEGMENT_START = 0.08
 PARAKEET_TEST_SEGMENT_END = 1.26
 
 TEST_WAV_TRANSCRIPTION = "To embrace the chaos that they fought in this battle."
+TEST_MP4_TRANSCRIPTION = "This is a test."
 
 PARAKEET_TEST_CONFIDENCE = -248
 
