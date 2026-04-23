@@ -2,7 +2,7 @@ from contextlib import ExitStack
 from copy import copy
 from typing import Iterable, Self, TYPE_CHECKING
 
-from icij_common.pydantic_utils import make_enum_discriminator, tagged_union
+from icij_common.pydantic_utils import make_enum_discriminator, safe_copy, tagged_union
 from pydantic import Discriminator, Field
 
 from .config import InferenceRunnerConfig, PostprocessorConfig, PreprocessorConfig
@@ -10,15 +10,13 @@ from .constants import TorchDevice
 from .objects import ASRResult, BaseModel, ASRModel
 from .tasks import (
     ASRTask,
+    FireRedASR2InferenceRunnerConfig,
+    FireRedASR2PostprocessorConfig,
+    FireRedASR2PreprocessorConfig,
     InferenceRunner,
-    ParakeetInferenceRunnerConfig,
-    ParakeetPostprocessorConfig,
     ParakeetPreprocessorConfig,
     Postprocessor,
     Preprocessor,
-    FireRedASR2PreprocessorConfig,
-    FireRedASR2InferenceRunnerConfig,
-    FireRedASR2PostprocessorConfig,
 )
 
 
@@ -54,6 +52,24 @@ class ASRPipelineConfig(BaseModel):  # pylint: disable=too-few-public-methods
     postprocessing: PostprocessorConfig_ = Field(
         discriminator=Discriminator(model_discriminator),
     )
+
+    @classmethod
+    @property
+    def parakeet(cls) -> Self:
+        return cls(
+            preprocessing=ParakeetPreprocessorConfig(),
+            inference=InferenceRunnerConfig(),
+            postprocessing=PostprocessorConfig(),
+        )
+
+    @classmethod
+    @property
+    def fireredasr2(cls) -> Self:
+        return cls(
+            preprocessing=FireRedASR2PreprocessorConfig(),
+            inference=FireRedASR2InferenceRunnerConfig(),
+            postprocessing=FireRedASR2PostprocessorConfig(),
+        )
 
 
 class ASRPipeline:
@@ -110,24 +126,14 @@ class ASRPipeline:
 
     @classmethod
     def parakeet(cls, device: "TorchDevice | torch._device" = TorchDevice.CPU) -> Self:
-        return cls.from_config(
-            ASRPipelineConfig(
-                device=device,
-                preprocessing=ParakeetPreprocessorConfig(),
-                inference=ParakeetInferenceRunnerConfig(),
-                postprocessing=ParakeetPostprocessorConfig(),
-            )
-        )
+        config = ASRPipelineConfig.parakeet
+        config = safe_copy(config, update={"device": device})
+        return cls.from_config(config)
 
     @classmethod
     def fireredasr2(
         cls, device: "TorchDevice | torch._device" = TorchDevice.CPU
     ) -> Self:
-        return cls.from_config(
-            ASRPipelineConfig(
-                device=device,
-                preprocessing=FireRedASR2PreprocessorConfig(),
-                inference=FireRedASR2InferenceRunnerConfig(),
-                postprocessing=FireRedASR2PostprocessorConfig(),
-            )
-        )
+        config = ASRPipelineConfig.fireredasr2
+        config = safe_copy(config, update={"device": device})
+        return cls.from_config(config)
