@@ -7,7 +7,7 @@ from typing import ClassVar, Iterable, TYPE_CHECKING
 
 from icij_common.registrable import FromConfig
 from pydantic import Field
-from torch._C.cpp.nn import Module
+
 
 from caul.constants import (
     FIREREDASR2_AED_MODEL_TAG,
@@ -47,7 +47,7 @@ class FireRedASR2InferenceRunnerConfig(InferenceRunnerConfig):
     return_timestamp: bool = FIREREDASR2_RETURN_TIMESTAMP_DEFAULT
     tmp_dir_fallback: bool = False
 
-    def to_fire_red_asr_model(self, use_gpu: bool = True) -> Module:
+    def to_fire_red_asr_model(self, use_gpu: bool = True) -> "torch.Module":
         from fireredasr2s.fireredasr2 import (  # pylint: disable=import-outside-toplevel
             FireRedAsr2,
             FireRedAsr2Config,
