@@ -14,6 +14,8 @@ from .tasks import (
     FireRedASR2PostprocessorConfig,
     FireRedASR2PreprocessorConfig,
     InferenceRunner,
+    ParakeetInferenceRunnerConfig,
+    ParakeetPostprocessorConfig,
     ParakeetPreprocessorConfig,
     Postprocessor,
     Preprocessor,
@@ -58,8 +60,8 @@ class ASRPipelineConfig(BaseModel):  # pylint: disable=too-few-public-methods
     def parakeet(cls) -> Self:
         return cls(
             preprocessing=ParakeetPreprocessorConfig(),
-            inference=InferenceRunnerConfig(),
-            postprocessing=PostprocessorConfig(),
+            inference=ParakeetInferenceRunnerConfig(),
+            postprocessing=ParakeetPostprocessorConfig(),
         )
 
     @classmethod
