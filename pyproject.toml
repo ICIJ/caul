@@ -48,6 +48,7 @@ fireredasr2 = [
 [tool.uv]
 override-dependencies = [
   "transformers==5.1.0",
+  "kaldialign==0.9.3",
 ]
 
 [[tool.uv.index]]

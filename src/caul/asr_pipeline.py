@@ -56,7 +56,6 @@ class ASRPipelineConfig(BaseModel):  # pylint: disable=too-few-public-methods
     )
 
     @classmethod
-    @property
     def parakeet(cls) -> Self:
         return cls(
             preprocessing=ParakeetPreprocessorConfig(),
@@ -65,7 +64,6 @@ class ASRPipelineConfig(BaseModel):  # pylint: disable=too-few-public-methods
         )
 
     @classmethod
-    @property
     def fireredasr2(cls) -> Self:
         return cls(
             preprocessing=FireRedASR2PreprocessorConfig(),
@@ -128,7 +126,7 @@ class ASRPipeline:
 
     @classmethod
     def parakeet(cls, device: "TorchDevice | torch._device" = TorchDevice.CPU) -> Self:
-        config = ASRPipelineConfig.parakeet
+        config = ASRPipelineConfig.parakeet()
         config = safe_copy(config, update={"device": device})
         return cls.from_config(config)
 
@@ -136,6 +134,6 @@ class ASRPipeline:
     def fireredasr2(
         cls, device: "TorchDevice | torch._device" = TorchDevice.CPU
     ) -> Self:
-        config = ASRPipelineConfig.fireredasr2
+        config = ASRPipelineConfig.fireredasr2()
         config = safe_copy(config, update={"device": device})
         return cls.from_config(config)
