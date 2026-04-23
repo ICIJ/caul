@@ -1,4 +1,8 @@
-TEST_PATH = "test/resources/asr_test.wav"
+from pathlib import Path
+
+TEST_PATH = Path(__file__).parent.parent
+
+TEST_WAV_PATH = TEST_PATH.joinpath("resources", "asr_test.wav")
 
 PARAKEET_TEST_SEGMENT_START = 0.08
 

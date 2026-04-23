@@ -5,16 +5,11 @@ from typing import Iterable, Self, TYPE_CHECKING, Callable
 
 from hashlib import sha256
 
-from pydantic import Field
 
 from caul.task_defaults import generic_batching_fn
 from caul.config import PreprocessorConfig
 from caul.segmentation.methods import segment_by_silence
-from caul.constants import (
-    DEFAULT_SAMPLE_RATE,
-    DEFAULT_BATCH_SIZE,
-    DEFAULT_MAX_FRAMES,
-)
+from caul.constants import DEFAULT_SAMPLE_RATE, DEFAULT_BATCH_SIZE, DEFAULT_MAX_FRAMES
 from caul.filesystem import save_tensor
 from caul.objects import (
     InputMetadata,
@@ -88,7 +83,6 @@ class ASRPreprocessor(Preprocessor):
         :param output_dir: if provided, save segments as wav files here
         :return: List of processed inputs
         """
-        import torchaudio  # pylint: disable=import-outside-toplevel
         import numpy as np  # pylint: disable=import-outside-toplevel
 
         if isinstance(input_sample_rates, (int, _NoneType)):
@@ -110,18 +104,21 @@ class ASRPreprocessor(Preprocessor):
                     if len(input_file_path.split(".")) > 1
                     else None
                 )
-                audio_input, sample_rate = torchaudio.load(audio_input)
+                audio_input = load_audio(
+                    audio_input, sample_rate=self._sample_rate, num_channels=1
+                )
 
             if isinstance(audio_input, np.ndarray):
                 import torch  # pylint: disable=import-outside-toplevel
 
                 audio_input = torch.Tensor(audio_input)
 
-            # Normalize
             if sample_rate is None:
                 sample_rate = self._sample_rate
 
-            audio_input = self._normalize(audio_input, sample_rate)
+            # Normalize
+            if sample_rate != self._sample_rate:
+                audio_input = self._normalize(audio_input, sample_rate)
 
             # Segment where necessary
             n_frames = audio_input.shape[-1]
@@ -199,3 +196,12 @@ def _displayable_prefix(path: str, component_size_limit: int = 10) -> str:
     displayable_file_name = path.name[:component_size_limit].replace(".", "__")
     uid = sha256(str(path).encode()).hexdigest()[:20]
     return f"{displayable_file_name}-{uid}"
+
+
+def load_audio(
+    path: str | Path, sample_rate: int = DEFAULT_SAMPLE_RATE, *, num_channels: int = 1
+) -> "torch.Tensor":
+    from torchcodec.decoders import AudioDecoder
+
+    samples = AudioDecoder(path, num_channels=num_channels, sample_rate=sample_rate)
+    return samples.get_all_samples().data.squeeze()
