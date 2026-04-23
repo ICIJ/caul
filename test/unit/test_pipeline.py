@@ -1,6 +1,8 @@
+from typing import Callable
+
 import pytest
 
-from caul.asr_pipeline import ASRPipelineConfig
+from caul.asr_pipeline import ASRPipeline, ASRPipelineConfig
 
 
 @pytest.mark.parametrize(
@@ -10,3 +12,12 @@ from caul.asr_pipeline import ASRPipelineConfig
 def test_asr_pipeline_config(model: str):
     config = getattr(ASRPipelineConfig, model)
     assert isinstance(config, ASRPipelineConfig)
+
+
+@pytest.mark.parametrize(
+    "pipeline",
+    [ASRPipeline.parakeet, ASRPipeline.fireredasr2],
+)
+def test_should_initialize_asr_pipeline(pipeline: Callable[[], ASRPipeline]) -> None:
+    instance = pipeline()
+    assert isinstance(instance, ASRPipeline)
