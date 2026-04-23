@@ -12,7 +12,7 @@ from caul.tasks import (
 )
 from test.unit.constant import (
     PARAKEET_TEST_CONFIDENCE,
-    PARAKEET_TEST_TRANSCRIPTION,
+    TEST_WAV_TRANSCRIPTION,
     PARAKEET_TEST_SEGMENT_START,
     PARAKEET_TEST_SEGMENT_END,
 )
@@ -29,13 +29,13 @@ class MockNvidiaASRInferenceHandlerResult:
         self.timestep = {
             "segment": [
                 {
-                    "segment": PARAKEET_TEST_TRANSCRIPTION,
+                    "segment": TEST_WAV_TRANSCRIPTION,
                     "start": PARAKEET_TEST_SEGMENT_START,
                     "end": PARAKEET_TEST_SEGMENT_END,
                 }
             ]
         }
-        self.text = PARAKEET_TEST_TRANSCRIPTION
+        self.text = TEST_WAV_TRANSCRIPTION
         self.score = PARAKEET_TEST_CONFIDENCE
 
 
@@ -43,13 +43,13 @@ def mock_result() -> Hypothesis:
     timestamp = {
         "segment": [
             {
-                "segment": PARAKEET_TEST_TRANSCRIPTION,
+                "segment": TEST_WAV_TRANSCRIPTION,
                 "start": PARAKEET_TEST_SEGMENT_START,
                 "end": PARAKEET_TEST_SEGMENT_END,
             }
         ]
     }
-    text = PARAKEET_TEST_TRANSCRIPTION
+    text = TEST_WAV_TRANSCRIPTION
     score = PARAKEET_TEST_CONFIDENCE
     return Hypothesis(timestamp=timestamp, text=text, score=score, y_sequence=[])
 

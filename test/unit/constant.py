@@ -1,14 +1,15 @@
 from pathlib import Path
 
 TEST_PATH = Path(__file__).parent.parent
-
-TEST_WAV_PATH = TEST_PATH.joinpath("resources", "asr_test.wav")
+TEST_RESOURCES_PATH = TEST_PATH / "resources"
+TEST_WAV_PATH = TEST_RESOURCES_PATH / "asr_test.wav"
+TEST_MP4_PATH = TEST_RESOURCES_PATH / "asr_test.mp4"
 
 PARAKEET_TEST_SEGMENT_START = 0.08
 
 PARAKEET_TEST_SEGMENT_END = 1.26
 
-PARAKEET_TEST_TRANSCRIPTION = "To embrace the chaos that they fought in this battle."
+TEST_WAV_TRANSCRIPTION = "To embrace the chaos that they fought in this battle."
 
 PARAKEET_TEST_CONFIDENCE = -248
 

@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 import numpy as np
 
@@ -6,12 +8,14 @@ from caul.handler import ASRHandler
 from caul.asr_pipeline import ASRPipeline
 from caul.tasks import ParakeetPreprocessorConfig, ParakeetPostprocessorConfig
 from caul.tasks.asr_task import Postprocessor, Preprocessor
-from test.unit import TEST_RESOURCES_PATH
 from test.unit.constant import (
-    PARAKEET_TEST_TRANSCRIPTION,
+    TEST_MP4_TRANSCRIPTION,
+    TEST_WAV_TRANSCRIPTION,
     PARAKEET_TEST_CONFIDENCE,
     PARAKEET_TEST_SEGMENT_START,
     PARAKEET_TEST_SEGMENT_END,
+    TEST_MP4_PATH,
+    TEST_WAV_PATH,
 )
 from test.unit.mock import (
     MockNvidiaASRInferenceRunner,
@@ -20,10 +24,13 @@ from test.unit.mock import (
 
 
 @pytest.mark.e2e
-def test_parakeet_model_handler() -> None:
+@pytest.mark.parametrize(
+    "audio_path,expected_transcription",
+    [(TEST_MP4_PATH, TEST_MP4_TRANSCRIPTION), (TEST_WAV_PATH, TEST_WAV_TRANSCRIPTION)],
+)
+def test_parakeet_model_handler(audio_path: Path, expected_transcription: str) -> None:
     # Given
     asr_handler = ASRHandler(models=ASRPipeline.parakeet())
-    audio_path = TEST_RESOURCES_PATH / "asr_test.wav"
 
     # When
     with asr_handler:
@@ -34,7 +41,7 @@ def test_parakeet_model_handler() -> None:
     result = result[0]
     assert len(result.transcription) == 1
     transcript = result.transcription[0]
-    assert transcript[2] == PARAKEET_TEST_TRANSCRIPTION
+    assert transcript[2] == expected_transcription
 
 
 def test__handler_with_single_parakeet_model__np_array_input():
@@ -58,7 +65,7 @@ def test__handler_with_single_parakeet_model__np_array_input():
         (
             PARAKEET_TEST_SEGMENT_START,
             PARAKEET_TEST_SEGMENT_END,
-            PARAKEET_TEST_TRANSCRIPTION,
+            TEST_WAV_TRANSCRIPTION,
         )
     ]
     assert result.score == PARAKEET_TEST_CONFIDENCE
