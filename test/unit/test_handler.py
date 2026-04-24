@@ -62,7 +62,3 @@ def test__handler_with_single_parakeet_model__np_array_input():
         )
     ]
     assert result.score == PARAKEET_TEST_CONFIDENCE
-
-
-def test__handler_with_single_whisper_model():
-    """Test calling out to standalone whisper.cpp model"""

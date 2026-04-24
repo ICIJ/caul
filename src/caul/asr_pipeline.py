@@ -1,5 +1,6 @@
 from contextlib import ExitStack
 from copy import copy
+from pathlib import Path
 from typing import Iterable, Self, TYPE_CHECKING
 
 from icij_common.pydantic_utils import make_enum_discriminator, tagged_union
@@ -19,6 +20,9 @@ from .tasks import (
     FireRedASR2PreprocessorConfig,
     FireRedASR2InferenceRunnerConfig,
     FireRedASR2PostprocessorConfig,
+    FasterWhisperPreprocessorConfig,
+    FasterWhisperInferenceRunnerConfig,
+    FasterWhisperPostprocessorConfig,
 )
 
 
@@ -101,11 +105,15 @@ class ASRPipeline:
     def process(
         self,
         inputs: "Iterable[np.ndarray | torch.Tensor | str] | np.ndarray | torch.Tensor | str",
+        languages: list[str] | None = None,
+        tensor_output_dir: str | Path | None = None,
     ) -> Iterable[ASRResult]:
         """Generic sequential processing method for ASR model handlers"""
         output = inputs
         for task in self._tasks:
-            output = task.process(output)
+            output = task.process(
+                output, output_dir=tensor_output_dir, languages=languages
+            )
         yield from output
 
     @classmethod
@@ -121,13 +129,30 @@ class ASRPipeline:
 
     @classmethod
     def fireredasr2(
-        cls, device: "TorchDevice | torch._device" = TorchDevice.CPU
+        cls,
+        device: "TorchDevice | torch._device" = TorchDevice.CPU,
+        tmp_dir_fallback: bool = False,
     ) -> Self:
         return cls.from_config(
             ASRPipelineConfig(
                 device=device,
                 preprocessing=FireRedASR2PreprocessorConfig(),
-                inference=FireRedASR2InferenceRunnerConfig(),
+                inference=FireRedASR2InferenceRunnerConfig(
+                    tmp_dir_fallback=tmp_dir_fallback
+                ),
                 postprocessing=FireRedASR2PostprocessorConfig(),
+            )
+        )
+
+    @classmethod
+    def faster_whisper(
+        cls, device: "TorchDevice | torch._device" = TorchDevice.CPU
+    ) -> Self:
+        return cls.from_config(
+            ASRPipelineConfig(
+                device=device,
+                preprocessing=FasterWhisperPreprocessorConfig(),
+                inference=FasterWhisperInferenceRunnerConfig(),
+                postprocessing=FasterWhisperPostprocessorConfig(),
             )
         )

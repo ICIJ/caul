@@ -31,14 +31,21 @@ dependencies = [
 
 [project.optional-dependencies]
 nemo = [
-  "nemo-toolkit[asr]~=2.7",
-  "torch~=2.10",
+    "nemo-toolkit[asr]~=2.7",
+    "torch~=2.10",
 ]
 pyannote = [
     "pyannote-audio>=4.0.4",
 ]
 fireredasr2 = [
-  "fireredasr2s",
+    "fireredasr2s",
+    "kaldi-native-fbank>=1.22.3",
+]
+faster_whisper = [
+    "faster_whisper~=1.2.1"
+]
+huggingface_hub = [
+    "huggingface-hub[cli]>=1.11.0",
 ]
 
 # Nemo 2.7.2 has a very tight transformers version range (>=4.57.0,<4.58.dev0) which
@@ -96,3 +103,9 @@ ignore-comments = true
 
 [tool.black]
 target-version = ["py310"]
+
+[tool.pytest.ini_options]
+markers = [
+    "e2e: end-to-end tests requiring live models and infrastructure",
+    "integration: integration tests that download and run real ASR models (slow)",
+]

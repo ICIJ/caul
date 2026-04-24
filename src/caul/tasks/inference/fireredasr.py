@@ -1,6 +1,6 @@
 import gc
 import logging
-import tempfile
+import os
 from contextlib import nullcontext
 from pathlib import Path
 from typing import ClassVar, Iterable, TYPE_CHECKING
@@ -10,7 +10,9 @@ from pydantic import Field
 from torch._C.cpp.nn import Module
 
 from caul.constants import (
-    FIREREDASR2_AED_MODEL_TAG,
+    FireRedASR2ModelTag,
+    FIREREDASR2_AED_MODEL_PATH,
+    FIREREDASR2_MODEL_HUB_PREFIX,
     FIREREDASR2_USE_HALF_DEFAULT,
     FIREREDASR2_BEAM_SIZE_DEFAULT,
     FIREREDASR2_NBEST_DEFAULT,
@@ -19,13 +21,13 @@ from caul.constants import (
     FIREREDASR2_AED_LENGTH_PENALTY_DEFAULT,
     FIREREDASR2_EOS_PENALTY_DEFAULT,
     FIREREDASR2_RETURN_TIMESTAMP_DEFAULT,
-    FIREREDASR2_AED_MODEL_REF,
     TorchDevice,
+    FireRedASR2ModelRef,
 )
-from caul.filesystem import save_tensor
 from caul.objects import ASRResult, PreprocessorOutput, ASRModel
 from caul.tasks.asr_task import InferenceRunner
 from caul.config import InferenceRunnerConfig
+from caul.utils import prepare_file_input_batch
 
 logger = logging.getLogger(__name__)
 
@@ -33,10 +35,48 @@ if TYPE_CHECKING:
     import torch
 
 
+def fireredasr2_from_pretrained(
+    model_ref: str,
+    model_dir: str,
+    model_tag: str | None = None,
+    config: "FireRedAsr2Config | None" = None,
+):
+    """Wrapper for FireRedAsr2.from_pretrained that downloads a model from
+    HuggingFace Hub if not already available in model_dir.
+
+    :param model_ref: One of ASR2, VAD, LID, or Punc
+    :param model_dir: Directory to download model to
+    :param model_tag: For ASR models, can be either AED or LLM
+    :param config: Configuration options for model
+    """
+    from huggingface_hub import (
+        snapshot_download,
+    )  # pylint: disable=import-outside-toplevel
+    from fireredasr2s.fireredasr2 import (
+        FireRedAsr2,
+        FireRedAsr2Config,
+    )  # pylint: disable=import-outside-toplevel
+
+    if config is None:
+        config = FireRedAsr2Config()
+
+    if model_tag is not None:
+        model_ref = f"{model_ref}-{model_tag}"
+
+    if not os.path.isdir(model_dir):
+        hub_ref = FIREREDASR2_MODEL_HUB_PREFIX + model_ref.upper()
+        model_dir = snapshot_download(hub_ref, local_dir=model_dir, dry_run=False)
+
+    if model_tag is not None:
+        return FireRedAsr2.from_pretrained(model_tag, model_dir, config)
+
+    return FireRedAsr2.from_pretrained(model_dir, config)
+
+
 class FireRedASR2InferenceRunnerConfig(InferenceRunnerConfig):
     model: ClassVar[str] = Field(frozen=True, default=ASRModel.FIREREDASR2_AED)
 
-    model_dir: str = FIREREDASR2_AED_MODEL_REF
+    model_dir: str = FIREREDASR2_AED_MODEL_PATH
     use_half: bool = FIREREDASR2_USE_HALF_DEFAULT
     beam_size: int = FIREREDASR2_BEAM_SIZE_DEFAULT
     nbest: int = FIREREDASR2_NBEST_DEFAULT
@@ -45,28 +85,29 @@ class FireRedASR2InferenceRunnerConfig(InferenceRunnerConfig):
     aed_length_penalty: float = FIREREDASR2_AED_LENGTH_PENALTY_DEFAULT
     eos_penalty: float = FIREREDASR2_EOS_PENALTY_DEFAULT
     return_timestamp: bool = FIREREDASR2_RETURN_TIMESTAMP_DEFAULT
-    tmp_dir_fallback: bool = False
 
     def to_fire_red_asr_model(self, use_gpu: bool = True) -> Module:
-        from fireredasr2s.fireredasr2 import (  # pylint: disable=import-outside-toplevel
-            FireRedAsr2,
+        from fireredasr2s.fireredasr2 import (
             FireRedAsr2Config,
-        )
+        )  # pylint: disable=import-outside-toplevel
 
         asr_config = FireRedAsr2Config(
             use_gpu=use_gpu,
-            use_half=self._use_half,
-            beam_size=self._beam_size,
-            nbest=self._nbest,
-            decode_max_len=self._decode_max_len,
-            softmax_smoothing=self._softmax_smoothing,
-            aed_length_penalty=self._aed_length_penalty,
-            eos_penalty=self._eos_penalty,
-            return_timestamp=self._return_timestamp,
+            use_half=self.use_half,
+            beam_size=self.beam_size,
+            nbest=self.nbest,
+            decode_max_len=self.decode_max_len,
+            softmax_smoothing=self.softmax_smoothing,
+            aed_length_penalty=self.aed_length_penalty,
+            eos_penalty=self.eos_penalty,
+            return_timestamp=self.return_timestamp,
         )
 
-        return FireRedAsr2.from_pretrained(
-            FIREREDASR2_AED_MODEL_TAG, self._model_dir, asr_config
+        return fireredasr2_from_pretrained(
+            model_tag=FireRedASR2ModelTag.AED,
+            model_dir=self.model_dir,
+            model_ref=FireRedASR2ModelRef.ASR2,
+            config=asr_config,
         )
 
 
@@ -81,7 +122,7 @@ class FireRedASR2InferenceRunner(InferenceRunner):
 
     def __init__(
         self,
-        config: FireRedASR2InferenceRunnerConfig,
+        config: FireRedASR2InferenceRunnerConfig = None,
         device: "TorchDevice | torch.device" = TorchDevice.CPU,
     ):
         if config is None:
@@ -105,7 +146,7 @@ class FireRedASR2InferenceRunner(InferenceRunner):
         )
 
     def __enter__(self):
-        use_gpu = self._device in TorchDevice
+        use_gpu = self._device != TorchDevice.CPU
         self._model = self._config.to_fire_red_asr_model(use_gpu)
         return self
 
@@ -130,8 +171,8 @@ class FireRedASR2InferenceRunner(InferenceRunner):
         for input_batch in inputs:
             if len(input_batch) == 0:
                 continue
-            inp_ids, wav_paths, inp_id_ordering_map, tmp_dir = self._prepare_batch(
-                input_batch, output_dir
+            inp_ids, wav_paths, inp_id_ordering_map, tmp_dir = prepare_file_input_batch(
+                input_batch, output_dir, self._config.tmp_dir_fallback
             )
 
             with tmp_dir if tmp_dir is not None else nullcontext():
@@ -146,47 +187,3 @@ class FireRedASR2InferenceRunner(InferenceRunner):
                 yield ASRResult.from_fireredasr2_result(
                     result, input_ordering=input_ordering
                 )
-
-    def _prepare_batch(
-        self, input_batch: list[PreprocessorOutput], output_dir: str | Path = None
-    ) -> tuple[
-        list[str], list[str], dict[str, int], tempfile.TemporaryDirectory | None
-    ]:
-        """Collect uuids and wav paths and write tensors to a temp directory when
-        no path is available.
-
-        :param input_batch: batch of PreprocessorOutput files
-        :return: tuple of batch input ids, wav paths, map from id to input ordering,
-        temporary dir (if applicable) where tensor paths are kept
-        """
-        tmp_dir = None
-        if output_dir is None and self._config.tmp_dir_fallback:
-            tmp_dir = tempfile.TemporaryDirectory()
-            output_dir = tmp_dir.name
-
-        if not isinstance(output_dir, Path):
-            output_dir = Path(output_dir)
-
-        inp_ids: list[str] = []
-        wav_paths: list[str] = []
-        inp_id_ordering_map: dict[str, int] = {}
-
-        for inp in input_batch:
-            inp_id = inp.metadata.uuid
-            inp_ids.append(inp_id)
-            inp_id_ordering_map[inp_id] = inp.metadata.input_ordering
-
-            if inp.metadata.preprocessed_file_path is None:
-                if output_dir is None:
-                    logger.warning(
-                        "Input {} has no preprocessed file path, no output dir is specified, and temporary dir creation is disabled. Skipping."
-                    )
-                    continue
-
-                wav_path = output_dir / f"{inp_id}.wav"
-                save_tensor(inp.tensor, wav_path)
-                wav_paths.append(str(wav_path))
-            else:
-                wav_paths.append(str(inp.metadata.preprocessed_file_path))
-
-        return inp_ids, wav_paths, inp_id_ordering_map, tmp_dir

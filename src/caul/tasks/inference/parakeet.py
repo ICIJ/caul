@@ -99,6 +99,10 @@ class ParakeetInferenceRunner(InferenceRunner):
             batch_size=self._batch_size,
             timestamps=self._return_timestamps,
             return_hypotheses=True,
+            # Bug in Nemo's AudioToBPEDataset—by default TranscribeConfig spawns 2
+            # DataLoader workers, but AudioToBPEDataset defines a class TokenizerWrapper
+            # inside __init__, meaning it can't be pickled.
+            num_workers=0,
             _internal=InternalTranscribeConfig(device=self._device),
         )
         for input_batch in inputs:

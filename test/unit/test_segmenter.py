@@ -83,7 +83,7 @@ def _make_pyannote_mock(speech_intervals_s: list[tuple[float, float]]):
 
 
 class TestTensorSegment:
-    def test_duration_computed_correctly(self):
+    def test__duration_computed_correctly(self):
 
         seg = TensorSegment(
             tensor=torch.zeros(16000),
@@ -94,7 +94,7 @@ class TestTensorSegment:
         )
         assert seg.duration == 1
 
-    def test_lower_sample_rate(self):
+    def test__lower_sample_rate(self):
 
         seg = TensorSegment(
             tensor=torch.zeros(8000),
@@ -110,41 +110,41 @@ class TestTensorSegment:
 
 
 class TestSegmentFixed:
-    def test_single_chunk_shorter_than_segment_duration(self):
+    def test__single_chunk_shorter_than_segment_duration(self):
         tensor = make_silent_tensor(5.0)
         segments = segment_fixed(tensor, max_segment_len_s=10.0)
         assert len(segments) == 1
         assert segments[0].segment_start == 0
         assert segments[0].segment_end == tensor.shape[-1]
 
-    def test_exact_multiple_produces_correct_num_segments(self):
+    def test__exact_multiple_produces_correct_num_segments(self):
         tensor = make_silent_tensor(10.0)
         segments = segment_fixed(tensor, max_segment_len_s=5.0)
         assert len(segments) == 2
 
-    def test_inexact_includes_remainder(self):
+    def test__inexact_includes_remainder(self):
         tensor = make_silent_tensor(11.0)
         segments = segment_fixed(tensor, max_segment_len_s=5.0)
         assert len(segments) == 3
 
-    def test_segments_are_contiguous_and_non_overlapping(self):
+    def test__segments_are_contiguous_and_non_overlapping(self):
         tensor = make_silent_tensor(13.0)
         segments = segment_fixed(tensor, max_segment_len_s=5.0)
         for i in range(1, len(segments)):
             assert segments[i].segment_start == segments[i - 1].segment_end
 
-    def test_tensor_content_matches_slice(self):
+    def test__tensor_content_matches_slice(self):
         tensor = torch.arange(float(DEFAULT_SAMPLE_RATE * 3))
         segments = segment_fixed(tensor, max_segment_len_s=1.0)
         for seg in segments:
             assert torch.equal(seg.tensor, tensor[seg.segment_start : seg.segment_end])
 
-    def test_all_segments_share_tensor_id(self):
+    def test__all_segments_share_tensor_id(self):
         segments = segment_fixed(make_silent_tensor(6.0), max_segment_len_s=2.0)
         tensor_ids = {s.tensor_id for s in segments}
         assert len(tensor_ids) == 1
 
-    def test_separate_calls_produce_different_tensor_ids(self):
+    def test__separate_calls_produce_different_tensor_ids(self):
         tensor = make_silent_tensor(3.0)
         segments_a = segment_fixed(tensor, max_segment_len_s=1.0)
         segments_b = segment_fixed(tensor, max_segment_len_s=1.0)
@@ -155,7 +155,7 @@ class TestSegmentFixed:
 
 
 class TestSegmentBySilence:
-    def test_all_silent_returns_single_segment(self):
+    def test__all_silent_returns_single_segment(self):
         """librosa.effects.split treats an all-zero tensor as one interval spanning
         the full tensor rather than as pure silence, so we get one segment back"""
 
@@ -165,37 +165,37 @@ class TestSegmentBySilence:
         assert segments[0].segment_start == 0
         assert segments[0].segment_end == tensor.shape[-1]
 
-    def test_segments_do_not_exceed_max_length(self):
+    def test__segments_do_not_exceed_max_length(self):
         tensor = make_noisy_tensor(5.0)
         max_secs = 2.0
         segments = segment_by_silence(tensor, max_segment_len_s=max_secs)
         for seg in segments:
             assert seg.duration <= max_secs
 
-    def test_oversized_interval_splits_correctly(self):
+    def test__oversized_interval_splits_correctly(self):
         tensor = make_noisy_tensor(6.0)
         segments = segment_by_silence(tensor, max_segment_len_s=2.0)
         assert len(segments) >= 3
 
-    def test_all_segments_share_tensor_id(self):
+    def test__all_segments_share_tensor_id(self):
         tensor = make_noisy_tensor(6.0)
         segments = segment_by_silence(tensor, max_segment_len_s=2.0)
         tensor_ids = {s.tensor_id for s in segments}
         assert len(tensor_ids) == 1
 
-    def test_separate_calls_produce_different_tensor_ids(self):
+    def test__separate_calls_produce_different_tensor_ids(self):
         tensor = make_noisy_tensor(2.0)
         segments_a = segment_by_silence(tensor)
         segments_b = segment_by_silence(tensor)
         assert segments_a[0].tensor_id != segments_b[0].tensor_id
 
-    def test_splits_voiced_tensor_into_one_segment_per_voice(self):
+    def test__splits_voiced_tensor_into_one_segment_per_voice(self):
         voice_durations = [1.0, 1.5, 0.8]
         tensor = make_voiced_tensor(voice_durations)
         segments = segment_by_silence(tensor)
         assert len(segments) == len(voice_durations)
 
-    def test_segment_durations_approximate_voice_regions(self):
+    def test__segment_durations_approximate_voice_regions(self):
         voice_durations = [1.0, 1.5, 0.8]
         silence_secs = 1.0
         tensor = make_voiced_tensor(voice_durations, silence_between_secs=silence_secs)
@@ -205,7 +205,7 @@ class TestSegmentBySilence:
 
 
 class TestSegmentBySileroVad:
-    def test_returns_tensor_segment_per_timestamp(self):
+    def test__returns_tensor_segment_per_timestamp(self):
         timestamps = [{"start": 0, "end": 8000}, {"start": 16000, "end": 24000}]
         model, vad_parser_fn = _make_silero_mock(timestamps)
         segments = segment_by_silero_vad(
@@ -218,14 +218,14 @@ class TestSegmentBySileroVad:
         assert segments[1].segment_start == 16000
         assert segments[1].segment_end == 24000
 
-    def test_no_speech_returns_empty(self):
+    def test__no_speech_returns_empty(self):
         model, vad_parser_fn = _make_silero_mock([])
         segments = segment_by_silero_vad(
             make_silent_tensor(1.0), vad_model=model, vad_parser_fn=vad_parser_fn
         )
         assert segments == []
 
-    def test_config_params_forwarded_to_model(self):
+    def test__config_params_forwarded_to_model(self):
         timestamps = [{"start": 0, "end": 4000}]
         model, vad_parser_fn = _make_silero_mock(timestamps)
         segment_by_silero_vad(
@@ -245,7 +245,7 @@ class TestSegmentBySileroVad:
         assert call_kwargs["min_silence_duration_ms"] == 200
         assert call_kwargs["speech_pad_ms"] == 50
 
-    def test_oversized_segment_is_split(self):
+    def test__oversized_segment_is_split(self):
         # One 4-second timestamp with a 2-second cap should produce 2 segments
         timestamps = [{"start": 0, "end": DEFAULT_SAMPLE_RATE * 4}]
         model, vad_parser_fn = _make_silero_mock(timestamps)
@@ -259,7 +259,7 @@ class TestSegmentBySileroVad:
         assert segments[0].segment_end == DEFAULT_SAMPLE_RATE * 2
         assert segments[1].segment_start == DEFAULT_SAMPLE_RATE * 2
 
-    def test_segments_do_not_exceed_max_length(self):
+    def test__segments_do_not_exceed_max_length(self):
         timestamps = [{"start": 0, "end": DEFAULT_SAMPLE_RATE * 10}]
         model, vad_parser_fn = _make_silero_mock(timestamps)
         segments = segment_by_silero_vad(
@@ -271,7 +271,7 @@ class TestSegmentBySileroVad:
         for seg in segments:
             assert seg.duration <= 3.0
 
-    def test_all_segments_share_tensor_id(self):
+    def test__all_segments_share_tensor_id(self):
         timestamps = [{"start": 0, "end": 8000}, {"start": 16000, "end": 24000}]
         model, vad_parser_fn = _make_silero_mock(timestamps)
         segments = segment_by_silero_vad(
@@ -280,7 +280,7 @@ class TestSegmentBySileroVad:
         tensor_ids = {s.tensor_id for s in segments}
         assert len(tensor_ids) == 1
 
-    def test_separate_calls_produce_different_tensor_ids(self):
+    def test__separate_calls_produce_different_tensor_ids(self):
         timestamps = [{"start": 0, "end": 8000}]
         model, vad_parser_fn = _make_silero_mock(timestamps)
         tensor = make_silent_tensor(1.0)
@@ -294,7 +294,7 @@ class TestSegmentBySileroVad:
         segments_b = segments_b
         assert segments_a[0].tensor_id != segments_b[0].tensor_id
 
-    def test_segments_match_voiced_regions(self):
+    def test__segments_match_voiced_regions(self):
         """Build a tensor with three voiced regions and derive sample-accurate timestamps"""
         voice_durations = [1.0, 1.5, 0.8]
         silence_secs = 0.6
@@ -321,7 +321,7 @@ class TestSegmentBySileroVad:
 
 
 class TestSegmentByPyannoteVad:
-    def test_returns_tensor_segment_per_speech_interval(self):
+    def test__returns_tensor_segment_per_speech_interval(self):
         intervals_s = [(0.0, 0.5), (1.0, 1.5)]
         pipeline = _make_pyannote_mock(intervals_s)
         tensor = make_silent_tensor(2.0)
@@ -333,12 +333,12 @@ class TestSegmentByPyannoteVad:
         assert segments[1].segment_start == int(1.0 * DEFAULT_SAMPLE_RATE)
         assert segments[1].segment_end == int(1.5 * DEFAULT_SAMPLE_RATE)
 
-    def test_no_speech_returns_empty(self):
+    def test__no_speech_returns_empty(self):
         pipeline = _make_pyannote_mock([])
         segments = segment_by_pyannote_vad(make_silent_tensor(1.0), pipeline=pipeline)
         assert segments == []
 
-    def test_pipeline_instantiate_called_with_correct_params(self):
+    def test__pipeline_instantiate_called_with_correct_params(self):
         pipeline = _make_pyannote_mock([(0.0, 0.5)])
         segment_by_pyannote_vad(
             make_silent_tensor(1.0),
@@ -354,7 +354,7 @@ class TestSegmentByPyannoteVad:
         assert call_args["min_duration_on"] == 200 * 1000
         assert call_args["min_duration_off"] == 150 * 1000
 
-    def test_oversized_segment_is_split(self):
+    def test__oversized_segment_is_split(self):
         # One 4-second interval with a 2-second cap should produce 2 segments
         pipeline = _make_pyannote_mock([(0.0, 4.0)])
         tensor = make_silent_tensor(4.0)
@@ -365,7 +365,7 @@ class TestSegmentByPyannoteVad:
         assert segments[0].segment_end == DEFAULT_SAMPLE_RATE * 2
         assert segments[1].segment_start == DEFAULT_SAMPLE_RATE * 2
 
-    def test_segments_do_not_exceed_max_length(self):
+    def test__segments_do_not_exceed_max_length(self):
         pipeline = _make_pyannote_mock([(0.0, 10.0)])
         segments = segment_by_pyannote_vad(
             make_silent_tensor(10.0), pipeline=pipeline, max_segment_len_s=3.0
@@ -373,13 +373,13 @@ class TestSegmentByPyannoteVad:
         for seg in segments:
             assert seg.duration <= 3.0
 
-    def test_all_segments_share_tensor_id(self):
+    def test__all_segments_share_tensor_id(self):
         pipeline = _make_pyannote_mock([(0.0, 0.5), (1.0, 1.5)])
         segments = segment_by_pyannote_vad(make_silent_tensor(2.0), pipeline=pipeline)
         tensor_ids = {s.tensor_id for s in segments}
         assert len(tensor_ids) == 1
 
-    def test_separate_calls_produce_different_tensor_ids(self):
+    def test__separate_calls_produce_different_tensor_ids(self):
         tensor = make_silent_tensor(1.0)
         segments_a = segment_by_pyannote_vad(
             tensor, pipeline=_make_pyannote_mock([(0.0, 0.5)])
@@ -389,7 +389,7 @@ class TestSegmentByPyannoteVad:
         )
         assert segments_a[0].tensor_id != segments_b[0].tensor_id
 
-    def test_tensor_content_matches_slice(self):
+    def test__tensor_content_matches_slice(self):
         intervals_s = [(0.0, 0.5), (1.0, 1.5)]
         pipeline = _make_pyannote_mock(intervals_s)
         tensor = torch.arange(float(DEFAULT_SAMPLE_RATE * 2))
@@ -432,7 +432,7 @@ class _MockPyannoteSegmenter(PyannoteAudioSegmenter):
 
 
 class TestAudioSegmenter:
-    def test_dispatches_to_segment_fixed(self):
+    def test__dispatches_to_segment_fixed(self):
         segmenter = AudioSegmenter.from_config(
             FixedSegmentationConfig(max_segment_len_s=2.0)
         )
@@ -441,14 +441,14 @@ class TestAudioSegmenter:
 
         assert len(segments) == 3
 
-    def test_dispatches_to_segment_by_silence(self):
+    def test__dispatches_to_segment_by_silence(self):
         segmenter = AudioSegmenter.from_config(SilenceSegmentationConfig())
         tensor = make_voiced_tensor([1.0, 1.0])
         with segmenter:
             segments = segmenter.segment(tensor)
             assert len(segments) == 2
 
-    def test_dispatches_to_segment_by_silero_vad(self):
+    def test__dispatches_to_segment_by_silero_vad(self):
         # Given
         voice_durations = [1.0, 1.5, 0.8]
         silence_secs = 0.6
@@ -468,7 +468,7 @@ class TestAudioSegmenter:
 
         assert len(segments) == 3
 
-    def test_dispatches_to_segment_by_pyannote_vad(self):
+    def test__dispatches_to_segment_by_pyannote_vad(self):
         intervals_s = [(0.0, 1.0), (2.0, 3.5), (4.0, 4.8)]
         tensor = make_silent_tensor(5.0)
         segmenter = _MockPyannoteSegmenter(
@@ -478,7 +478,7 @@ class TestAudioSegmenter:
             segments = segmenter.segment(tensor)
         assert len(segments) == 3
 
-    def test_context_manager_clears_vad_model_on_exit(self):
+    def test__context_manager_clears_vad_model_on_exit(self):
         segmenter = _MockSileroVADSegmenter(SileroVoiceSegmentationConfig())
         with segmenter:
             segmenter.segment(make_silent_tensor(1.0))

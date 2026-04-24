@@ -1,4 +1,5 @@
 import datetime
+import math
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
@@ -50,14 +51,14 @@ _VALIDATED_FIREREDASR2_LANGUAGES = {
 
 class ASRModel(StrEnum):
     PARAKEET = "parakeet"
-    WHISPER_CPP = "whisper_cpp"
+    FASTER_WHISPER = "whisper_cpp"
     FIREREDASR2_AED = "fireredasr2_aed"
 
     def supported_languages(self) -> set[ASRLanguage]:
         match self:
             case ASRModel.PARAKEET:
                 return _VALIDATED_PARAKEET_LANGUAGES
-            case ASRModel.WHISPER_CPP:
+            case ASRModel.FASTER_WHISPER:
                 return set()
             case ASRModel.FIREREDASR2_AED:
                 return _VALIDATED_FIREREDASR2_LANGUAGES
@@ -118,6 +119,24 @@ class ASRResult(BaseModel):
         transcription = [(start_s, end_s, text)] if text.strip() else []
         confidence = result.get("confidence")
         score = float(confidence) if confidence is not None else -1.0
+        return cls(transcription=transcription, score=score, **extra)
+
+    @classmethod
+    def from_faster_whisper_result(cls, segments, **extra) -> Self:
+        """Parse segments returned by a faster-whisper model
+
+        :param segments: iterable of Segment objects with start, end, text, avg_logprob
+        :return: ASRResult
+        """
+        transcription = []
+        weighted_logprob = 0.0
+        total_duration = 0.0
+        for segment in segments:
+            duration = segment.end - segment.start
+            transcription.append((segment.start, segment.end, segment.text))
+            weighted_logprob += segment.avg_logprob * duration
+            total_duration += duration
+        score = math.exp(weighted_logprob / total_duration) if total_duration else -1.0
         return cls(transcription=transcription, score=score, **extra)
 
     def __add__(self, other: Self) -> Self:
