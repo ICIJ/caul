@@ -1,5 +1,6 @@
 from contextlib import ExitStack
 from copy import copy
+from pathlib import Path
 from typing import Iterable, Self, TYPE_CHECKING
 
 from icij_common.pydantic_utils import make_enum_discriminator, safe_copy, tagged_union
@@ -10,15 +11,18 @@ from .constants import TorchDevice
 from .objects import ASRResult, BaseModel, ASRModel
 from .tasks import (
     ASRTask,
-    FireRedASR2InferenceRunnerConfig,
-    FireRedASR2PostprocessorConfig,
-    FireRedASR2PreprocessorConfig,
     InferenceRunner,
     ParakeetInferenceRunnerConfig,
     ParakeetPostprocessorConfig,
     ParakeetPreprocessorConfig,
     Postprocessor,
     Preprocessor,
+    FireRedASR2PreprocessorConfig,
+    FireRedASR2InferenceRunnerConfig,
+    FireRedASR2PostprocessorConfig,
+    FasterWhisperPreprocessorConfig,
+    FasterWhisperInferenceRunnerConfig,
+    FasterWhisperPostprocessorConfig,
 )
 
 
@@ -64,11 +68,21 @@ class ASRPipelineConfig(BaseModel):  # pylint: disable=too-few-public-methods
         )
 
     @classmethod
-    def fireredasr2(cls) -> Self:
+    def fireredasr2(cls, tmp_dir_fallback: bool = True) -> Self:
         return cls(
             preprocessing=FireRedASR2PreprocessorConfig(),
-            inference=FireRedASR2InferenceRunnerConfig(),
+            inference=FireRedASR2InferenceRunnerConfig(
+                tmp_dir_fallback=tmp_dir_fallback
+            ),
             postprocessing=FireRedASR2PostprocessorConfig(),
+        )
+
+    @classmethod
+    def faster_whisper(cls) -> Self:
+        return cls(
+            preprocessing=FasterWhisperPreprocessorConfig(),
+            inference=FasterWhisperInferenceRunnerConfig(),
+            postprocessing=FasterWhisperPostprocessorConfig(),
         )
 
 
@@ -117,11 +131,15 @@ class ASRPipeline:
     def process(
         self,
         inputs: "Iterable[np.ndarray | torch.Tensor | str] | np.ndarray | torch.Tensor | str",
+        languages: list[str] | None = None,
+        tensor_output_dir: str | Path | None = None,
     ) -> Iterable[ASRResult]:
         """Generic sequential processing method for ASR model handlers"""
         output = inputs
         for task in self._tasks:
-            output = task.process(output)
+            output = task.process(
+                output, output_dir=tensor_output_dir, languages=languages
+            )
         yield from output
 
     @classmethod
@@ -132,8 +150,18 @@ class ASRPipeline:
 
     @classmethod
     def fireredasr2(
+        cls,
+        device: "TorchDevice | torch._device" = TorchDevice.CPU,
+        tmp_dir_fallback: bool = False,
+    ) -> Self:
+        config = ASRPipelineConfig.fireredasr2(tmp_dir_fallback=tmp_dir_fallback)
+        config = safe_copy(config, update={"device": device})
+        return cls.from_config(config)
+
+    @classmethod
+    def faster_whisper(
         cls, device: "TorchDevice | torch._device" = TorchDevice.CPU
     ) -> Self:
-        config = ASRPipelineConfig.fireredasr2()
+        config = ASRPipelineConfig.faster_whisper()
         config = safe_copy(config, update={"device": device})
         return cls.from_config(config)
