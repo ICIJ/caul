@@ -1,7 +1,5 @@
 from typing import ClassVar, Iterable
 
-import gc
-
 
 from icij_common.registrable import FromConfig
 from pydantic import Field
@@ -62,16 +60,6 @@ class ParakeetInferenceRunner(InferenceRunner):
         self._model = nemo_asr.models.ASRModel.from_pretrained(
             self.model_name, map_location=torch.device(device)
         ).eval()
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        import torch  # pylint: disable=import-outside-toplevel
-
-        self._model = None
-        if self._device == torch.device(TorchDevice.GPU):
-            torch.cuda.empty_cache()
-        gc.collect()
-
         return self
 
     def process(  # pylint: disable=too-many-locals

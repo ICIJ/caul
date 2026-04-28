@@ -1,4 +1,3 @@
-import gc
 import logging
 import os
 from contextlib import nullcontext
@@ -149,10 +148,6 @@ class FireRedASR2InferenceRunner(InferenceRunner):
         use_gpu = self._device != TorchDevice.CPU
         self._model = self._config.to_fire_red_asr_model(use_gpu)
         return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self._model = None
-        gc.collect()
 
     def process(
         self,

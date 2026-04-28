@@ -1,8 +1,6 @@
-import gc
 from pathlib import Path
 from typing import ClassVar, Iterable, TYPE_CHECKING
 
-from faster_whisper.transcribe import TranscriptionOptions
 from icij_common.registrable import FromConfig
 from pydantic import Field
 
@@ -45,6 +43,7 @@ from ...config import InferenceRunnerConfig
 
 if TYPE_CHECKING:
     import torch
+    from faster_whisper.transcribe import TranscriptionOptions
 
 
 class FasterWhisperInferenceRunnerConfig(InferenceRunnerConfig):
@@ -81,7 +80,9 @@ class FasterWhisperInferenceRunnerConfig(InferenceRunnerConfig):
     hallucination_silence_threshold: float | None = None
     hotwords: str | None = None
 
-    def to_transcription_options(self) -> TranscriptionOptions:
+    def to_transcription_options(self) -> "TranscriptionOptions":
+        from faster_whisper.transcribe import TranscriptionOptions
+
         return TranscriptionOptions(
             beam_size=self.beam_size,
             best_of=self.best_of,
@@ -125,6 +126,7 @@ class FasterWhisperInferenceRunner(InferenceRunner):
         config: FasterWhisperInferenceRunnerConfig = None,
         device: "TorchDevice | torch.device" = TorchDevice.CPU,
     ):
+        super().__init__(device=device)
         if config is None:
             config = FasterWhisperInferenceRunnerConfig()
         self._config = config
@@ -151,10 +153,6 @@ class FasterWhisperInferenceRunner(InferenceRunner):
             )
         )
         return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self._model = None
-        gc.collect()
 
     def process(
         self,
