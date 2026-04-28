@@ -73,7 +73,7 @@ class ASRPreprocessor(Preprocessor):
         self,
         inputs: Iterable["np.ndarray | torch.Tensor | str"],
         input_sample_rates: Iterable[int] | int | None = None,
-        output_dir: Path | None = None,
+        output_dir: str | Path | None = None,
     ) -> Iterable[PreprocessorOutput]:
         """Accepts audio inputs as a list of file paths, np.ndarray, or torch.Tensor, converting to
         torch.Tensor, normalizing, segmenting inputs longer than segment_max and batching segments
@@ -84,6 +84,9 @@ class ASRPreprocessor(Preprocessor):
         :return: List of processed inputs
         """
         import numpy as np  # pylint: disable=import-outside-toplevel
+
+        if output_dir is not None and not isinstance(output_dir, Path):
+            output_dir = Path(output_dir)
 
         if isinstance(input_sample_rates, (int, _NoneType)):
             input_sample_rates = repeat(input_sample_rates)

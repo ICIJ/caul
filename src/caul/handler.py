@@ -1,6 +1,7 @@
 import logging
 from contextlib import ExitStack
 from itertools import groupby
+from pathlib import Path
 from typing import Iterable, TYPE_CHECKING
 
 
@@ -10,7 +11,11 @@ from caul.objects import ASRModel, ASRResult
 from caul.utils import fuzzy_match
 
 
-from caul.exception import MissingModelSpecificationException, UnsupportedModelException
+from caul.exception import (
+    MissingModelSpecificationException,
+    UnsupportedModelException,
+    LanguageInputMismatchException,
+)
 
 if TYPE_CHECKING:
     import torch
@@ -72,7 +77,7 @@ class ASRHandler:
                 if not matching_keys:
                     raise UnsupportedModelException(f"Unsupported model '{model}'")
                 model = ASRModel(model)
-                asr_pipeline = ASRPipeline.from_config(MODEL_FAMILY_CONFIG_MAP[model])
+                asr_pipeline = MODEL_FAMILY_CONFIG_MAP[model]
                 self._pipelines.append(asr_pipeline)
             elif isinstance(model, ASRPipelineConfig):
                 self._pipelines.append(ASRPipeline.from_config(model))
@@ -114,12 +119,14 @@ class ASRHandler:
         self,
         inputs: "Iterable[np.ndarray | torch.Tensor | str] | np.ndarray | torch.Tensor | str",
         languages: Iterable[str] | None = None,
+        tensor_output_dir: str | Path | None = None,
     ) -> Iterable[ASRResult]:
         """Transcribe audio tensors or strings. Returns a tuple of (transcription, score). A list
         of languages of len(inputs) may be passed to direct inputs to certain inference_handlers.
 
         :param inputs: List of np.ndarray or torch.Tensor or str, or a singleton of same types
         :param languages: List of ISO-639-3 language codes
+        :param tensor_output_dir: Where to save intermediate file representations of audio file inputs
         :return: HandlerResult
         """
         import numpy as np  # pylint: disable=import-outside-toplevel
@@ -135,12 +142,22 @@ class ASRHandler:
 
         if languages is None:
             # Default to first model handler
-            yield from self._pipelines[0].process(inputs)
+            yield from self._pipelines[0].process(
+                inputs, tensor_output_dir=tensor_output_dir
+            )
             return
+
+        if isinstance(languages, str):
+            languages = [languages] * len(inputs)
+
+        if len(inputs) != len(languages):
+            raise LanguageInputMismatchException("Languages don't match input length.")
 
         languages_and_inputs = zip(languages, inputs, strict=True)
         inputs_by_language = groupby(languages_and_inputs, key=lambda l: l[0])
-        for language, language_ins in enumerate(inputs_by_language):
+        for language, language_ins in inputs_by_language:
             pipe = self._get_pipeline_by_language(language)
             language_ins = (l[1] for l in language_ins)
-            yield from pipe.process(language_ins)
+            yield from pipe.process(
+                language_ins, tensor_output_dir=tensor_output_dir, languages=languages
+            )

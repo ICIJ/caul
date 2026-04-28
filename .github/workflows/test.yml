@@ -6,7 +6,7 @@ on:
   pull_request:
     paths:
       - '**.py'
-      - '.github/workflows/test-unit.yml'
+      - '.github/workflows/test.yml'
       - 'pyproject.toml'
       - 'uv.lock'
 

@@ -1,3 +1,4 @@
+import gc
 from abc import ABC, abstractmethod
 from contextlib import AbstractContextManager
 from pathlib import Path
@@ -57,6 +58,16 @@ class InferenceRunner(ASRTask, RegistrableFromConfig):
             device = torch.device(device)
 
         self._device = device
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        import torch  # pylint: disable=import-outside-toplevel
+
+        self._model = None
+        if self._device == torch.device(TorchDevice.GPU):
+            torch.cuda.empty_cache()
+        gc.collect()
+
+        return self
 
     @abstractmethod
     def process(

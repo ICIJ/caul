@@ -28,6 +28,8 @@ class InferenceRunnerConfig(_BaseConfig):
     registry_key: ClassVar[str] = Field(frozen=True, default="model")
     model: ClassVar[ASRModel]
 
+    tmp_dir_fallback: bool = False
+
 
 class PostprocessorConfig(_BaseConfig):
     registry_key: ClassVar[str] = Field(frozen=True, default="model")

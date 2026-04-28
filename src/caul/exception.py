@@ -8,3 +8,7 @@ class UnsupportedModelException(Exception):
 
 class MissingFireRedAsr2OutputDirException(Exception):
     """Raise if no file path is available to store FireRedAsr2 inputs at"""
+
+
+class LanguageInputMismatchException(Exception):
+    """Raise when inputs and input languages to ASRHandler.transcribe don't align"""

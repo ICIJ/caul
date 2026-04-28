@@ -1,7 +1,5 @@
 from typing import ClassVar, Iterable
 
-import gc
-
 
 from icij_common.registrable import FromConfig
 from pydantic import Field
@@ -64,16 +62,6 @@ class ParakeetInferenceRunner(InferenceRunner):
         ).eval()
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        import torch  # pylint: disable=import-outside-toplevel
-
-        self._model = None
-        if self._device == torch.device(TorchDevice.GPU):
-            torch.cuda.empty_cache()
-        gc.collect()
-
-        return self
-
     def process(  # pylint: disable=too-many-locals
         self,
         inputs: Iterable[list[PreprocessorOutput]],
@@ -99,6 +87,10 @@ class ParakeetInferenceRunner(InferenceRunner):
             batch_size=self._batch_size,
             timestamps=self._return_timestamps,
             return_hypotheses=True,
+            # Bug in Nemo's AudioToBPEDataset—by default TranscribeConfig spawns 2
+            # DataLoader workers, but AudioToBPEDataset defines a class TokenizerWrapper
+            # inside __init__, meaning it can't be pickled.
+            num_workers=0,
             _internal=InternalTranscribeConfig(device=self._device),
         )
         for input_batch in inputs:
