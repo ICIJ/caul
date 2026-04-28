@@ -8,6 +8,7 @@ from .constants import (
     DEFAULT_SAMPLE_RATE,
     DEFAULT_BATCH_SIZE,
     DEFAULT_MAX_FRAMES,
+    DEFAULT_LARGE_FILE_THRESHOLD_BYTES,
 )
 from .objects import BaseModel, ASRModel
 
@@ -22,6 +23,7 @@ class PreprocessorConfig(_BaseConfig):
     max_frames: int = DEFAULT_MAX_FRAMES
     batch_size: int = DEFAULT_BATCH_SIZE
     sample_rate: int = DEFAULT_SAMPLE_RATE
+    large_file_threshold_bytes: int = DEFAULT_LARGE_FILE_THRESHOLD_BYTES
 
 
 class InferenceRunnerConfig(_BaseConfig):

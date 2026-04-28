@@ -4,9 +4,10 @@ from pydantic import Field
 
 from caul.config import PreprocessorConfig
 from caul.constants import (
+    DEFAULT_LARGE_FILE_THRESHOLD_BYTES,
+    DEFAULT_SAMPLE_RATE,
     PARAKEET_INFERENCE_MAX_DURATION_S,
     PARAKEET_INFERENCE_MAX_FRAMES,
-    DEFAULT_SAMPLE_RATE,
 )
 from caul.objects import ASRModel
 from caul.objects import PreprocessedInput
@@ -67,11 +68,13 @@ class ParakeetPreprocessor(ASRPreprocessor):
         batching_fn: Callable = _parakeet_batching_fn,
         max_frames: int = PARAKEET_INFERENCE_MAX_FRAMES,
         sample_rate: int = DEFAULT_SAMPLE_RATE,
+        large_file_threshold_bytes: int = DEFAULT_LARGE_FILE_THRESHOLD_BYTES,
     ):
         super().__init__(
             batching_fn=batching_fn,
             max_frames=max_frames,
             sample_rate=sample_rate,
+            large_file_threshold_bytes=large_file_threshold_bytes,
         )
 
     @classmethod
@@ -79,4 +82,5 @@ class ParakeetPreprocessor(ASRPreprocessor):
         return cls(
             max_frames=config.max_frames,
             sample_rate=config.sample_rate,
+            large_file_threshold_bytes=config.large_file_threshold_bytes,
         )
