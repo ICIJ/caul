@@ -9,7 +9,12 @@ from hashlib import sha256
 from caul.task_defaults import generic_batching_fn
 from caul.config import PreprocessorConfig
 from caul.segmentation.methods import segment_by_silence
-from caul.constants import DEFAULT_SAMPLE_RATE, DEFAULT_BATCH_SIZE, DEFAULT_MAX_FRAMES
+from caul.constants import (
+    DEFAULT_SAMPLE_RATE,
+    DEFAULT_BATCH_SIZE,
+    DEFAULT_MAX_FRAMES,
+    DEFAULT_LARGE_FILE_THRESHOLD_BYTES,
+)
 from caul.filesystem import save_tensor
 from caul.objects import (
     InputMetadata,
@@ -35,12 +40,14 @@ class ASRPreprocessor(Preprocessor):
         max_frames: int = DEFAULT_MAX_FRAMES,
         batch_size: int = DEFAULT_BATCH_SIZE,
         sample_rate: int = DEFAULT_SAMPLE_RATE,
+        large_file_threshold_bytes: int = DEFAULT_LARGE_FILE_THRESHOLD_BYTES,
     ):
         super().__init__()
         self._batch_fn = batching_fn
         self._max_frames = max_frames
         self._batch_size = batch_size
         self._sample_rate = sample_rate
+        self._large_file_threshold_bytes = large_file_threshold_bytes
 
     @classmethod
     def _from_config(cls, config: PreprocessorConfig, **extras) -> Self:
@@ -48,6 +55,7 @@ class ASRPreprocessor(Preprocessor):
             max_frames=config.max_frames,
             batch_size=config.batch_size,
             sample_rate=config.sample_rate,
+            large_file_threshold_bytes=config.large_file_threshold_bytes,
         )
 
     def process(
@@ -94,12 +102,11 @@ class ASRPreprocessor(Preprocessor):
         else:
             inputs_and_sample_rates = zip(inputs, input_sample_rates, strict=True)
 
-        # Load arrays and divide into max_length segments
         for input_idx, (audio_input, sample_rate) in enumerate(inputs_and_sample_rates):
             input_file_path = None
             input_format = None
 
-            # Load audio files as arrays
+            # Resolve input to a lazy iterable of normalized 1D chunks at self._sample_rate
             if isinstance(audio_input, str):
                 input_file_path = audio_input
                 input_format = (
@@ -107,62 +114,107 @@ class ASRPreprocessor(Preprocessor):
                     if len(input_file_path.split(".")) > 1
                     else None
                 )
-                audio_input = load_audio(
-                    audio_input, sample_rate=self._sample_rate, num_channels=1
-                )
+                audio_chunks = self._load_file_as_chunks(audio_input)
+            else:
+                if isinstance(audio_input, np.ndarray):
+                    import torch  # pylint: disable=import-outside-toplevel
 
-            if isinstance(audio_input, np.ndarray):
-                import torch  # pylint: disable=import-outside-toplevel
+                    audio_input = torch.Tensor(audio_input)
+                if sample_rate is None:
+                    sample_rate = self._sample_rate
 
-                audio_input = torch.Tensor(audio_input)
-
-            if sample_rate is None:
-                sample_rate = self._sample_rate
-
-            # Normalize
-            if sample_rate != self._sample_rate:
-                audio_input = self._normalize(audio_input, sample_rate)
-
-            # Segment where necessary
-            n_frames = audio_input.shape[-1]
-            tensor_segments = [audio_input]
-
-            if n_frames > self._max_frames:
-                max_segment_len_s = self._max_frames / self._sample_rate
-                tensor_segments = [
-                    s.tensor
-                    for s in segment_by_silence(
-                        audio_input, max_segment_len_s=max_segment_len_s
-                    )
-                ]
+                    audio_input = self._normalize(audio_input, sample_rate)
+                elif len(audio_input.shape) > 1:
+                    audio_input = audio_input.squeeze(0)
+                audio_chunks = iter([audio_input])
 
             original_file = (
                 _displayable_prefix(input_file_path)
                 if input_file_path is not None
                 else uuid.uuid4().hex
             )
-            for seg_i, tensor_segment in enumerate(tensor_segments):
-                segment_path = None
-                # Create temporary filesystem reference if applicable
-                if output_dir is not None:
-                    segment_name = f"{original_file}-{seg_i}.wav"
-                    segment_path = output_dir / segment_name
-                    save_tensor(tensor_segment, segment_path)
-                    segment_path = segment_path.relative_to(output_dir)
-                # Create preprocessed input
-                metadata = InputMetadata(
-                    input_ordering=input_idx,
-                    duration_s=n_frames / DEFAULT_SAMPLE_RATE,
-                    input_format=input_format,
-                    input_file_path=input_file_path,
-                    preprocessed_file_path=segment_path,
-                )
-                if metadata.preprocessed_file_path is None:
-                    yield PreprocessedInputWithTensor(
-                        metadata=metadata, tensor=tensor_segment
+
+            # seg_i is global across chunks so output file names are stable
+            seg_i = 0
+            for chunk in audio_chunks:
+                n_frames = chunk.shape[-1]
+                tensor_segments = [chunk]
+
+                if n_frames > self._max_frames:
+                    max_segment_len_s = self._max_frames / self._sample_rate
+                    tensor_segments = [
+                        s.tensor
+                        for s in segment_by_silence(
+                            chunk, max_segment_len_s=max_segment_len_s
+                        )
+                    ]
+
+                for tensor_segment in tensor_segments:
+                    segment_path = None
+                    if output_dir is not None:
+                        segment_name = f"{original_file}-{seg_i}.wav"
+                        segment_path = output_dir / segment_name
+                        save_tensor(tensor_segment, segment_path)
+                        segment_path = segment_path.relative_to(output_dir)
+                    metadata = InputMetadata(
+                        input_ordering=input_idx,
+                        duration_s=n_frames / DEFAULT_SAMPLE_RATE,
+                        input_format=input_format,
+                        input_file_path=input_file_path,
+                        preprocessed_file_path=segment_path,
                     )
-                else:
-                    yield PreprocessedInput(metadata=metadata)
+                    if metadata.preprocessed_file_path is None:
+                        yield PreprocessedInputWithTensor(
+                            metadata=metadata, tensor=tensor_segment
+                        )
+                    else:
+                        yield PreprocessedInput(metadata=metadata)
+                    seg_i += 1
+
+    def _load_file_as_chunks(self, path: str) -> "Iterable[torch.Tensor]":
+        """Return a lazy iterator of normalized 1D audio chunks at self._sample_rate.
+
+        Reads file metadata first; falls back to a single eager load for small files.
+
+        :param path: path to audio file
+        :return: Iterable of tensor segments
+        """
+        from torchcodec.decoders import (
+            AudioDecoder,
+        )  # pylint: disable=import-outside-toplevel
+
+        native_meta = AudioDecoder(path).metadata
+        num_frames = int(native_meta.duration_seconds * native_meta.sample_rate)
+        estimated_bytes = num_frames * native_meta.num_channels * 4  # float32
+
+        if estimated_bytes > self._large_file_threshold_bytes:
+            yield from self._iter_audio_chunks(path, native_meta.duration_seconds)
+        else:
+            yield load_audio(path, sample_rate=self._sample_rate, num_channels=1)
+
+    def _iter_audio_chunks(
+        self, path: str, total_duration_s: float
+    ) -> "Iterable[torch.Tensor]":
+        """Lazily decode a large audio file in max-frame-sized windows.
+
+        :param path: path to audio file
+        :param total_duration_s: total duration of audio file in seconds
+        :return: Iterable of tensor segments
+        """
+        from torchcodec.decoders import (
+            AudioDecoder,
+        )  # pylint: disable=import-outside-toplevel
+
+        chunk_duration_s = self._max_frames / self._sample_rate
+        decoder = AudioDecoder(path, num_channels=1, sample_rate=self._sample_rate)
+        start = 0.0
+        while start < total_duration_s:
+            end = min(start + chunk_duration_s, total_duration_s)
+            samples = decoder.get_samples_played_in_range(
+                start_seconds=start, stop_seconds=end
+            )
+            yield samples.data.squeeze()
+            start = end
 
     def _normalize(
         self, audio_tensor: "torch.Tensor", sample_rate: int
@@ -204,7 +256,9 @@ def _displayable_prefix(path: str, component_size_limit: int = 10) -> str:
 def load_audio(
     path: str | Path, sample_rate: int = DEFAULT_SAMPLE_RATE, *, num_channels: int = 1
 ) -> "torch.Tensor":
-    from torchcodec.decoders import AudioDecoder
+    from torchcodec.decoders import (
+        AudioDecoder,
+    )  # pylint: disable=import-outside-toplevel
 
     samples = AudioDecoder(path, num_channels=num_channels, sample_rate=sample_rate)
     return samples.get_all_samples().data.squeeze()
