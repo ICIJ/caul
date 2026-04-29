@@ -2,8 +2,6 @@ import logging
 import tempfile
 from pathlib import Path
 
-from torch._C._te import Tensor
-
 from caul.filesystem import save_tensor
 from caul.objects import PreprocessorOutput
 
@@ -29,6 +27,8 @@ def prepare_file_input_batch(
     :return: tuple of batch input ids, wav paths, map from id to input ordering,
     temporary dir (if applicable) where tensor paths are kept
     """
+    from torch import Tensor
+
     tmp_dir = None
     if output_dir is None and tmp_dir_fallback:
         tmp_dir = tempfile.TemporaryDirectory()
