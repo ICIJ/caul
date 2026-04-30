@@ -1,6 +1,8 @@
+import logging
+from pathlib import Path, PurePosixPath
 from typing import ClassVar, Iterable
 
-
+from huggingface_hub.constants import HF_HUB_CACHE
 from icij_common.registrable import FromConfig
 from pydantic import Field
 
@@ -8,6 +10,9 @@ from caul.constants import PARAKEET_MODEL_REF, TorchDevice
 from caul.objects import ASRModel, ASRResult, PreprocessorOutput
 from ..asr_task import InferenceRunner
 from ...config import InferenceRunnerConfig
+from ...utils import cache_hf_model_file
+
+logger = logging.getLogger(__name__)
 
 
 class ParakeetInferenceRunnerConfig(InferenceRunnerConfig):
@@ -23,6 +28,8 @@ class ParakeetInferenceRunner(InferenceRunner):
     are single-channel with a sample rate of 16000—this last is very important for segmenting.
     """
 
+    _models = [PARAKEET_MODEL_REF]
+
     def __init__(
         self,
         model_name: str,
@@ -30,14 +37,8 @@ class ParakeetInferenceRunner(InferenceRunner):
         return_timestamps: bool = True,
         batch_size: int = 4,
     ):
-        import torch  # pylint: disable=import-outside-toplevel
-
+        super().__init__(device)
         self.model_name = model_name
-
-        if isinstance(device, str):
-            device = torch.device(device)
-
-        self._device = device
         self._return_timestamps = return_timestamps
         self._model = None
         self._batch_size = batch_size
@@ -61,6 +62,30 @@ class ParakeetInferenceRunner(InferenceRunner):
             self.model_name, map_location=torch.device(device)
         ).eval()
         return self
+
+    @classmethod
+    def cache_models(cls, cache_dir: Path | None = None) -> None:
+        import nemo
+
+        if cache_dir is not None and cache_dir != HF_HUB_CACHE:
+            msg = (
+                f"parakeet model are sadly only loaded from the HF cache hub"
+                f" ({HF_HUB_CACHE}), can't load them from elsewhere"
+            )
+            raise ValueError(msg)
+
+        library_name = nemo.__name__
+        library_version = nemo.__version__
+        for m in cls._models:
+            logger.info("caching parakeet model %s", m)
+            filenaname = PurePosixPath(m).name + ".nemo"
+            cache_hf_model_file(
+                repo_id=m,
+                filename=filenaname,
+                library_name=library_name,
+                library_version=library_version,
+                cache_dir=cache_dir,
+            )
 
     def process(  # pylint: disable=too-many-locals
         self,

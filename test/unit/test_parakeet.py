@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pytest
+from huggingface_hub.constants import HF_HUB_CACHE
 
 from caul.asr_pipeline import ASRPipeline
 from caul.constants import TorchDevice, DEFAULT_SAMPLE_RATE
@@ -8,7 +9,12 @@ from caul.objects import ASRResult
 
 import torch
 
-from caul.tasks import ParakeetPostprocessor, ParakeetPreprocessor
+from caul.tasks import (
+    ParakeetInferenceRunner,
+    ParakeetInferenceRunnerConfig,
+    ParakeetPostprocessor,
+    ParakeetPreprocessor,
+)
 from caul.tasks.preprocessing.parakeet import _parakeet_batching_fn
 
 
@@ -106,3 +112,16 @@ def test__parakeet_device_setting():
     # Then
     assert pipeline.device == torch.device("mps")
     assert pipeline.tasks[1].device == torch.device("mps")
+
+
+@pytest.mark.no_ci
+def test_parakeet_should_cache_to_dir_and_load_from_it() -> None:
+    # Given
+    # Let's use the local cache to avoid downloading for ages
+    cache_dir = HF_HUB_CACHE
+    # When
+    ParakeetInferenceRunner.cache_models(cache_dir)
+    runner = ParakeetInferenceRunner.from_config(ParakeetInferenceRunnerConfig())
+    with runner:
+        # Then
+        assert isinstance(runner._model, torch.nn.Module)

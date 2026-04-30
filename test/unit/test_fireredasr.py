@@ -1,7 +1,11 @@
 import pytest
 import torch
+from fireredasr2s.fireredasr2 import FireRedAsr2
+from huggingface_hub.constants import HF_HUB_CACHE
 
-from caul.constants import FIREREDASR2_INFERENCE_MAX_FRAMES
+from caul.constants import (
+    FIREREDASR2_INFERENCE_MAX_FRAMES,
+)
 from caul.objects import (
     ASRResult,
     PreprocessedInput,
@@ -89,7 +93,7 @@ class TestASRResultFromFireRedASR2:
 
 class TestFireRedASR2InferenceRunner:
     def setup_method(self):
-        mock_config = FireRedASR2InferenceRunnerConfig(model_dir="test")
+        mock_config = FireRedASR2InferenceRunnerConfig()
 
         self._inference_runner = MockFireRedASR2InferenceRunner(config=mock_config)
 
@@ -119,9 +123,7 @@ class TestFireRedASR2InferenceRunner:
 
     def test__processes_input_without_output_dir_with_tmp_dirs_enabled(self):
         """We should still process inputs without file paths if temporary dir creation is enabled"""
-        mock_config = FireRedASR2InferenceRunnerConfig(
-            model_dir="test", tmp_dir_fallback=True
-        )
+        mock_config = FireRedASR2InferenceRunnerConfig(tmp_dir_fallback=True)
         inference_runner = MockFireRedASR2InferenceRunner(config=mock_config)
         batches = [
             [
@@ -144,3 +146,28 @@ class TestFireRedASR2InferenceRunner:
             results = list(self._inference_runner.process(batches))
 
         assert len(results) == 0
+
+    @pytest.mark.no_ci
+    def test__cache_to_dir_and_load_from_it(self) -> None:
+        # Given
+        # Let's use the local cache to avoid downloading for ages
+        cache_dir = HF_HUB_CACHE
+        # When
+        FireRedASR2InferenceRunner.cache_models(cache_dir)
+        runner = FireRedASR2InferenceRunner.from_config(
+            FireRedASR2InferenceRunnerConfig()
+        )
+        with runner:
+            # Then
+            assert isinstance(runner._model, FireRedAsr2)
+
+    @pytest.mark.no_ci
+    def test__load_asr_without_cache(self) -> None:
+        # When
+        runner = FireRedASR2InferenceRunner.from_config(
+            FireRedASR2InferenceRunnerConfig()
+        )
+        # When
+        with runner:
+            # Then
+            assert isinstance(runner._model, FireRedAsr2)

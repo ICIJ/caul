@@ -1,9 +1,10 @@
 import math
-from abc import ABC
 from collections import namedtuple
 
 import pytest
 import torch
+from faster_whisper import BatchedInferencePipeline
+from huggingface_hub.constants import HF_HUB_CACHE
 from numpy import ndarray
 
 from caul.objects import (
@@ -16,7 +17,6 @@ from caul.tasks.inference.faster_whisper import (
     FasterWhisperInferenceRunner,
     FasterWhisperInferenceRunnerConfig,
 )
-
 
 EN_TEXT_A = "hello"
 EN_TEXT_B = "world"
@@ -203,3 +203,17 @@ class TestFasterWhisperInferenceRunner:
             results = list(self._runner.process([batch_a, batch_b]))
 
         assert len(results) == 2
+
+    @pytest.mark.no_ci
+    def test_inference_runner_should_cache_to_dir_and_load_from_it(self) -> None:
+        # Given
+        # Let's use the local cache to avoid downloading for ages
+        cache_dir = HF_HUB_CACHE
+        # When
+        FasterWhisperInferenceRunner.cache_models(cache_dir)
+        runner = FasterWhisperInferenceRunner.from_config(
+            FasterWhisperInferenceRunnerConfig()
+        )
+        with runner:
+            # Then
+            assert isinstance(runner._model, BatchedInferencePipeline)

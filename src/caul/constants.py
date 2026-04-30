@@ -1,5 +1,4 @@
 from enum import StrEnum
-from pathlib import Path
 
 
 class VadModel(StrEnum):
@@ -58,7 +57,6 @@ PARAKEET_TDT_0_6B_V3_LANGUAGES = {
 }
 
 # Faster Whisper (SYSTRAN/faster-whisper)
-FASTER_WHISPER_MODEL_NAME = "large-v3-turbo"
 FASTER_WHISPER_COMPUTE_TYPE_DEFAULT = "float32"
 FASTER_WHISPER_WORD_TIMESTAMPS_DEFAULT = True
 FASTER_WHISPER_BEAM_SIZE_DEFAULT = 5
@@ -184,14 +182,6 @@ class FireRedASR2ModelTag(StrEnum):
 
 FIREREDASR2_LANGUAGES = {"zh"}
 FIREREDASR2_MODEL_HUB_PREFIX = "FireRedTeam/FireRed"
-FIREREDASR2_AED_MODEL_PATH = str(
-    Path(
-        ".models",
-        FIREREDASR2_MODEL_HUB_PREFIX.lower(),
-        FireRedASR2ModelRef.ASR2.lower(),
-        FireRedASR2ModelTag.AED,
-    )
-)
 FIREREDASR2_INFERENCE_MAX_DURATION_S = 60
 FIREREDASR2_INFERENCE_MAX_FRAMES = (
     FIREREDASR2_INFERENCE_MAX_DURATION_S * DEFAULT_SAMPLE_RATE

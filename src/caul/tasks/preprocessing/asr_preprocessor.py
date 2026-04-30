@@ -58,6 +58,11 @@ class ASRPreprocessor(Preprocessor):
             large_file_threshold_bytes=config.large_file_threshold_bytes,
         )
 
+    @classmethod
+    def cache_models(cls, cache_dir: Path | None = None) -> None:
+        # We only segment by silence for now
+        return None
+
     def process(
         self,
         inputs: "Iterable[np.ndarray | torch.Tensor | str] | np.ndarray | torch.Tensor | str",
