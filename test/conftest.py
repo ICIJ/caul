@@ -1,5 +1,7 @@
-from caul.asr_pipeline import ASRPipelineConfig
+import nest_asyncio
+import pytest
 
 
-def parakeet_config() -> ASRPipelineConfig:
-    return ASRPipelineConfig()
+@pytest.fixture
+def typer_asyncio_patch() -> None:
+    nest_asyncio.apply()

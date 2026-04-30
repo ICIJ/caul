@@ -31,9 +31,7 @@ class ASRTask(AbstractContextManager, ABC):
 
     def __exit__(self, exc_type, exc_val, exc_tb): ...
 
-    def set_device(
-        self, device: "TorchDevice | torch._device"
-    ) -> None:  # pylint: disable=unused-argument
+    def set_device(self, device: "TorchDevice | torch._device") -> None:  # pylint: disable=unused-argument
         pass
 
 
@@ -47,6 +45,10 @@ class Preprocessor(ASRTask, RegistrableFromConfig):
     ) -> Iterable[list[PreprocessorOutput]]:
         """Generic processing task"""
 
+    @classmethod
+    @abstractmethod
+    def cache_models(cls, cache_dir: Path | None = None) -> None: ...
+
 
 class InferenceRunner(ASRTask, RegistrableFromConfig):
     """Abstract for ASR inference"""
@@ -54,7 +56,7 @@ class InferenceRunner(ASRTask, RegistrableFromConfig):
     def __init__(self, device: "TorchDevice | torch._device" = TorchDevice.CPU):
         import torch  # pylint: disable=import-outside-toplevel
 
-        if isinstance(device, str):
+        if isinstance(device, TorchDevice):
             device = torch.device(device)
 
         self._device = device
@@ -73,6 +75,10 @@ class InferenceRunner(ASRTask, RegistrableFromConfig):
     def process(
         self, inputs: Iterable[list[PreprocessorOutput]], *args, **kwargs
     ) -> Iterable[ASRResult]: ...
+
+    @classmethod
+    @abstractmethod
+    def cache_models(cls, cache_dir: Path | None = None) -> None: ...
 
     @property
     def device(self) -> "torch.device":

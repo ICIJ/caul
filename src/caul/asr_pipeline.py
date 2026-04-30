@@ -1,3 +1,4 @@
+import logging
 from contextlib import ExitStack
 from copy import copy
 from pathlib import Path
@@ -11,7 +12,10 @@ from .constants import TorchDevice
 from .objects import ASRResult, BaseModel, ASRModel
 from .tasks import (
     ASRTask,
+    FasterWhisperInferenceRunner,
+    FireRedASR2InferenceRunner,
     InferenceRunner,
+    ParakeetInferenceRunner,
     ParakeetInferenceRunnerConfig,
     ParakeetPostprocessorConfig,
     ParakeetPreprocessorConfig,
@@ -24,12 +28,14 @@ from .tasks import (
     FasterWhisperInferenceRunnerConfig,
     FasterWhisperPostprocessorConfig,
 )
-
+from .tasks.preprocessing.asr_preprocessor import ASRPreprocessor
 
 if TYPE_CHECKING:
     import numpy as np
     import torch
 
+
+logger = logging.getLogger(__name__)
 
 PreprocessorConfig_ = tagged_union(
     PreprocessorConfig.__subclasses__(), lambda t: t.model.default.value
@@ -165,3 +171,37 @@ class ASRPipeline:
         config = ASRPipelineConfig.faster_whisper()
         config = safe_copy(config, update={"device": device})
         return cls.from_config(config)
+
+
+def cache_models(asr_model: ASRModel | None, cache_dir: Path) -> None:
+    if asr_model is None:
+        logger.info("caching all models to %s", cache_dir)
+    else:
+        logger.info("caching %s models to %s", asr_model, cache_dir)
+    match asr_model:
+        case ASRModel.PARAKEET:
+            cache_fns = [
+                ASRPreprocessor.cache_models,
+                ParakeetInferenceRunner.cache_models,
+            ]
+        case ASRModel.FASTER_WHISPER:
+            cache_fns = [
+                ASRPreprocessor.cache_models,
+                FasterWhisperInferenceRunner.cache_models,
+            ]
+        case ASRModel.FIREREDASR2_AED:
+            cache_fns = [
+                ASRPreprocessor.cache_models,
+                FireRedASR2InferenceRunner.cache_models,
+            ]
+        case None:
+            cache_fns = [
+                ASRPreprocessor.cache_models,
+                ParakeetInferenceRunner.cache_models,
+                FasterWhisperInferenceRunner.cache_models,
+                FireRedASR2InferenceRunner.cache_models,
+            ]
+        case _:
+            raise ValueError(f"invalid model {asr_model}")
+    for cache_fn in cache_fns:
+        cache_fn(cache_dir)

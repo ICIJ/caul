@@ -1,5 +1,9 @@
+import logging
+from enum import StrEnum, unique
+
 from pathlib import Path
 from typing import ClassVar, Iterable, TYPE_CHECKING
+
 
 from icij_common.registrable import FromConfig
 from pydantic import Field
@@ -16,7 +20,6 @@ from caul.constants import (
     FASTER_WHISPER_LENGTH_PENALTY_DEFAULT,
     FASTER_WHISPER_LOG_PROB_THRESHOLD_DEFAULT,
     FASTER_WHISPER_MAX_INITIAL_TIMESTAMP_DEFAULT,
-    FASTER_WHISPER_MODEL_NAME,
     FASTER_WHISPER_MULTILINGUAL_DEFAULT,
     FASTER_WHISPER_NO_REPEAT_NGRAM_SIZE_DEFAULT,
     FASTER_WHISPER_NO_SPEECH_THRESHOLD_DEFAULT,
@@ -45,9 +48,25 @@ if TYPE_CHECKING:
     import torch
     from faster_whisper.transcribe import TranscriptionOptions
 
+logger = logging.getLogger(__name__)
+
+
+@unique
+class FasterWhisperModel(StrEnum):
+    TINY = "tiny"
+    BASE = "base"
+    SMALL = "small"
+    MEDIUM = "medium"
+    LARGE = "large"
+    LARGE_V3 = "large-v3"
+    DISTIL_LARGE_V3 = "distil-large-v3"
+
 
 class FasterWhisperInferenceRunnerConfig(InferenceRunnerConfig):
     model: ClassVar[str] = Field(frozen=True, default=ASRModel.FASTER_WHISPER)
+
+    whisper_model_name: FasterWhisperModel = FasterWhisperModel.MEDIUM
+
     compute_type: str = FASTER_WHISPER_COMPUTE_TYPE_DEFAULT
     word_timestamps: bool = FASTER_WHISPER_WORD_TIMESTAMPS_DEFAULT
     beam_size: int = FASTER_WHISPER_BEAM_SIZE_DEFAULT
@@ -81,7 +100,7 @@ class FasterWhisperInferenceRunnerConfig(InferenceRunnerConfig):
     hotwords: str | None = None
 
     def to_transcription_options(self) -> "TranscriptionOptions":
-        from faster_whisper.transcribe import TranscriptionOptions
+        from faster_whisper.transcribe import TranscriptionOptions  # pylint: disable=import-outside-toplevel
 
         return TranscriptionOptions(
             beam_size=self.beam_size,
@@ -130,7 +149,6 @@ class FasterWhisperInferenceRunner(InferenceRunner):
         if config is None:
             config = FasterWhisperInferenceRunnerConfig()
         self._config = config
-        self._device = device
         self._model = None
 
     @classmethod
@@ -147,36 +165,52 @@ class FasterWhisperInferenceRunner(InferenceRunner):
 
         self._model = faster_whisper.BatchedInferencePipeline(
             faster_whisper.WhisperModel(
-                FASTER_WHISPER_MODEL_NAME,
+                self._config.whisper_model_name,
                 device=str(self._device),
                 compute_type=self._config.compute_type,
             )
         )
         return self
 
-    def process(
+    @classmethod
+    def cache_models(cls, cache_dir: Path | None = None) -> None:
+        from faster_whisper import download_model  # pylint: disable=import-outside-toplevel
+        from huggingface_hub import get_token  # pylint: disable=import-outside-toplevel
+
+        revision = None
+        for model_id in FasterWhisperModel:
+            logger.info("caching faster whisper model size %s", model_id)
+            download_model(
+                model_id,
+                cache_dir=str(cache_dir),
+                revision=revision,
+                use_auth_token=get_token(),
+            )
+
+    def process(  # pylint: disable=too-many-locals
         self,
         inputs: Iterable[list[PreprocessorOutput]],
         *,
         languages: list[str] | None = None,
         **kwargs,
     ) -> Iterable[ASRResult]:
-        """Transcribe batches of preprocessed audio segments using faster_whisper.generate_segment_batched.
+        """Transcribe batches of preprocessed audio segments using
+        faster_whisper.generate_segment_batched.
 
         :param inputs: batches of PreprocessorOutput (file-backed or tensor)
         :param languages: ISO-639-1 code or list of codes
         :return: ASRResult per input, in batch order
         """
         import numpy as np  # pylint: disable=import-outside-toplevel
-        from faster_whisper.audio import (
+        from faster_whisper.audio import (  # pylint: disable=import-outside-toplevel
             pad_or_trim,
-        )  # pylint: disable=import-outside-toplevel
-        from faster_whisper.tokenizer import (
+        )
+        from faster_whisper.tokenizer import (  # pylint: disable=import-outside-toplevel
             Tokenizer,
-        )  # pylint: disable=import-outside-toplevel
-        from faster_whisper.transcribe import (
+        )
+        from faster_whisper.transcribe import (  # pylint: disable=import-outside-toplevel
             Segment,
-        )  # pylint: disable=import-outside-toplevel
+        )
 
         options = self._config.to_transcription_options()
 
