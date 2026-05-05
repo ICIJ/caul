@@ -26,7 +26,6 @@ dependencies = [
     "librosa>=0.10.1,<0.12",
     "numpy~=2.3",
     "pydantic-extra-types[pycountry]~=2.11",
-    "torchaudio~=2.10",
     "torchcodec>=0.10.0,<0.12",
     "typer~=0.24",
 ]
@@ -35,19 +34,22 @@ dependencies = [
 nemo = [
     "nemo-toolkit[asr]~=2.7",
     "torch~=2.10",
+    "torchaudio~=2.10",
 ]
 pyannote = [
-    "pyannote-audio>=4.0.4",
+    "pyannote-audio~=4.0",
+    "torchaudio~=2.10",
 ]
 fireredasr2 = [
     "fireredasr2s",
-    "kaldi-native-fbank>=1.22.3",
+    "kaldi-native-fbank~=1.22",
+    "torchaudio~=2.10",
 ]
 faster_whisper = [
-    "faster_whisper~=1.2.1"
+    "faster_whisper~=1.2"
 ]
 huggingface_hub = [
-    "huggingface-hub[cli]>=1.11.0",
+    "huggingface-hub~=1.11",
 ]
 
 # Nemo 2.7.2 has a very tight transformers version range (>=4.57.0,<4.58.dev0) which

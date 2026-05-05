@@ -231,7 +231,7 @@ class ASRPreprocessor(Preprocessor):
         :return: normalized 1D tensor at self._sample_rate
         """
         if sample_rate != self._sample_rate:
-            audio_tensor = _resample_waveform(
+            audio_tensor = _resample_audio(
                 audio_tensor, self._sample_rate, target_rate=sample_rate
             )
 
@@ -242,13 +242,14 @@ class ASRPreprocessor(Preprocessor):
         return audio_tensor
 
 
-def _resample_waveform(
-    waveform: "torch.Tensor", sample_rate: int, *, target_rate: int
+def _resample_audio(
+    audio: "torch.Tensor", sample_rate: int, *, target_rate: int
 ) -> "torch.Tensor":
-    import torchaudio  # pylint: disable=import-outside-toplevel
+    from torchcodec.encoders import AudioEncoder
 
-    transform = torchaudio.transforms.Resample(sample_rate, target_rate)
-    return transform(waveform)
+    encoder = AudioEncoder(samples=audio, sample_rate=sample_rate)
+
+    return encoder.to_tensor(format="wav", num_channels=1, sample_rate=target_rate)
 
 
 def _displayable_prefix(path: str, component_size_limit: int = 10) -> str:
