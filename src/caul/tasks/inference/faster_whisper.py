@@ -224,6 +224,7 @@ class FasterWhisperInferenceRunner(InferenceRunner):
         from faster_whisper.transcribe import (  # pylint: disable=import-outside-toplevel
             Segment,
         )
+        from torchcodec.decoders import AudioDecoder
 
         options = self._config.to_transcription_options()
 
@@ -237,10 +238,10 @@ class FasterWhisperInferenceRunner(InferenceRunner):
                 isinstance(input_batch[0], PreprocessedInput)
                 and input_batch[0].metadata.preprocessed_file_path is not None
             ):
-                import torchaudio  # pylint: disable=import-outside-toplevel
-
                 tensors = [
-                    torchaudio.load(inp.metadata.preprocessed_file_path)[0]
+                    AudioDecoder(inp.metadata.preprocessed_file_path)
+                    .get_all_samples()
+                    .data[0]
                     .squeeze(0)
                     .numpy()
                     for inp in input_batch

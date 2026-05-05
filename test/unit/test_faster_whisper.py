@@ -6,7 +6,9 @@ import torch
 from faster_whisper import BatchedInferencePipeline
 from huggingface_hub.constants import HF_HUB_CACHE
 from numpy import ndarray
+from torchcodec.encoders import AudioEncoder
 
+from caul.constants import DEFAULT_SAMPLE_RATE
 from caul.objects import (
     ASRResult,
     InputMetadata,
@@ -15,7 +17,6 @@ from caul.objects import (
 )
 from caul.tasks.inference.faster_whisper import (
     FasterWhisperInferenceRunner,
-    FasterWhisperInferenceRunnerConfig,
 )
 
 EN_TEXT_A = "hello"
@@ -105,10 +106,9 @@ class MockFasterWhisperInferenceRunner(FasterWhisperInferenceRunner):
 
 
 def _file_backed(tmp_path, name="audio.wav", input_ordering=0, duration_s=2.0):
-    import torchaudio  # pylint: disable=import-outside-toplevel
-
     path = tmp_path / name
-    torchaudio.save(str(path), torch.zeros(1, int(duration_s * 16000)), 16000)
+    audio = torch.zeros(1, int(duration_s * 16000))
+    AudioEncoder(audio, sample_rate=DEFAULT_SAMPLE_RATE).to_file(path)
     return PreprocessedInput(
         metadata=InputMetadata(
             duration_s=duration_s,

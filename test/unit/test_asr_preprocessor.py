@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 import torch
-import torchaudio
+from torchcodec.encoders import AudioEncoder
 
 from caul.constants import DEFAULT_SAMPLE_RATE
 from caul.tasks.preprocessing.asr_preprocessor import ASRPreprocessor, load_audio
@@ -17,7 +17,7 @@ def long_wav(tmp_path) -> Path:
     """3-second silent wav at 16 kHz, long enough for several 1-second chunks"""
     audio = torch.zeros(1, DEFAULT_SAMPLE_RATE * 3)
     path = tmp_path / "long.wav"
-    torchaudio.save(str(path), audio, DEFAULT_SAMPLE_RATE)
+    AudioEncoder(audio, sample_rate=DEFAULT_SAMPLE_RATE).to_file(path)
     return path
 
 

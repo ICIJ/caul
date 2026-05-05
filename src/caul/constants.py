@@ -1,6 +1,7 @@
 from enum import StrEnum
 
 
+
 class VadModel(StrEnum):
     SILERO_MODEL = "silero_vad"
     PYANNOTE_MODEL = "pyannote/voice-activity-detection"
@@ -13,6 +14,8 @@ class TorchDevice(StrEnum):
 
 
 DEFAULT_SAMPLE_RATE = 16000
+DEFAULT_BIT_DEPTH = 16
+DEFAULT_BIT_RATE = DEFAULT_SAMPLE_RATE * DEFAULT_BIT_DEPTH
 DEFAULT_BATCH_SIZE = 32
 DEFAULT_MAX_FRAMES = 25 * 60 * DEFAULT_SAMPLE_RATE  # twenty-five minutes
 DEFAULT_LARGE_FILE_THRESHOLD_BYTES = 30 * 1024 * 1024  # 30mb
