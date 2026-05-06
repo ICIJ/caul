@@ -87,5 +87,3 @@ class PyannoteVoiceSegmentationConfig(VoiceSegmentationConfig):
     strategy: ClassVar[SegmentationStrategy] = Field(
         frozen=True, default=SegmentationStrategy.VOICE_PYANNOTE
     )
-    onset: float = 0.5
-    offset: float = 0.5

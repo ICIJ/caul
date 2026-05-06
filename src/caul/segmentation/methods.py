@@ -210,8 +210,6 @@ def segment_by_pyannote_vad(  # pylint: disable=too-many-arguments
     pipeline: "pyannote.audio.Pipeline",
     *,
     sample_rate: int = DEFAULT_SAMPLE_RATE,
-    onset: float = 0.5,
-    offset: float = 0.5,
     min_speech_duration_ms: int = 100,
     min_silence_duration_ms: int = 100,
     max_segment_len_s: float = PARAKEET_INFERENCE_MAX_DURATION_S,
@@ -221,8 +219,6 @@ def segment_by_pyannote_vad(  # pylint: disable=too-many-arguments
     :param audio_tensor: 1D input tensor
     :param pipeline: pyannote voice activity detection pipeline
     :param sample_rate: sample rate of the audio
-    :param onset: speech onset probability threshold [0, 1)
-    :param offset: speech offset probability threshold [0, 1)
     :param min_speech_duration_ms: minimum speech segment duration in ms
     :param min_silence_duration_ms: minimum silence duration to split on in ms
     :param max_segment_len_s: maximum segment duration in seconds; segments
@@ -234,14 +230,12 @@ def segment_by_pyannote_vad(  # pylint: disable=too-many-arguments
     tensor_id = uuid.uuid4().hex
     max_segment_samples = int(max_segment_len_s * sample_rate)
 
-    pipeline.instantiate(
-        {
-            "onset": onset,
-            "offset": offset,
-            "min_duration_on": min_speech_duration_ms * 1000,  # seconds expected
-            "min_duration_off": min_silence_duration_ms * 1000,  # seconds expected
-        }
-    )
+    # pyannote expects seconds
+    params = {
+        "min_duration_on": min_speech_duration_ms / 1000,
+        "min_duration_off": min_silence_duration_ms / 1000,
+    }
+    pipeline.instantiate(params)
 
     # pyannote expects a 2D tensor (channels x samples)
     waveform = audio_tensor.unsqueeze(0).to(float32)

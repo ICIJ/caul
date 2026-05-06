@@ -14,9 +14,9 @@ from caul.segmentation.objects import (
 )
 from caul.segmentation.segmenter import (
     AudioSegmenter,
-    PyannoteAudioSegmenter,
+    PyannoteVoiceAudioSegmenter,
     TensorSegment,
-    VoiceAudioSegmenter,
+    SileroVoiceAudioSegmenter,
     segment_by_pyannote_vad,
     segment_by_silence,
     segment_by_silero_vad,
@@ -343,16 +343,12 @@ class TestSegmentByPyannoteVad:
         segment_by_pyannote_vad(
             make_silent_tensor(1.0),
             pipeline=pipeline,
-            onset=0.6,
-            offset=0.4,
             min_speech_duration_ms=200,
             min_silence_duration_ms=150,
         )
         call_args = pipeline.instantiate.call_args[0][0]
-        assert call_args["onset"] == 0.6
-        assert call_args["offset"] == 0.4
-        assert call_args["min_duration_on"] == 200 * 1000
-        assert call_args["min_duration_off"] == 150 * 1000
+        assert call_args["min_duration_on"] == pytest.approx(0.2)
+        assert call_args["min_duration_off"] == pytest.approx(0.15)
 
     def test__oversized_segment_is_split(self):
         # One 4-second interval with a 2-second cap should produce 2 segments
@@ -401,12 +397,8 @@ class TestSegmentByPyannoteVad:
             assert torch.equal(seg.tensor, tensor[start_sample:end_sample])
 
 
-# AudioSegmenter dispatch
-
-
-# segment_by_silero_vad
 @AudioSegmenter.register("mock_silero")
-class _MockSileroVADSegmenter(VoiceAudioSegmenter):
+class _MockSileroVADSegmenter(SileroVoiceAudioSegmenter):
     def __init__(
         self, config: SegmentationConfig, timestamps: list[dict] = TEST_TIMESTAMPS
     ) -> None:
@@ -418,13 +410,13 @@ class _MockSileroVADSegmenter(VoiceAudioSegmenter):
 
 
 @AudioSegmenter.register("mock_pyannote")
-class _MockPyannoteSegmenter(PyannoteAudioSegmenter):
+class _MockPyannoteSegmenter(PyannoteVoiceAudioSegmenter):
     def __init__(
         self,
         config: PyannoteVoiceSegmentationConfig,
         intervals_s: list[tuple[float, float]] | None = None,
     ) -> None:
-        super().__init__(config)
+        super().__init__(config, hf_token="")
         self._intervals_s = intervals_s or []
 
     def _load_pipeline(self):
@@ -449,7 +441,6 @@ class TestAudioSegmenter:
             assert len(segments) == 2
 
     def test__dispatches_to_segment_by_silero_vad(self):
-        # Given
         voice_durations = [1.0, 1.5, 0.8]
         silence_secs = 0.6
         tensor = make_voiced_tensor(voice_durations, silence_between_secs=silence_secs)

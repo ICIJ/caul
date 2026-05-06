@@ -67,11 +67,6 @@ class ASRModel(StrEnum):
                 raise NotImplementedError(msg)
 
 
-class VadModel(StrEnum):
-    SILERO_MODEL = "silero_vad"
-    PYANNOTE_MODEL = "pyannote/voice-activity-detection"
-
-
 class ASRResult(BaseModel):
     """Base result class for ASR models"""
 
