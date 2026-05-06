@@ -1,15 +1,14 @@
 import pytest
 
 from caul.asr_pipeline import ASRPipeline, ASRPipelineConfig
-from caul.config import PreprocessorConfig, InferenceRunnerConfig, PostprocessorConfig
 from caul.tasks import (
+    FasterWhisperInferenceRunner,
     ParakeetInferenceRunner,
     ParakeetInferenceRunnerConfig,
     ParakeetPostprocessor,
     ParakeetPostprocessorConfig,
     ParakeetPreprocessor,
     ParakeetPreprocessorConfig,
-    WhisperCppInferenceRunner,
     FireRedASR2Preprocessor,
     FireRedASR2InferenceRunner,
     FireRedASR2Postprocessor,
@@ -49,7 +48,7 @@ _PARAKEET_WITH_WHISPER_INFERENCE = """
         "model": "parakeet"
     },
     "inference": {
-        "model": "whisper_cpp"
+        "model": "faster_whisper"
     },
     "postprocessing": {
         "model": "parakeet"
@@ -67,7 +66,7 @@ _PARAKEET_WITH_WHISPER_INFERENCE = """
         ),
         (
             _PARAKEET_WITH_WHISPER_INFERENCE,
-            [ParakeetPreprocessor, WhisperCppInferenceRunner, ParakeetPostprocessor],
+            [ParakeetPreprocessor, FasterWhisperInferenceRunner, ParakeetPostprocessor],
         ),
         (
             _FIREREDASR2,
@@ -103,20 +102,4 @@ def test_config_serde() -> None:
     ser = config.model_dump_json(indent=2)
     deser = ASRPipelineConfig.model_validate_json(ser)
     # Then
-    expected = """{
-  "device": "cpu",
-  "preprocessing": {
-    "sample_rate": 16000,
-    "model": "parakeet"
-  },
-  "inference": {
-    "model_name": "nvidia/parakeet-tdt-0.6b-v3",
-    "return_timestamps": true,
-    "model": "parakeet"
-  },
-  "postprocessing": {
-    "model": "parakeet"
-  }
-}"""
-    # assert ser == expected
     assert deser == config

@@ -3,8 +3,6 @@ from .inference import (
     ParakeetInferenceRunnerConfig,
     FasterWhisperInferenceRunner,
     FasterWhisperInferenceRunnerConfig,
-    WhisperCppInferenceRunnerConfig,
-    WhisperCppInferenceRunner,
     FireRedASR2InferenceRunner,
     FireRedASR2InferenceRunnerConfig,
 )
