@@ -85,7 +85,7 @@ def cache_hf_model_file(
     filename: str,
     library_name: str | None = None,
     library_version: str | None = None,
-    cache_dir: Path,
+    cache_dir: Path | None = None,
 ) -> None:
     from huggingface_hub import hf_hub_download, get_token
 
@@ -105,7 +105,7 @@ def cache_hf_repo(
     *,
     library_name: str | None = None,
     library_version: str | None = None,
-    cache_dir: Path,
+    cache_dir: Path | None = None,
 ) -> None:
     from huggingface_hub import snapshot_download, get_token
 

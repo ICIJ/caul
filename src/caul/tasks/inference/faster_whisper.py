@@ -61,6 +61,26 @@ class FasterWhisperModel(StrEnum):
     LARGE_V3 = "large-v3"
     DISTIL_LARGE_V3 = "distil-large-v3"
 
+    @property
+    def to_repo_id(self) -> str:
+        match self:
+            case FasterWhisperModel.TINY:
+                return "Systran/faster-whisper-tiny"
+            case FasterWhisperModel.BASE:
+                return "Systran/faster-whisper-base"
+            case FasterWhisperModel.SMALL:
+                return "Systran/faster-whisper-small"
+            case FasterWhisperModel.MEDIUM:
+                return "Systran/faster-whisper-medium"
+            case FasterWhisperModel.LARGE:
+                return "Systran/faster-whisper-large-v3"
+            case FasterWhisperModel.LARGE_V3:
+                return "Systran/faster-whisper-large-v3"
+            case FasterWhisperModel.DISTIL_LARGE_V3:
+                return "Systran/faster-distil-whisper-large-v3"
+            case _:
+                raise NotImplementedError(f"invalid faster whisper model {self}")
+
 
 class FasterWhisperInferenceRunnerConfig(InferenceRunnerConfig):
     model: ClassVar[str] = Field(frozen=True, default=ASRModel.FASTER_WHISPER)
@@ -174,18 +194,11 @@ class FasterWhisperInferenceRunner(InferenceRunner):
 
     @classmethod
     def cache_models(cls, cache_dir: Path | None = None) -> None:
-        from faster_whisper import download_model  # pylint: disable=import-outside-toplevel
-        from huggingface_hub import get_token  # pylint: disable=import-outside-toplevel
-
-        revision = None
         for model_id in FasterWhisperModel:
             logger.info("caching faster whisper model size %s", model_id)
-            download_model(
-                model_id,
-                cache_dir=str(cache_dir),
-                revision=revision,
-                use_auth_token=get_token(),
-            )
+            # We replace the faster whisper download_model utils to avoid importing
+            # the whole faster whisper stack just for download
+            _download_fasterwhisper_model(model_id, cache_dir=cache_dir)
 
     def process(  # pylint: disable=too-many-locals
         self,
@@ -295,3 +308,24 @@ class FasterWhisperInferenceRunner(InferenceRunner):
                 yield ASRResult.from_faster_whisper_result(
                     segments, input_ordering=inp.metadata.input_ordering
                 )
+
+
+def _download_fasterwhisper_model(model: FasterWhisperModel, cache_dir: Path | None):
+    from huggingface_hub import get_token, snapshot_download
+
+    allow_patterns = [
+        "config.json",
+        "preprocessor_config.json",
+        "model.bin",
+        "tokenizer.json",
+        "vocabulary.*",
+    ]
+
+    kwargs = {"allow_patterns": allow_patterns}
+
+    if cache_dir is not None:
+        kwargs["cache_dir"] = str(cache_dir)
+
+    kwargs["token"] = get_token()
+
+    return snapshot_download(model.to_repo_id, **kwargs)
