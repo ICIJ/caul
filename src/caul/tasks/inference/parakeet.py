@@ -65,8 +65,6 @@ class ParakeetInferenceRunner(InferenceRunner):
 
     @classmethod
     def cache_models(cls, cache_dir: Path | None = None) -> None:
-        import nemo
-
         if cache_dir is not None and cache_dir != HF_HUB_CACHE:
             msg = (
                 f"parakeet model are sadly only loaded from the HF cache hub"
@@ -74,17 +72,11 @@ class ParakeetInferenceRunner(InferenceRunner):
             )
             raise ValueError(msg)
 
-        library_name = nemo.__name__
-        library_version = nemo.__version__
         for m in cls._models:
             logger.info("caching parakeet model %s", m)
             filenaname = PurePosixPath(m).name + ".nemo"
             cache_hf_model_file(
-                repo_id=m,
-                filename=filenaname,
-                library_name=library_name,
-                library_version=library_version,
-                cache_dir=cache_dir,
+                repo_id=m, filename=filenaname, library_name="nemo", cache_dir=cache_dir
             )
 
     def process(  # pylint: disable=too-many-locals
