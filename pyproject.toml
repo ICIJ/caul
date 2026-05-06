@@ -28,6 +28,7 @@ dependencies = [
     "pydantic-extra-types[pycountry]~=2.11",
     "torchcodec>=0.10.0,<0.12",
     "typer~=0.24",
+    "huggingface-hub~=1.11",
 ]
 
 [project.optional-dependencies]
@@ -48,6 +49,7 @@ fireredasr2 = [
 faster_whisper = [
     "faster_whisper~=1.2"
 ]
+# TODO: delete me at the next major
 huggingface_hub = [
     "huggingface-hub~=1.11",
 ]
