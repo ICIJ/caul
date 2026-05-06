@@ -51,7 +51,7 @@ _VALIDATED_FIREREDASR2_LANGUAGES = {
 
 class ASRModel(StrEnum):
     PARAKEET = "parakeet"
-    FASTER_WHISPER = "whisper_cpp"
+    FASTER_WHISPER = "faster_whisper"
     FIREREDASR2_AED = "fireredasr2_aed"
 
     def supported_languages(self) -> set[ASRLanguage]:
