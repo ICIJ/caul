@@ -26,16 +26,17 @@ dependencies = [
     "librosa>=0.10.1,<0.12",
     "numpy~=2.3",
     "pydantic-extra-types[pycountry]~=2.11",
-    "torchcodec>=0.10.0,<0.12",
     "typer~=0.24",
     "huggingface-hub~=1.11",
 ]
 
 [project.optional-dependencies]
+preprocessing = [
+    "torchcodec>=0.10.0,<0.12",  # pulls in torch automatically so we've made it optional for a base install
+]
 nemo = [
     "nemo-toolkit[asr]~=2.7",
     "torch~=2.10",
-    "torchaudio~=2.10",
 ]
 pyannote = [
     "pyannote-audio~=4.0",
@@ -78,6 +79,9 @@ torchaudio = [
 torchcodec = [
   { index = "pytorch-cpu" }
 ]
+fireredasr2s = [
+    { git = "https://github.com/FireRedTeam/FireRedASR2S.git" }
+]
 
 [dependency-groups]
 dev = [
@@ -85,7 +89,6 @@ dev = [
     "pre-commit>=4.5.1",
     "pylint>=4.0.4",
     "pytest>=9.0.2",
-    "fireredasr2s @ git+https://github.com/FireRedTeam/FireRedASR2S.git",
     "nest-asyncio>=1.6.0",
     "pytest-asyncio>=1.3.0",
 ]
