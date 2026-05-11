@@ -4,8 +4,7 @@ from typing import Any, Callable, Protocol, Self, TYPE_CHECKING
 
 from icij_common.registrable import RegistrableFromConfig
 
-from caul.constants import SILERO_TORCH_HUB_REPO
-from caul.objects import VadModel
+from caul.constants import SILERO_TORCH_HUB_REPO, VadModel
 from caul.segmentation.methods import (
     segment_by_pyannote_vad,
     segment_by_silence,
@@ -79,7 +78,7 @@ class SilenceAudioSegmenter(AudioSegmenter):
 
 
 @AudioSegmenter.register(SegmentationStrategy.VOICE_SILERO)
-class VoiceAudioSegmenter(AudioSegmenter):
+class SileroVoiceAudioSegmenter(AudioSegmenter):
     def __init__(self, config: SegmentationConfig):
         import torch  # pylint: disable=import-outside-toplevel
 
@@ -114,10 +113,11 @@ class VoiceAudioSegmenter(AudioSegmenter):
 
 
 @AudioSegmenter.register(SegmentationStrategy.VOICE_PYANNOTE)
-class PyannoteAudioSegmenter(AudioSegmenter):
-    def __init__(self, config: PyannoteVoiceSegmentationConfig):
+class PyannoteVoiceAudioSegmenter(AudioSegmenter):
+    def __init__(self, config: PyannoteVoiceSegmentationConfig, hf_token: str):
         super().__init__(config)
         self._pipeline: Any | None = None
+        self._hf_token = hf_token
 
     def __enter__(self) -> Self:
         self._pipeline = self._load_pipeline()
@@ -127,9 +127,14 @@ class PyannoteAudioSegmenter(AudioSegmenter):
         return self
 
     def _load_pipeline(self) -> Any:
-        from pyannote.audio import Pipeline  # pylint: disable=import-outside-toplevel
+        from pyannote.audio import Model  # pylint: disable=import-outside-toplevel
+        from pyannote.audio.pipelines import (
+            VoiceActivityDetection,
+        )  # pylint: disable=import-outside-toplevel
 
-        return Pipeline.from_pretrained(VadModel.PYANNOTE_MODEL)
+        model = Model.from_pretrained(VadModel.PYANNOTE_MODEL, token=self._hf_token)
+
+        return VoiceActivityDetection(segmentation=model)
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         import torch  # pylint: disable=import-outside-toplevel
