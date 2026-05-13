@@ -4,7 +4,6 @@ from enum import StrEnum, unique
 from pathlib import Path
 from typing import ClassVar, Iterable, TYPE_CHECKING
 
-from huggingface_hub import get_token, snapshot_download
 from icij_common.registrable import FromConfig
 from pydantic import Field
 
@@ -312,6 +311,8 @@ class FasterWhisperInferenceRunner(InferenceRunner):
 
 
 def _download_fasterwhisper_model(model: FasterWhisperModel, cache_dir: Path | None):
+    from huggingface_hub import get_token, snapshot_download  # pylint: disable=import-outside-toplevel
+
     allow_patterns = [
         "config.json",
         "preprocessor_config.json",

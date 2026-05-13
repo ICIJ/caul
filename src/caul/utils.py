@@ -2,8 +2,6 @@ import logging
 import tempfile
 from pathlib import Path
 
-from huggingface_hub import get_token, hf_hub_download, snapshot_download
-
 from caul.filesystem import save_tensor
 from caul.objects import PreprocessorOutput
 
@@ -88,6 +86,8 @@ def cache_hf_model_file(
     library_version: str | None = None,
     cache_dir: Path | None = None,
 ) -> None:
+    from huggingface_hub import hf_hub_download, get_token  # pylint: disable=import-outside-toplevel
+
     hf_hub_download(
         repo_id=repo_id,
         filename=filename,
@@ -106,6 +106,8 @@ def cache_hf_repo(
     library_version: str | None = None,
     cache_dir: Path | None = None,
 ) -> None:
+    from huggingface_hub import snapshot_download, get_token  # pylint: disable=import-outside-toplevel
+
     snapshot_download(
         repo_id=repo_id,
         cache_dir=cache_dir,

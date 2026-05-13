@@ -2,7 +2,7 @@ import logging
 from pathlib import Path, PurePosixPath
 from typing import ClassVar, Iterable
 
-from huggingface_hub.constants import HF_HUB_CACHE
+
 from icij_common.registrable import FromConfig
 from pydantic import Field
 
@@ -65,6 +65,8 @@ class ParakeetInferenceRunner(InferenceRunner):
 
     @classmethod
     def cache_models(cls, cache_dir: Path | None = None) -> None:
+        from huggingface_hub.constants import HF_HUB_CACHE  # pylint: disable=import-outside-toplevel
+
         if cache_dir is not None and cache_dir != HF_HUB_CACHE:
             msg = (
                 f"parakeet model are sadly only loaded from the HF cache hub"

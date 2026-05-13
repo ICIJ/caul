@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import Annotated
 
 import typer
-from huggingface_hub.constants import HF_HUB_CACHE
 
 from caul.asr_pipeline import cache_models
 from caul.objects import ASRModel
@@ -34,6 +33,8 @@ async def cache(
         Path | None, typer.Argument(help=_CACHE_MODELS_CACHE_DIR_HELP)
     ] = None,
 ) -> None:
+    from huggingface_hub.constants import HF_HUB_CACHE  # pylint: disable=import-outside-toplevel
+
     if cache_dir is None:
         cache_dir = HF_HUB_CACHE
     cache_models(model, cache_dir)

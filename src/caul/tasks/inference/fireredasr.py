@@ -3,8 +3,7 @@ from contextlib import nullcontext
 from pathlib import Path
 from typing import ClassVar, Iterable, TYPE_CHECKING
 
-from huggingface_hub import snapshot_download
-from huggingface_hub.constants import HF_HUB_CACHE
+
 from icij_common.registrable import FromConfig
 from pydantic import Field
 
@@ -54,6 +53,8 @@ def fireredasr2_from_pretrained(
         FireRedAsr2,
         FireRedAsr2Config,
     )  # pylint: disable=import-outside-toplevel
+    from huggingface_hub.constants import HF_HUB_CACHE  # pylint: disable=import-outside-toplevel
+    from huggingface_hub import snapshot_download  # pylint: disable=import-outside-toplevel
 
     if cache_dir is None:
         cache_dir = HF_HUB_CACHE
