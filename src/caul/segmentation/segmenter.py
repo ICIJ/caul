@@ -79,15 +79,17 @@ class SilenceAudioSegmenter(AudioSegmenter):
 
 @AudioSegmenter.register(SegmentationStrategy.VOICE_SILERO)
 class SileroVoiceAudioSegmenter(AudioSegmenter):
-    def __init__(self, config: SegmentationConfig):
+    def __init__(self, config: SegmentationConfig, device: str = "cpu"):
         import torch  # pylint: disable=import-outside-toplevel
 
         super().__init__(config)
         self._vad_model: torch.nn.Module | None = None
         self._vad_parser_fn: Callable | None = None
+        self._device = torch.device(device)
 
     def __enter__(self) -> Self:
         self._vad_model, self._vad_parser_fn = self._load_vad_model()
+
         self._segmentation_fn = partial(
             segment_by_silero_vad,
             vad_model=self._vad_model,
@@ -96,7 +98,9 @@ class SileroVoiceAudioSegmenter(AudioSegmenter):
         return self
 
     def _load_vad_model(self) -> tuple["torch.nn.Module", Callable]:
-        return _load_vad_model()
+        model, parser_fn = _load_vad_model()
+
+        return model.to(device=self._device), parser_fn
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         import torch  # pylint: disable=import-outside-toplevel
@@ -114,10 +118,18 @@ class SileroVoiceAudioSegmenter(AudioSegmenter):
 
 @AudioSegmenter.register(SegmentationStrategy.VOICE_PYANNOTE)
 class PyannoteVoiceAudioSegmenter(AudioSegmenter):
-    def __init__(self, config: PyannoteVoiceSegmentationConfig, hf_token: str):
+    def __init__(
+        self,
+        config: PyannoteVoiceSegmentationConfig,
+        hf_token: str,
+        device: str = "cpu",
+    ):
+        import torch  # pylint: disable=import-outside-toplevel
+
         super().__init__(config)
         self._pipeline: Any | None = None
         self._hf_token = hf_token
+        self._device = torch.device(device)
 
     def __enter__(self) -> Self:
         self._pipeline = self._load_pipeline()
@@ -134,7 +146,7 @@ class PyannoteVoiceAudioSegmenter(AudioSegmenter):
 
         model = Model.from_pretrained(VadModel.PYANNOTE_MODEL, token=self._hf_token)
 
-        return VoiceActivityDetection(segmentation=model)
+        return VoiceActivityDetection(segmentation=model).to(device=self._device)
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         import torch  # pylint: disable=import-outside-toplevel
