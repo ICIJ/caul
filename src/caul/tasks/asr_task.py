@@ -6,9 +6,7 @@ from typing import Any, Iterable, TYPE_CHECKING
 
 from icij_common.registrable import RegistrableFromConfig
 
-from caul.constants import TorchDevice
-from caul.objects import ASRResult, PreprocessorOutput
-
+from caul.objects import ASRResult, PreprocessorOutput, TorchDevice
 
 if TYPE_CHECKING:
     import torch
@@ -31,7 +29,9 @@ class ASRTask(AbstractContextManager, ABC):
 
     def __exit__(self, exc_type, exc_val, exc_tb): ...
 
-    def set_device(self, device: "TorchDevice | torch._device") -> None:  # pylint: disable=unused-argument
+    def set_device(
+        self, device: "TorchDevice | torch._device"
+    ) -> None:  # pylint: disable=unused-argument
         pass
 
 

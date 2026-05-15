@@ -43,7 +43,7 @@ pyannote = [
     "torchaudio~=2.10",
 ]
 fireredasr2 = [
-    "fireredasr2s",
+    "fasr-asr-firered~=0.5.3",
     "kaldi-native-fbank~=1.22",
     "torchaudio~=2.10",
 ]
@@ -78,9 +78,6 @@ torchaudio = [
 ]
 torchcodec = [
   { index = "pytorch-cpu" }
-]
-fireredasr2s = [
-    { git = "https://github.com/FireRedTeam/FireRedASR2S.git" }
 ]
 
 [dependency-groups]

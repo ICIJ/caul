@@ -1,6 +1,6 @@
 import pytest
 import torch
-from fireredasr2s.fireredasr2 import FireRedAsr2
+from fasr_asr_firered.firered import FireRedAsr2
 from huggingface_hub.constants import HF_HUB_CACHE
 
 from caul.constants import (

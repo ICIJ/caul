@@ -6,8 +6,8 @@ from typing import ClassVar, Iterable
 from icij_common.registrable import FromConfig
 from pydantic import Field
 
-from caul.constants import PARAKEET_MODEL_REF, TorchDevice
-from caul.objects import ASRModel, ASRResult, PreprocessorOutput
+from caul.constants import PARAKEET_MODEL_REF
+from caul.objects import ASRModel, ASRResult, PreprocessorOutput, TorchDevice
 from ..asr_task import InferenceRunner
 from ...config import InferenceRunnerConfig
 from ...utils import cache_hf_model_file
@@ -65,7 +65,9 @@ class ParakeetInferenceRunner(InferenceRunner):
 
     @classmethod
     def cache_models(cls, cache_dir: Path | None = None) -> None:
-        from huggingface_hub.constants import HF_HUB_CACHE  # pylint: disable=import-outside-toplevel
+        from huggingface_hub.constants import (
+            HF_HUB_CACHE,
+        )  # pylint: disable=import-outside-toplevel
 
         if cache_dir is not None and cache_dir != HF_HUB_CACHE:
             msg = (
