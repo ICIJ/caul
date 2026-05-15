@@ -1,18 +1,6 @@
 from enum import StrEnum
 
 
-
-class VadModel(StrEnum):
-    SILERO_MODEL = "silero_vad"
-    PYANNOTE_MODEL = "pyannote/segmentation-3.0"
-
-
-class TorchDevice(StrEnum):
-    CPU = "cpu"
-    GPU = "cuda"
-    MPS = "mps"
-
-
 DEFAULT_SAMPLE_RATE = 16000
 DEFAULT_BIT_DEPTH = 16
 DEFAULT_BIT_RATE = DEFAULT_SAMPLE_RATE * DEFAULT_BIT_DEPTH
@@ -174,14 +162,6 @@ FASTER_WHISPER_LARGE_V3_TURBO_SUPPRESSED_TOKENS = [
 
 
 # FireRedASR2
-class FireRedASR2ModelRef(StrEnum):
-    ASR2 = "ASR2"
-
-
-class FireRedASR2ModelTag(StrEnum):
-    AED = "aed"
-    LLM = "llm"
-
 
 FIREREDASR2_LANGUAGES = {"zh"}
 FIREREDASR2_MODEL_HUB_PREFIX = "FireRedTeam/FireRed"
@@ -197,3 +177,5 @@ FIREREDASR2_SOFTMAX_SMOOTHING_DEFAULT = 1.25
 FIREREDASR2_AED_LENGTH_PENALTY_DEFAULT = 0.6
 FIREREDASR2_EOS_PENALTY_DEFAULT = 1.0
 FIREREDASR2_RETURN_TIMESTAMP_DEFAULT = True
+
+FIREREDASR2_FASR_ASR_AED_MODEL_REF = "firered_aed"

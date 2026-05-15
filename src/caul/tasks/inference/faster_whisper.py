@@ -30,7 +30,6 @@ from caul.constants import (
     FASTER_WHISPER_TEMPERATURES_DEFAULT,
     FASTER_WHISPER_WITHOUT_TIMESTAMPS_DEFAULT,
     FASTER_WHISPER_WORD_TIMESTAMPS_DEFAULT,
-    TorchDevice,
     DEFAULT_SAMPLE_RATE,
 )
 from caul.objects import (
@@ -39,6 +38,7 @@ from caul.objects import (
     PreprocessorOutput,
     PreprocessedInput,
     PreprocessedInputWithTensor,
+    TorchDevice,
 )
 from ..asr_task import InferenceRunner
 from ...config import InferenceRunnerConfig
@@ -119,7 +119,9 @@ class FasterWhisperInferenceRunnerConfig(InferenceRunnerConfig):
     hotwords: str | None = None
 
     def to_transcription_options(self) -> "TranscriptionOptions":
-        from faster_whisper.transcribe import TranscriptionOptions  # pylint: disable=import-outside-toplevel
+        from faster_whisper.transcribe import (
+            TranscriptionOptions,
+        )  # pylint: disable=import-outside-toplevel
 
         return TranscriptionOptions(
             beam_size=self.beam_size,
@@ -311,7 +313,10 @@ class FasterWhisperInferenceRunner(InferenceRunner):
 
 
 def _download_fasterwhisper_model(model: FasterWhisperModel, cache_dir: Path | None):
-    from huggingface_hub import get_token, snapshot_download  # pylint: disable=import-outside-toplevel
+    from huggingface_hub import (
+        get_token,
+        snapshot_download,
+    )  # pylint: disable=import-outside-toplevel
 
     allow_patterns = [
         "config.json",

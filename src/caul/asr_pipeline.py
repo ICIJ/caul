@@ -8,8 +8,7 @@ from icij_common.pydantic_utils import make_enum_discriminator, safe_copy, tagge
 from pydantic import Discriminator, Field
 
 from .config import InferenceRunnerConfig, PostprocessorConfig, PreprocessorConfig
-from .constants import TorchDevice
-from .objects import ASRResult, BaseModel, ASRModel
+from .objects import ASRResult, BaseModel, ASRModel, TorchDevice
 from .tasks import (
     ASRTask,
     FasterWhisperInferenceRunner,

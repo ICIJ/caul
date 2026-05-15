@@ -19,6 +19,26 @@ if TYPE_CHECKING:
     import torch
 
 
+class VadModel(StrEnum):
+    SILERO_MODEL = "silero_vad"
+    PYANNOTE_MODEL = "pyannote/segmentation-3.0"
+
+
+class TorchDevice(StrEnum):
+    CPU = "cpu"
+    GPU = "cuda"
+    MPS = "mps"
+
+
+class FireRedASR2ModelRef(StrEnum):
+    ASR2 = "ASR2"
+
+
+class FireRedASR2ModelTag(StrEnum):
+    AED = "aed"
+    LLM = "llm"
+
+
 class BaseModel(_BaseModel):
     model_config = merge_configs(icij_config(), no_enum_values_config())
 

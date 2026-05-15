@@ -9,7 +9,6 @@ from pydantic import Field
 
 
 from caul.constants import (
-    FireRedASR2ModelTag,
     FIREREDASR2_MODEL_HUB_PREFIX,
     FIREREDASR2_USE_HALF_DEFAULT,
     FIREREDASR2_BEAM_SIZE_DEFAULT,
@@ -19,10 +18,15 @@ from caul.constants import (
     FIREREDASR2_AED_LENGTH_PENALTY_DEFAULT,
     FIREREDASR2_EOS_PENALTY_DEFAULT,
     FIREREDASR2_RETURN_TIMESTAMP_DEFAULT,
-    TorchDevice,
-    FireRedASR2ModelRef,
 )
-from caul.objects import ASRResult, PreprocessorOutput, ASRModel
+from caul.objects import (
+    ASRResult,
+    PreprocessorOutput,
+    ASRModel,
+    FireRedASR2ModelRef,
+    FireRedASR2ModelTag,
+    TorchDevice,
+)
 from caul.tasks.asr_task import InferenceRunner
 from caul.config import InferenceRunnerConfig
 from caul.utils import cache_hf_repo, prepare_file_input_batch
@@ -31,7 +35,7 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     import torch
-    from fireredasr2s.fireredasr2 import FireRedAsr2
+    from fasr_asr_firered.firered import FireRedAsr2
 
 
 def fireredasr2_from_pretrained(
@@ -45,16 +49,20 @@ def fireredasr2_from_pretrained(
     HuggingFace Hub if not already available in model_dir.
 
     :param model_ref: One of ASR2, VAD, LID, or Punc
-    :param model_dir: Directory to download model to
+    :param cache_dir: Directory to download model to
     :param model_tag: For ASR models, can be either AED or LLM
     :param config: Configuration options for model
     """
-    from fireredasr2s.fireredasr2 import (
+    from fasr_asr_firered.firered import (
         FireRedAsr2,
         FireRedAsr2Config,
     )  # pylint: disable=import-outside-toplevel
-    from huggingface_hub.constants import HF_HUB_CACHE  # pylint: disable=import-outside-toplevel
-    from huggingface_hub import snapshot_download  # pylint: disable=import-outside-toplevel
+    from huggingface_hub.constants import (
+        HF_HUB_CACHE,
+    )  # pylint: disable=import-outside-toplevel
+    from huggingface_hub import (
+        snapshot_download,
+    )  # pylint: disable=import-outside-toplevel
 
     if cache_dir is None:
         cache_dir = HF_HUB_CACHE
@@ -86,7 +94,7 @@ class FireRedASR2InferenceRunnerConfig(InferenceRunnerConfig):
     def to_fire_red_asr_model(
         self, use_gpu: bool = True, cache_dir: Path | None = None
     ) -> "torch.Module":
-        from fireredasr2s.fireredasr2 import (
+        from fasr_asr_firered.firered import (
             FireRedAsr2Config,
         )  # pylint: disable=import-outside-toplevel
 
