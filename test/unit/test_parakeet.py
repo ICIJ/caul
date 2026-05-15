@@ -4,8 +4,8 @@ import pytest
 from huggingface_hub.constants import HF_HUB_CACHE
 
 from caul.asr_pipeline import ASRPipeline
-from caul.constants import TorchDevice, DEFAULT_SAMPLE_RATE
-from caul.objects import ASRResult
+from caul.constants import DEFAULT_SAMPLE_RATE
+from caul.objects import ASRResult, TorchDevice
 
 import torch
 
