@@ -4,7 +4,8 @@ from typing import Any, Callable, Protocol, Self, TYPE_CHECKING
 
 from icij_common.registrable import RegistrableFromConfig
 
-from caul.constants import SILERO_TORCH_HUB_REPO, VadModel
+from caul.constants import SILERO_TORCH_HUB_REPO
+from caul.objects import VadModel
 from caul.segmentation.methods import (
     segment_by_pyannote_vad,
     segment_by_silence,
