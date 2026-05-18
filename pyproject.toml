@@ -30,6 +30,9 @@ dependencies = [
     "huggingface-hub~=1.11",
 ]
 
+[project.scripts]
+caul = "caul.__main__:main"
+
 [project.optional-dependencies]
 preprocessing = [
     "torchcodec>=0.10.0,<0.12",  # pulls in torch automatically so we've made it optional for a base install
