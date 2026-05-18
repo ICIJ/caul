@@ -67,7 +67,7 @@ class ParakeetInferenceRunner(InferenceRunner):
     def cache_models(cls, cache_dir: Path | None = None) -> None:
         from huggingface_hub.constants import HF_HUB_CACHE  # pylint: disable=import-outside-toplevel
 
-        if cache_dir is not None and cache_dir != HF_HUB_CACHE:
+        if cache_dir is not None and str(cache_dir) != HF_HUB_CACHE:
             msg = (
                 f"parakeet model are sadly only loaded from the HF cache hub"
                 f" ({HF_HUB_CACHE}), can't load them from elsewhere"
