@@ -31,8 +31,8 @@ class TensorSegment:
 class SegmentationStrategy(StrEnum):
     FIXED = "fixed"
     SILENCE = "silence"
-    VOICE_SILERO = "voice"
-    VOICE_PYANNOTE = "pyannote"
+    VOICE_SILERO = "voice_silero"
+    VOICE_PYANNOTE = "voice_pyannote"
 
 
 class SegmentationConfig(RegistrableConfig):
