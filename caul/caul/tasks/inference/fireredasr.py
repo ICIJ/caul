@@ -6,17 +6,7 @@ from typing import Iterable, TYPE_CHECKING
 
 from icij_common.registrable import FromConfig
 
-from caul_core.constants import (
-    FIREREDASR2_USE_HALF_DEFAULT,
-    FIREREDASR2_BEAM_SIZE_DEFAULT,
-    FIREREDASR2_NBEST_DEFAULT,
-    FIREREDASR2_DECODE_MAX_LEN_DEFAULT,
-    FIREREDASR2_SOFTMAX_SMOOTHING_DEFAULT,
-    FIREREDASR2_AED_LENGTH_PENALTY_DEFAULT,
-    FIREREDASR2_EOS_PENALTY_DEFAULT,
-    FIREREDASR2_RETURN_TIMESTAMP_DEFAULT,
-    FIREREDASR2_MODEL_HUB_PREFIX,
-)
+from caul_core.constants import FIREREDASR2_MODEL_HUB_PREFIX
 from caul_core.objects import (
     TorchDevice,
     ASRResult,
@@ -25,8 +15,8 @@ from caul_core.objects import (
     FireRedASR2ModelTag,
     FireRedASR2ModelRef,
 )
+from caul_core.config import FireRedASR2InferenceRunnerConfig
 from caul.tasks.asr_task import InferenceRunner
-from caul_core.config import InferenceRunnerConfig, FireRedASR2InferenceRunnerConfig
 from caul.utils import cache_hf_repo, prepare_file_input_batch
 
 logger = logging.getLogger(__name__)

@@ -6,22 +6,22 @@ from typing import Iterable, Self, TYPE_CHECKING, Callable
 from hashlib import sha256
 
 
-from caul.task_defaults import generic_batching_fn
 from caul_core.config import PreprocessorConfig
-from caul.segmentation import segment_by_silence
 from caul_core.constants import (
     DEFAULT_SAMPLE_RATE,
     DEFAULT_BATCH_SIZE,
     DEFAULT_MAX_FRAMES,
     DEFAULT_LARGE_FILE_THRESHOLD_BYTES,
 )
-from caul.filesystem import save_tensor
 from caul_core.objects import (
     InputMetadata,
     PreprocessedInput,
     PreprocessedInputWithTensor,
     PreprocessorOutput,
 )
+from caul.task_defaults import generic_batching_fn
+from caul.segmentation import segment_by_silence
+from caul.filesystem import save_tensor
 from caul.tasks.asr_task import Preprocessor
 
 if TYPE_CHECKING:

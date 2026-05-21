@@ -105,6 +105,7 @@ disable = [
     "missing-module-docstring",
     "missing-class-docstring",
     "missing-function-docstring",
+    "import-outside-toplevel",
 ]
 
 [tool.pylint.main]

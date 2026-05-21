@@ -5,10 +5,10 @@ from pathlib import Path
 from typing import Iterable, TYPE_CHECKING
 
 
-from .asr_pipeline import ASRPipeline
 from caul_core.asr_pipeline import ASRPipelineConfig
-from .default_configs import MODEL_FAMILY_CONFIG_MAP
 from caul_core.objects import ASRModel, ASRResult
+from .asr_pipeline import ASRPipeline
+from .default_configs import MODEL_FAMILY_CONFIG_MAP
 from .utils import fuzzy_match
 from .exception import (
     MissingModelSpecificationException,

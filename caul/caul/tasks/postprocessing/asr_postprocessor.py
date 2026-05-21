@@ -2,9 +2,9 @@ from typing import Callable, Iterable
 
 from icij_common.registrable import FromConfig
 
-from caul.task_defaults import generic_unbatching_fn
 from caul_core.config import PostprocessorConfig
 from caul_core.objects import ASRResult
+from caul.task_defaults import generic_unbatching_fn
 from caul.tasks.asr_task import Postprocessor
 
 

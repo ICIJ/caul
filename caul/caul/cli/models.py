@@ -4,9 +4,8 @@ from typing import Annotated
 
 import typer
 
-from caul.asr_pipeline import cache_models
 from caul_core.objects import ASRModel
-
+from caul.asr_pipeline import cache_models
 from .utils import AsyncTyper
 
 _START_WORKER_HELP = "start a datashare worker"
@@ -33,9 +32,9 @@ async def cache(
         Path | None, typer.Argument(help=_CACHE_MODELS_CACHE_DIR_HELP)
     ] = None,
 ) -> None:
-    from huggingface_hub.constants import (
+    from huggingface_hub.constants import (  # pylint: disable=import-outside-toplevel
         HF_HUB_CACHE,
-    )  # pylint: disable=import-outside-toplevel
+    )
 
     if cache_dir is None:
         cache_dir = HF_HUB_CACHE

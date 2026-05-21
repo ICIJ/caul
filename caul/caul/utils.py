@@ -2,8 +2,8 @@ import logging
 import tempfile
 from pathlib import Path
 
-from .filesystem import save_tensor
 from caul_core.objects import PreprocessorOutput
+from .filesystem import save_tensor
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +60,8 @@ def prepare_file_input_batch(
             )
         ):
             logger.warning(
-                "Input %s does not have a preprocessed file path or a valid tensor to save to disk. Skipping",
+                "Input %s does not have a preprocessed file path or a valid tensor"
+                "to save to disk. Skipping",
                 inp_id,
             )
             continue

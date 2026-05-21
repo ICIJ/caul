@@ -7,8 +7,8 @@ from icij_common.registrable import FromConfig
 
 from caul_core.constants import PARAKEET_MODEL_REF
 from caul_core.objects import TorchDevice, ASRModel, ASRResult, PreprocessorOutput
+from caul_core.config import ParakeetInferenceRunnerConfig
 from ..asr_task import InferenceRunner
-from caul_core.config import InferenceRunnerConfig, ParakeetInferenceRunnerConfig
 from ...utils import cache_hf_model_file
 
 logger = logging.getLogger(__name__)
