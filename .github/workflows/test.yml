@@ -33,7 +33,7 @@ jobs:
         run: sudo apt update && sudo apt install -y ffmpeg
       - name: Run tests
         run: |
-          cd caul
+          cd ..
           uv run --dev --all-extras --frozen pytest -vvv --cache-clear --show-capture=all -r A test -m "not no_ci"
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
