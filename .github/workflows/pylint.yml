@@ -21,9 +21,8 @@ jobs:
         python-version-file: "caul/pyproject.toml"
         enable-cache: true
     - name: Install the project
-      with:
-        working-directory: caul
       run: |
+        cd caul
         uv sync --all-extras --dev
     - name: Analysing the code with pylint
       run: |

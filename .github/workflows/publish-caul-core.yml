@@ -22,10 +22,10 @@ jobs:
       - name: Install Python 3.13
         run: uv python install 3.13
       - name: Build Caul Core
-        with:
-          working-directory: caul-core
-        run: uv build
+        run: |
+          cd caul-core
+          uv build
       - name: Publish Caul Core
-        with:
-          working-directory: caul-core
-        run: uv publish
+        run: |
+          cd caul-core
+          uv publish

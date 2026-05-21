@@ -26,9 +26,8 @@ jobs:
           python-version: "3.13"
           enable-cache: true
       - name: Install deps
-        with:
-          working-directory: caul
         run: |
+          cd caul
           uv sync --all-extras --dev
       - name: Install torchcodec deps
         run: sudo apt update && sudo apt install -y ffmpeg
