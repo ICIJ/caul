@@ -4,23 +4,25 @@ from unittest.mock import MagicMock
 import pytest
 import torch
 
-from caul.constants import DEFAULT_SAMPLE_RATE
-from caul.segmentation.objects import (
+from caul_core.constants import DEFAULT_SAMPLE_RATE
+from caul.segmentation import (
     FixedSegmentationConfig,
     PyannoteVoiceSegmentationConfig,
     SegmentationConfig,
     SilenceSegmentationConfig,
     SileroVoiceSegmentationConfig,
 )
-from caul.segmentation.segmenter import (
-    AudioSegmenter,
-    PyannoteVoiceAudioSegmenter,
+from caul.segmentation import (
     TensorSegment,
-    SileroVoiceAudioSegmenter,
     segment_by_pyannote_vad,
     segment_by_silence,
     segment_by_silero_vad,
     segment_fixed,
+)
+from caul.segmentation.segmenter import (
+    SileroVoiceAudioSegmenter,
+    AudioSegmenter,
+    PyannoteVoiceAudioSegmenter,
 )
 from test.unit.constant import TEST_TIMESTAMPS
 

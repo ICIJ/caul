@@ -7,7 +7,8 @@ import pytest
 import torch
 from torchcodec.encoders import AudioEncoder
 
-from caul.constants import DEFAULT_SAMPLE_RATE
+from caul_core.constants import DEFAULT_SAMPLE_RATE
+
 from caul.tasks.preprocessing.asr_preprocessor import ASRPreprocessor, load_audio
 from test.unit.constant import TEST_WAV_PATH
 

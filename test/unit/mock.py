@@ -4,12 +4,9 @@ from nemo.collections.asr.parts.mixins import TranscribeConfig
 from nemo.collections.asr.parts.utils import Hypothesis
 from pydantic import Field
 
-from caul.constants import TorchDevice
-from caul.tasks import (
-    InferenceRunner,
-    ParakeetInferenceRunner,
-    ParakeetInferenceRunnerConfig,
-)
+from caul_core.objects import TorchDevice
+from caul_core.config import ParakeetInferenceRunnerConfig
+from caul.tasks import InferenceRunner, ParakeetInferenceRunner
 from test.unit.constant import (
     PARAKEET_TEST_CONFIDENCE,
     TEST_WAV_TRANSCRIPTION,

@@ -4,17 +4,17 @@ import pytest
 from huggingface_hub.constants import HF_HUB_CACHE
 
 from caul.asr_pipeline import ASRPipeline
-from caul.constants import TorchDevice, DEFAULT_SAMPLE_RATE
-from caul.objects import ASRResult
+from caul_core.objects import TorchDevice, ASRResult
+from caul_core.constants import DEFAULT_SAMPLE_RATE
 
 import torch
 
 from caul.tasks import (
     ParakeetInferenceRunner,
-    ParakeetInferenceRunnerConfig,
     ParakeetPostprocessor,
     ParakeetPreprocessor,
 )
+from caul_core.config import ParakeetInferenceRunnerConfig
 from caul.tasks.preprocessing.parakeet import _parakeet_batching_fn
 
 

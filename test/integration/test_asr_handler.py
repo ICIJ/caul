@@ -4,9 +4,8 @@ from pathlib import Path
 import pytest
 
 from caul.asr_pipeline import ASRPipeline
-from caul.constants import TorchDevice
+from caul_core.objects import TorchDevice, ASRModel
 from caul.handler import ASRHandler
-from caul.objects import ASRModel
 
 RESOURCES = Path(__file__).parents[1] / "resources"
 

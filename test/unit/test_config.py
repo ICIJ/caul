@@ -1,17 +1,20 @@
 import pytest
 
-from caul.asr_pipeline import ASRPipeline, ASRPipelineConfig
+from caul.asr_pipeline import ASRPipeline
+from caul_core.asr_pipeline import ASRPipelineConfig
 from caul.tasks import (
     FasterWhisperInferenceRunner,
     ParakeetInferenceRunner,
-    ParakeetInferenceRunnerConfig,
     ParakeetPostprocessor,
-    ParakeetPostprocessorConfig,
     ParakeetPreprocessor,
-    ParakeetPreprocessorConfig,
     FireRedASR2Preprocessor,
     FireRedASR2InferenceRunner,
     FireRedASR2Postprocessor,
+)
+from caul_core.config import (
+    ParakeetInferenceRunnerConfig,
+    ParakeetPostprocessorConfig,
+    ParakeetPreprocessorConfig,
 )
 
 _PARAKEET = """

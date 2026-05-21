@@ -4,7 +4,7 @@ from pathlib import Path
 from _pytest.logging import LogCaptureFixture
 from _pytest.monkeypatch import MonkeyPatch
 from caul.cli import cli_app, models
-from caul.objects import ASRModel
+from caul_core.objects import ASRModel
 
 from typer.testing import CliRunner
 

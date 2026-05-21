@@ -2,7 +2,8 @@ from typing import Callable
 
 import pytest
 
-from caul.asr_pipeline import ASRPipeline, ASRPipelineConfig
+from caul.asr_pipeline import ASRPipeline
+from caul_core.asr_pipeline import ASRPipelineConfig
 
 
 @pytest.mark.parametrize(
