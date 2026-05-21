@@ -8,8 +8,8 @@ from huggingface_hub.constants import HF_HUB_CACHE
 from numpy import ndarray
 from torchcodec.encoders import AudioEncoder
 
-from caul.constants import DEFAULT_SAMPLE_RATE
-from caul.objects import (
+from caul_core.constants import DEFAULT_SAMPLE_RATE
+from caul_core.objects import (
     ASRResult,
     InputMetadata,
     PreprocessedInput,

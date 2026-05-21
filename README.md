@@ -22,7 +22,7 @@ for each input. `transcriptions` contains a list of
 tuples of the form `(start_time, end_time, text_segment)` and `scores` a measure
 of confidence in a transcription in the `range(0, -250)`:
 ```aiignore
->>> from caul.handler import ASRHandler
+>>> from .handler import ASRHandler
 >>> handler = ASRHandler(models="parakeet")
 >>> handler.startup()
 >>> results = handler.transcribe("<...path to some audio file...>")

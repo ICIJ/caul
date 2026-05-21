@@ -4,10 +4,9 @@ import pytest
 import numpy as np
 
 from caul.handler import ASRHandler
-
 from caul.asr_pipeline import ASRPipeline
-from caul.tasks import ParakeetPreprocessorConfig, ParakeetPostprocessorConfig
-from caul.tasks.asr_task import Postprocessor, Preprocessor
+from caul_core.config import ParakeetPreprocessorConfig, ParakeetPostprocessorConfig
+from caul.tasks import Postprocessor, Preprocessor
 from test.unit.constant import (
     TEST_MP4_TRANSCRIPTION,
     TEST_WAV_TRANSCRIPTION,

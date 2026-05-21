@@ -3,22 +3,15 @@ import torch
 from fireredasr2s.fireredasr2 import FireRedAsr2
 from huggingface_hub.constants import HF_HUB_CACHE
 
-from caul.constants import (
-    FIREREDASR2_INFERENCE_MAX_FRAMES,
-)
-from caul.objects import (
+from caul_core.constants import FIREREDASR2_INFERENCE_MAX_FRAMES
+from caul_core.objects import (
     ASRResult,
     PreprocessedInput,
     PreprocessedInputWithTensor,
     InputMetadata,
 )
-from caul.tasks import FireRedASR2InferenceRunnerConfig
-from caul.tasks.inference.fireredasr import (
-    FireRedASR2InferenceRunner,
-)
-from caul.tasks.preprocessing.fireredasr import (
-    FireRedASR2Preprocessor,
-)
+from caul_core.config import FireRedASR2InferenceRunnerConfig
+from caul.tasks import FireRedASR2InferenceRunner, FireRedASR2Preprocessor
 
 
 ZH_TEXT = "你好世界"

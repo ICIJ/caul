@@ -3,8 +3,8 @@ from pathlib import Path
 import pytest
 import torch
 
-from caul.constants import FIREREDASR2_INFERENCE_MAX_FRAMES
-from caul.objects import ASRResult
+from caul_core.constants import FIREREDASR2_INFERENCE_MAX_FRAMES
+from caul_core.objects import ASRResult
 from caul.tasks.postprocessing.asr_postprocessor import ASRPostprocessor
 from caul.tasks.preprocessing.asr_preprocessor import ASRPreprocessor
 
