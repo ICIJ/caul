@@ -25,16 +25,12 @@ jobs:
           version: "0.9.24"
           python-version: "3.13"
           enable-cache: true
-      - name: Install deps
-        run: |
-          cd caul
-          uv sync --all-extras --dev
       - name: Install torchcodec deps
         run: sudo apt update && sudo apt install -y ffmpeg
       - name: Run tests
         run: |
-          cd ..
-          uv run --dev --all-extras --frozen pytest -vvv --cache-clear --show-capture=all -r A test -m "not no_ci"
+          cd caul
+          uv run --dev --all-extras --frozen pytest -vvv --cache-clear --show-capture=all -r A ../test -m "not no_ci"
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
