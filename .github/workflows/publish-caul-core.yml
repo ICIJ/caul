@@ -7,7 +7,7 @@ on:
       - v*
 
 jobs:
-  run:
+  build:
     runs-on: ubuntu-latest
     environment:
       name: pypi
@@ -21,7 +21,11 @@ jobs:
         uses: astral-sh/setup-uv@v7
       - name: Install Python 3.13
         run: uv python install 3.13
-      - name: Build
+      - name: Build Caul Core
+        with:
+          working-directory: caul-core
         run: uv build
-      - name: Publish
+      - name: Publish Caul Core
+        with:
+          working-directory: caul-core
         run: uv publish
