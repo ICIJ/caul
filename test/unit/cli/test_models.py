@@ -1,6 +1,7 @@
 import logging
 from pathlib import Path
 
+import pytest
 from _pytest.logging import LogCaptureFixture
 from _pytest.monkeypatch import MonkeyPatch
 from caul.cli import cli_app, models
@@ -16,6 +17,7 @@ def _mock_cache_models(model: ASRModel | None, cache_dir: Path) -> None:
     logger.info("%s models were cached %s", model, cache_dir)
 
 
+@pytest.mark.asyncio
 async def test_cache_models(
     typer_asyncio_patch, monkeypatch: MonkeyPatch, caplog: LogCaptureFixture
 ) -> None:
