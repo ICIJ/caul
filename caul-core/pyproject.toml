@@ -1,16 +1,3 @@
-[build-system]
-requires = ["hatchling", "uv-dynamic-versioning"]
-build-backend = "hatchling.build"
-
-[tool.hatch.version]
-source = "uv-dynamic-versioning"
-
-[tool.hatch.build.targets.wheel]
-packages = ["caul_core"]
-
-[tool.uv-dynamic-versioning]
-fallback-version = "0.0.0"
-
 [project]
 name = "caul-core"
 dynamic = ["version"]
@@ -27,3 +14,17 @@ dependencies = [
 
 [tool.uv]
 package = true
+
+[build-system]
+requires = ["hatchling", "uv-dynamic-versioning"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
+
+[tool.hatch.build.targets.wheel]
+packages = ["caul_core"]
+
+[tool.uv-dynamic-versioning]
+fallback-version = "0.0.0"
+pattern-prefix = "caul-core-"
