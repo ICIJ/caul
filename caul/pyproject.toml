@@ -45,6 +45,9 @@ faster_whisper = [
 huggingface_hub = [
     "huggingface-hub~=1.11",
 ]
+parakeet_trt = [
+    "tensorrt-lean~=11.0.0.114",
+]
 
 # Nemo 2.7.2 has a very tight transformers version range (>=4.57.0,<4.58.dev0) which
 # conflicts with fireredasr2s. Pin the version from fireredasr2s here, since this throws
