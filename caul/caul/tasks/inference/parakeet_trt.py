@@ -11,7 +11,7 @@ from caul_core.constants import PARAKEET_MODEL_REF
 from caul_core.objects import TorchDevice, ASRModel, ASRResult
 from .. import ParakeetInferenceRunner
 from ..asr_task import InferenceRunner
-from ...trt.runner import TrtInferenceRunner
+from ...trt.runner import TrtInferenceHandler
 
 logger = logging.getLogger(__name__)
 
@@ -111,7 +111,7 @@ class ParakeetTrtInferenceRunner(ParakeetInferenceRunner):
             audio_inputs.shape[0] * [audio_inputs.shape[-1]]
         )
 
-        with TrtInferenceRunner(self._encoder) as runner:
+        with TrtInferenceHandler(self._encoder) as runner:
             enc_out, enc_len = runner.infer(
                 {"input_signal": audio_inputs, "input_signal_length": audio_inputs_len}
             )

@@ -10,7 +10,7 @@ try:
         trt.bool: torch.bool,
     }
 
-    class TrtInferenceRunner:
+    class TrtInferenceHandler:
         """Context wrapper for inference with TRT engines"""
 
         def __init__(self, engine: "trt.ICudaEngine"):
@@ -55,7 +55,7 @@ try:
 
 except ImportError:
     # Stub to prevent import errors when tensorrt not present
-    class TrtInferenceRunner:
+    class TrtInferenceHandler:
         def __enter__(self): ...
 
         def __exit__(self): ...
