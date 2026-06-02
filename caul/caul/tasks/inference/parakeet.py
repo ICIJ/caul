@@ -2,7 +2,6 @@ import logging
 from pathlib import Path, PurePosixPath
 from typing import Iterable
 
-
 from icij_common.registrable import FromConfig
 
 from caul_core.constants import PARAKEET_MODEL_REF
@@ -25,7 +24,7 @@ class ParakeetInferenceRunner(InferenceRunner):
 
     def __init__(
         self,
-        model_name: str,
+        model_name: str = PARAKEET_MODEL_REF,
         device: "TorchDevice | torch.device" = TorchDevice.CPU,
         return_timestamps: bool = True,
         batch_size: int = 4,
@@ -34,6 +33,7 @@ class ParakeetInferenceRunner(InferenceRunner):
         self.model_name = model_name
         self._return_timestamps = return_timestamps
         self._model = None
+        self._transcribe_config = None
         self._batch_size = batch_size
 
     @classmethod
@@ -45,6 +45,29 @@ class ParakeetInferenceRunner(InferenceRunner):
             return_timestamps=config.return_timestamps,
             **extras,
         )
+
+    @property
+    def transcribe_config(self):
+        if self._transcribe_config is None:
+            # pylint: disable=import-outside-toplevel
+            from nemo.collections.asr.parts.mixins import TranscribeConfig
+            from nemo.collections.asr.parts.mixins.transcription import (
+                InternalTranscribeConfig,
+            )
+
+            self._transcribe_config = TranscribeConfig(
+                use_lhotse=False,
+                batch_size=self._batch_size,
+                timestamps=self._return_timestamps,
+                return_hypotheses=True,
+                # Bug in Nemo's AudioToBPEDataset—by default TranscribeConfig spawns 2
+                # DataLoader workers, but AudioToBPEDataset defines a class TokenizerWrapper
+                # inside __init__, meaning it can't be pickled.
+                num_workers=0,
+                _internal=InternalTranscribeConfig(device=self._device),
+            )
+
+        return self._transcribe_config
 
     def __enter__(self):
         import nemo.collections.asr as nemo_asr  # pylint: disable=import-outside-toplevel
@@ -76,6 +99,18 @@ class ParakeetInferenceRunner(InferenceRunner):
                 repo_id=m, filename=filenaname, library_name="nemo", cache_dir=cache_dir
             )
 
+    def transcribe(self, audio_inputs: Iterable["torch.Tensor"]) -> ASRResult:
+        """Transcribe normalized audio tensors
+
+        :param audio_inputs: input tensors
+        :return: transcription results
+        """
+        return self._model.transcribe(
+            audio_inputs,
+            timestamps=self._return_timestamps,
+            override_config=self._transcribe_config,
+        )
+
     def process(  # pylint: disable=too-many-locals
         self,
         inputs: Iterable[list[PreprocessorOutput]],
@@ -87,26 +122,10 @@ class ParakeetInferenceRunner(InferenceRunner):
         :param inputs: List of np.ndarray or torch.Tensor or str, or singleton of same types
         :return: List of results
         """
-        # pylint: disable=import-outside-toplevel
-        from nemo.collections.asr.parts.mixins import TranscribeConfig
-        from nemo.collections.asr.parts.mixins.transcription import (
-            InternalTranscribeConfig,
-        )
 
         if isinstance(inputs, PreprocessorOutput):
             inputs = [inputs]
 
-        transcribe_config = TranscribeConfig(
-            use_lhotse=False,
-            batch_size=self._batch_size,
-            timestamps=self._return_timestamps,
-            return_hypotheses=True,
-            # Bug in Nemo's AudioToBPEDataset—by default TranscribeConfig spawns 2
-            # DataLoader workers, but AudioToBPEDataset defines a class TokenizerWrapper
-            # inside __init__, meaning it can't be pickled.
-            num_workers=0,
-            _internal=InternalTranscribeConfig(device=self._device),
-        )
         for input_batch in inputs:
             if not input_batch:
                 continue
@@ -115,9 +134,7 @@ class ParakeetInferenceRunner(InferenceRunner):
             else:
                 audios = [str(i.metadata.preprocessed_file_path) for i in input_batch]
 
-            hypotheses = self._model.transcribe(
-                audios, self._return_timestamps, override_config=transcribe_config
-            )
+            hypotheses = self.transcribe(audios)
             # Get timestamped segments if available, otherwise default to whole text
             for idx, hyps in enumerate(hypotheses):
                 best_hyp = hyps

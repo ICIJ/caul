@@ -1,4 +1,5 @@
 from abc import ABC
+from pathlib import Path
 from typing import ClassVar
 
 from icij_common.registrable import RegistrableConfig
@@ -83,6 +84,13 @@ class ParakeetPreprocessorConfig(PreprocessorConfig):
 class ParakeetInferenceRunnerConfig(InferenceRunnerConfig):
     model: ClassVar[str] = Field(frozen=True, default=ASRModel.PARAKEET)
     model_name: str = PARAKEET_MODEL_REF
+    return_timestamps: bool = True
+
+
+class ParakeetTrtInferenceRunnerConfig(InferenceRunnerConfig):
+    model_path: Path | str = None
+    engine_path: Path | str = None
+    model: ClassVar[str] = Field(frozen=True, default=ASRModel.PARAKEET_TRT)
     return_timestamps: bool = True
 
 

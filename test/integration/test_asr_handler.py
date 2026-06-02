@@ -56,7 +56,6 @@ class TestASRHandler:
 
         assert len(results) == 1
         text = _full_text(results[0])
-        print(text)
         assert results[0].transcription
         assert "你好" in text
         assert "世界" in text

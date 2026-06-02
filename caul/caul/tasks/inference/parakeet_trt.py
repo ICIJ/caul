@@ -1,0 +1,125 @@
+import logging
+
+from pathlib import Path
+from typing import Iterable
+
+from icij_common.registrable import FromConfig
+from nemo.core.connectors.save_restore_connector import SaveRestoreConnector
+
+from caul_core.config import ParakeetTrtInferenceRunnerConfig
+from caul_core.constants import PARAKEET_MODEL_REF
+from caul_core.objects import TorchDevice, ASRModel, ASRResult
+from .. import ParakeetInferenceRunner
+from ..asr_task import InferenceRunner
+from ...trt.runner import TrtInferenceRunner
+
+logger = logging.getLogger(__name__)
+
+
+class DecoderJointConnector(SaveRestoreConnector):
+
+    @staticmethod
+    def _load_state_dict_from_disk(
+        model_weights, device: "TorchDevice | torch.device"
+    ) -> dict:
+        """Maps model weights into virtual address space
+
+        :param model_weights:
+        :param map_location:
+        :return:
+        """
+        import torch
+
+        weight_pointers = torch.load(
+            model_weights,
+            map_location=device,
+            mmap=True,
+            weights_only=True,
+        )
+        without_encoder = {
+            k: v
+            for k, v in weight_pointers.items()
+            if k.startswith(("decoder.", "joint."))
+        }
+        del weight_pointers  # release mmap handles
+        return without_encoder
+
+
+@InferenceRunner.register(ASRModel.PARAKEET_TRT)
+class ParakeetTrtInferenceRunner(ParakeetInferenceRunner):
+    """Inference handler for NVIDIA parakeet models converted to TRT. Expects only the
+    encoder to be converted, passing its output to decoder and joint layers using Nemo.
+    Note that batch_size must match the shape profile used to convert to TRT.
+    """
+
+    _models = [PARAKEET_MODEL_REF]
+
+    def __init__(
+        self,
+        model_path: Path | str,
+        engine_path: Path | str,
+        device: "TorchDevice | torch.device" = TorchDevice.CPU,
+        return_timestamps: bool = True,
+        batch_size: int = 4,
+    ):
+        super().__init__(
+            device=device, return_timestamps=return_timestamps, batch_size=batch_size
+        )
+
+        self._model_path = str(model_path)
+        self._engine_path = str(engine_path)
+        self._encoder = None
+        self._decoder = None
+
+    @classmethod
+    def _from_config(
+        cls, config: ParakeetTrtInferenceRunnerConfig, **extras
+    ) -> FromConfig:
+        return cls(
+            return_timestamps=config.return_timestamps,
+            **extras,
+        )
+
+    def __enter__(self):
+        import nemo.collections.asr as nemo_asr  # pylint: disable=import-outside-toplevel
+        import torch  # pylint: disable=import-outside-toplevel
+        import tensorrt as trt  # pylint: disable=import-outside-toplevel
+
+        with open(self._engine_path, "rb") as f:
+            self._encoder = trt.Runtime(
+                trt.Logger(trt.Logger.ERROR)
+            ).deserialize_cuda_engine(f.read())
+
+        self._decoder = nemo_asr.models.ASRModel.restore_from(
+            self._model_path,
+            map_location=torch.device(self._device),
+            save_restore_connector=DecoderJointConnector(),
+            strict=False,
+        ).eval()
+
+        return self
+
+    def transcribe(self, audio_inputs: Iterable["torch.Tensor"]) -> Iterable[ASRResult]:
+        """Transcribe audio tensors
+
+        :param audio_inputs: audio tensor inputs
+        :return: transcription results
+        """
+        import torch  # pylint: disable=import-outside-toplevel
+
+        audio_inputs_len = torch.Tensor(
+            audio_inputs.shape[0] * [audio_inputs.shape[-1]]
+        )
+
+        with TrtInferenceRunner(self._encoder) as runner:
+            enc_out, enc_len = runner.infer(
+                {"input_signal": audio_inputs, "input_signal_length": audio_inputs_len}
+            )
+
+        enc_out = torch.from_numpy(enc_out).to(self._device)
+        enc_len = torch.from_numpy(enc_len).to(self._device)
+
+        with torch.no_grad():
+            return self._decoder.decoding.rnnt_decoder_predictions_tensor(
+                enc_out, enc_len
+            )
