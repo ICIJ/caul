@@ -4,7 +4,6 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Iterable
 
-import numpy as np
 from icij_common.registrable import FromConfig
 
 from caul_core.config import ParakeetTrtInferenceRunnerConfig
@@ -137,13 +136,13 @@ class ParakeetTrtInferenceRunner(ParakeetInferenceRunner):
             [torch.tensor([ai.shape[-1]]) for ai in audio_inputs]
         ).to(trt_device)
 
-        with TrtInferenceHandler(self._encoder) as runner:
-            enc_out, enc_len = runner.infer(
+        with TrtInferenceHandler(self._encoder) as handler:
+            enc_out, enc_len = handler.infer(
                 {"input_signal": audio_inputs, "input_signal_length": audio_inputs_len}
             )
 
-        enc_out = torch.from_numpy(enc_out).to(self._device)
-        enc_len = torch.from_numpy(enc_len).to(self._device)
+        enc_out = enc_out.to(self._device)
+        enc_len = enc_len.to(self._device)
 
         with torch.no_grad():
             return self._decoder.decoding.rnnt_decoder_predictions_tensor(

@@ -1,6 +1,5 @@
 from unittest.mock import MagicMock, patch
 
-import numpy as np
 import torch
 
 from caul.tasks.inference.parakeet_trt import ParakeetTrtInferenceRunner
@@ -11,8 +10,8 @@ _INFERENCE_HANDLER_PATH = "caul.tasks.inference.parakeet_trt.TrtInferenceHandler
 _BATCH_SIZE = 2
 _SIGNAL_LEN = 16000
 _AUDIO_INPUT = torch.zeros(_BATCH_SIZE, _SIGNAL_LEN)
-_ENC_OUT = np.zeros((_BATCH_SIZE, 50, 256), dtype=np.float32)
-_ENC_OUT_LEN = np.full(_BATCH_SIZE, 50, dtype=np.int32)
+_ENC_OUT = torch.zeros((_BATCH_SIZE, 50, 256), dtype=torch.float32)
+_ENC_OUT_LEN = torch.full((_BATCH_SIZE,), 50, dtype=torch.int32)
 
 
 def _mock_inference_runner():
@@ -22,7 +21,7 @@ def _mock_inference_runner():
     return runner
 
 
-def _mock_trt_handler(enc_out: np.ndarray, enc_len: np.ndarray):
+def _mock_trt_handler(enc_out: torch.tensor, enc_len: torch.tensor):
     instance = MagicMock()
     instance.infer.return_value = (enc_out, enc_len)
     instance.__enter__ = MagicMock(return_value=instance)
@@ -42,7 +41,6 @@ class TestParakeetTrtInferenceRunner:
 
         call_args = mock_trt_handler.return_value.infer.call_args[0][0]
         input_signal_length = call_args["input_signal_length"]
-        print(call_args)
         assert input_signal_length.shape == (_BATCH_SIZE,)
         assert input_signal_length.tolist() == [_SIGNAL_LEN] * _BATCH_SIZE
 
@@ -60,8 +58,8 @@ class TestParakeetTrtInferenceRunner:
                 0
             ]
         )
-        assert torch.equal(enc_out_arg, torch.from_numpy(_ENC_OUT))
-        assert torch.equal(enc_len_arg, torch.from_numpy(_ENC_OUT_LEN))
+        assert torch.equal(enc_out_arg, _ENC_OUT)
+        assert torch.equal(enc_len_arg, _ENC_OUT_LEN)
 
     def test__returns_decoder_predictions(self):
         mock_inference_runner = _mock_inference_runner()

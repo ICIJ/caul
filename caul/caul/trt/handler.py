@@ -59,4 +59,4 @@ class TrtInferenceHandler:
         self._context.execute_async_v3(stream.cuda_stream)
         stream.synchronize()
 
-        return tuple(t.cpu().numpy() for t in outputs.values())
+        return tuple(outputs.values())
