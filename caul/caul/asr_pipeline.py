@@ -90,6 +90,24 @@ class ASRPipeline:
         return cls.from_config(config)
 
     @classmethod
+    def parakeet_trt(
+        cls,
+        model_path: str | Path,
+        engine_path: str | Path,
+        device: "TorchDevice | torch._device" = TorchDevice.CPU,
+    ) -> Self:
+        config = ASRPipelineConfig.parakeet_trt()
+        config = safe_copy(
+            config,
+            update={
+                "device": device,
+                "model_path": model_path,
+                "engine_path": engine_path,
+            },
+        )
+        return cls.from_config(config=config)
+
+    @classmethod
     def fireredasr2(
         cls,
         device: "TorchDevice | torch._device" = TorchDevice.CPU,
@@ -118,6 +136,10 @@ def cache_models(asr_model: ASRModel | None, cache_dir: Path) -> None:
             cache_fns = [
                 ASRPreprocessor.cache_models,
                 ParakeetInferenceRunner.cache_models,
+            ]
+        case ASRModel.PARAKEET_TRT:
+            cache_fns = [
+                ASRPreprocessor.cache_models,
             ]
         case ASRModel.FASTER_WHISPER:
             cache_fns = [

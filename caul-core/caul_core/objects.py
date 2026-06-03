@@ -108,12 +108,13 @@ _VALIDATED_FIREREDASR2_LANGUAGES = {
 
 class ASRModel(StrEnum):
     PARAKEET = "parakeet"
+    PARAKEET_TRT = "parakeet_trt"
     FASTER_WHISPER = "faster_whisper"
     FIREREDASR2_AED = "fireredasr2_aed"
 
     def supported_languages(self) -> set[ASRLanguage]:
         match self:
-            case ASRModel.PARAKEET:
+            case ASRModel.PARAKEET | ASRModel.PARAKEET_TRT:
                 return _VALIDATED_PARAKEET_LANGUAGES
             case ASRModel.FASTER_WHISPER:
                 return set()
