@@ -46,7 +46,7 @@ huggingface_hub = [
     "huggingface-hub~=1.11",
 ]
 parakeet_trt = [
-    "tensorrt-lean~=11.0.0.114",
+    "tensorrt-lean~=11.0",
 ]
 
 # Nemo 2.7.2 has a very tight transformers version range (>=4.57.0,<4.58.dev0) which

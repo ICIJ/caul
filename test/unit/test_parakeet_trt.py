@@ -36,10 +36,13 @@ class TestParakeetTrtInferenceRunner:
         mock_trt_handler = _mock_trt_handler(_ENC_OUT, _ENC_OUT_LEN)
 
         with patch(_INFERENCE_HANDLER_PATH, mock_trt_handler):
-            mock_inference_runner.transcribe(_AUDIO_INPUT)
+            mock_inference_runner._transcribe(
+                _AUDIO_INPUT, trt_device=torch.device("cpu")
+            )
 
-        called_inputs = mock_trt_handler.return_value.infer.call_args[0][0]
-        input_signal_length = called_inputs["input_signal_length"]
+        call_args = mock_trt_handler.return_value.infer.call_args[0][0]
+        input_signal_length = call_args["input_signal_length"]
+        print(call_args)
         assert input_signal_length.shape == (_BATCH_SIZE,)
         assert input_signal_length.tolist() == [_SIGNAL_LEN] * _BATCH_SIZE
 
@@ -48,7 +51,9 @@ class TestParakeetTrtInferenceRunner:
         mock_trt_handler = _mock_trt_handler(_ENC_OUT, _ENC_OUT_LEN)
 
         with patch(_INFERENCE_HANDLER_PATH, mock_trt_handler):
-            mock_inference_runner.transcribe(_AUDIO_INPUT)
+            mock_inference_runner._transcribe(
+                _AUDIO_INPUT, trt_device=torch.device("cpu")
+            )
 
         enc_out_arg, enc_len_arg = (
             mock_inference_runner._decoder.decoding.rnnt_decoder_predictions_tensor.call_args[
@@ -67,6 +72,8 @@ class TestParakeetTrtInferenceRunner:
         )
 
         with patch(_INFERENCE_HANDLER_PATH, mock_trt_handler):
-            result = mock_inference_runner.transcribe(_AUDIO_INPUT)
+            result = mock_inference_runner._transcribe(
+                _AUDIO_INPUT, trt_device=torch.device("cpu")
+            )
 
         assert result is expected

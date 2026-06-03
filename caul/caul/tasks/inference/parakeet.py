@@ -33,7 +33,7 @@ class ParakeetInferenceRunner(InferenceRunner):
         self.model_name = model_name
         self._return_timestamps = return_timestamps
         self._model = None
-        self._transcribe_config = None
+        self.__transcribe_config = None
         self._batch_size = batch_size
 
     @classmethod
@@ -47,15 +47,15 @@ class ParakeetInferenceRunner(InferenceRunner):
         )
 
     @property
-    def transcribe_config(self):
-        if self._transcribe_config is None:
+    def _transcribe_config(self):
+        if self.__transcribe_config is None:
             # pylint: disable=import-outside-toplevel
             from nemo.collections.asr.parts.mixins import TranscribeConfig
             from nemo.collections.asr.parts.mixins.transcription import (
                 InternalTranscribeConfig,
             )
 
-            self._transcribe_config = TranscribeConfig(
+            self.__transcribe_config = TranscribeConfig(
                 use_lhotse=False,
                 batch_size=self._batch_size,
                 timestamps=self._return_timestamps,
@@ -67,7 +67,7 @@ class ParakeetInferenceRunner(InferenceRunner):
                 _internal=InternalTranscribeConfig(device=self._device),
             )
 
-        return self._transcribe_config
+        return self.__transcribe_config
 
     def __enter__(self):
         import nemo.collections.asr as nemo_asr  # pylint: disable=import-outside-toplevel
@@ -99,7 +99,9 @@ class ParakeetInferenceRunner(InferenceRunner):
                 repo_id=m, filename=filenaname, library_name="nemo", cache_dir=cache_dir
             )
 
-    def transcribe(self, audio_inputs: Iterable["torch.Tensor"]) -> ASRResult:
+    def _transcribe(
+        self, audio_inputs: Iterable["torch.Tensor"], **kwargs
+    ) -> ASRResult:
         """Transcribe normalized audio tensors
 
         :param audio_inputs: input tensors
@@ -134,7 +136,7 @@ class ParakeetInferenceRunner(InferenceRunner):
             else:
                 audios = [str(i.metadata.preprocessed_file_path) for i in input_batch]
 
-            hypotheses = self.transcribe(audios)
+            hypotheses = self._transcribe(audios)
             # Get timestamped segments if available, otherwise default to whole text
             for idx, hyps in enumerate(hypotheses):
                 best_hyp = hyps

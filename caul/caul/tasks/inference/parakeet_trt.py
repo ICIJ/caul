@@ -1,48 +1,57 @@
 import logging
+from functools import lru_cache
 
 from pathlib import Path
 from typing import Iterable
 
+import numpy as np
 from icij_common.registrable import FromConfig
-from nemo.core.connectors.save_restore_connector import SaveRestoreConnector
 
 from caul_core.config import ParakeetTrtInferenceRunnerConfig
 from caul_core.constants import PARAKEET_MODEL_REF
 from caul_core.objects import TorchDevice, ASRModel, ASRResult
 from .. import ParakeetInferenceRunner
 from ..asr_task import InferenceRunner
-from ...trt.runner import TrtInferenceHandler
+from ...trt.handler import TrtInferenceHandler
 
 logger = logging.getLogger(__name__)
 
 
-class DecoderJointConnector(SaveRestoreConnector):
+@lru_cache(maxsize=None)
+def _decoder_joint_connector():
+    from nemo.core.connectors.save_restore_connector import (
+        SaveRestoreConnector,
+    )  # pylint: disable=import-outside-toplevel
 
-    @staticmethod
-    def _load_state_dict_from_disk(
-        model_weights, device: "TorchDevice | torch.device"
-    ) -> dict:
-        """Maps model weights into virtual address space
+    class DecoderJointConnector(SaveRestoreConnector):
 
-        :param model_weights:
-        :param map_location:
-        :return:
-        """
-        import torch
+        @staticmethod
+        def _load_state_dict_from_disk(
+            model_weights: dict, device: "TorchDevice | torch.device"
+        ) -> dict:
+            """Maps model weights into virtual address space
 
-        weight_pointers = torch.load(
-            model_weights,
-            map_location=device,
-            mmap=True,
-            weights_only=True,
-        )
-        without_encoder = {
-            k: v
-            for k, v in weight_pointers.items()
-            if k.startswith(("decoder.", "joint."))
-        }
-        del weight_pointers  # release mmap handles
-        return without_encoder
+            :param model_weights: model weights
+            :param device: device to load weights to
+            :return: decoder + joint weights
+            """
+            import torch  # pylint: disable=import-outside-toplevel
+
+            weight_pointers = torch.load(
+                model_weights,
+                map_location=device,
+                mmap=True,
+                weights_only=True,
+            )
+            without_encoder = {
+                k: v
+                for k, v in weight_pointers.items()
+                if k.startswith(("decoder.", "joint."))
+            }
+            del weight_pointers  # release mmap handles
+            return without_encoder
+
+    return DecoderJointConnector()
 
 
 @InferenceRunner.register(ASRModel.PARAKEET_TRT)
@@ -93,13 +102,18 @@ class ParakeetTrtInferenceRunner(ParakeetInferenceRunner):
         self._decoder = nemo_asr.models.ASRModel.restore_from(
             self._model_path,
             map_location=torch.device(self._device),
-            save_restore_connector=DecoderJointConnector(),
+            save_restore_connector=_decoder_joint_connector(),
             strict=False,
         ).eval()
 
         return self
 
-    def transcribe(self, audio_inputs: Iterable["torch.Tensor"]) -> Iterable[ASRResult]:
+    def _transcribe(
+        self,
+        audio_inputs: "torch.Tensor | Iterable[torch.Tensor]",
+        trt_device: "TorchDevice | torch.device" = None,
+        **kwargs
+    ) -> Iterable[ASRResult]:
         """Transcribe audio tensors
 
         :param audio_inputs: audio tensor inputs
@@ -107,9 +121,21 @@ class ParakeetTrtInferenceRunner(ParakeetInferenceRunner):
         """
         import torch  # pylint: disable=import-outside-toplevel
 
-        audio_inputs_len = torch.Tensor(
-            audio_inputs.shape[0] * [audio_inputs.shape[-1]]
-        )
+        # trt only runs on cuda
+        if trt_device is None:
+            trt_device = torch.device("cuda")
+
+        if not isinstance(audio_inputs, Iterable):
+            audio_inputs = [audio_inputs]
+
+        # pad to len(max(t)), setting dim[0] to batch_size
+        audio_inputs = torch.nn.utils.rnn.pad_sequence(
+            audio_inputs, batch_first=True
+        ).to(trt_device)
+
+        audio_inputs_len = torch.tensor(
+            [torch.tensor([ai.shape[-1]]) for ai in audio_inputs]
+        ).to(trt_device)
 
         with TrtInferenceHandler(self._encoder) as runner:
             enc_out, enc_len = runner.infer(
