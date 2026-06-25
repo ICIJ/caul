@@ -113,6 +113,8 @@ disable = [
     "missing-class-docstring",
     "missing-function-docstring",
     "import-outside-toplevel",
+    "import-error",
+    "invalid-name",
 ]
 
 [tool.pylint.main]
@@ -129,7 +131,7 @@ ignore-docstrings = true
 ignore-comments = true
 
 [tool.black]
-target-version = ["py310"]
+target-version = ["py312"]
 
 [tool.pytest.ini_options]
 markers = [
