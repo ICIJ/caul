@@ -80,7 +80,9 @@ class ASRPreprocessor(Preprocessor):
         preprocessed_inputs = self.preprocess_inputs(
             inputs, input_sample_rates, output_dir=output_dir
         )
-        yield from self._batch_fn(preprocessed_inputs, self._batch_size)
+        for batch in self._batch_fn(preprocessed_inputs, self._batch_size):
+            for start in range(0, len(batch), self._batch_size):
+                yield batch[start : start + self._batch_size]
 
     def preprocess_inputs(  # pylint: disable=too-many-locals
         self,
@@ -140,7 +142,7 @@ class ASRPreprocessor(Preprocessor):
             )
 
             # seg_i is global across chunks so output file names are stable
-            seg_i = 0
+            seg_idx = 0
             for chunk in audio_chunks:
                 n_frames = chunk.shape[-1]
                 tensor_segments = [chunk]
@@ -156,8 +158,9 @@ class ASRPreprocessor(Preprocessor):
 
                 for tensor_segment in tensor_segments:
                     segment_path = None
+                    tensor_segment = self._additional_preprocessing(tensor_segment)
                     if output_dir is not None:
-                        segment_name = f"{original_file}-{seg_i}.wav"
+                        segment_name = f"{original_file}-{seg_idx}.wav"
                         segment_path = output_dir / segment_name
                         save_tensor(tensor_segment, segment_path)
                         segment_path = segment_path.relative_to(output_dir)
@@ -174,7 +177,11 @@ class ASRPreprocessor(Preprocessor):
                         )
                     else:
                         yield PreprocessedInput(metadata=metadata)
-                    seg_i += 1
+                    seg_idx += 1
+
+    def _additional_preprocessing(self, audio_tensor: "torch.Tensor") -> "torch.Tensor":
+        """Stub for subclasses that have added preprocessing logic"""
+        return audio_tensor
 
     def _load_file_as_chunks(self, path: str) -> "Iterable[torch.Tensor]":
         """Return a lazy iterator of normalized 1D audio chunks at self._sample_rate.

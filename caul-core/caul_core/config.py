@@ -1,10 +1,32 @@
 from abc import ABC
 from pathlib import Path
-from typing import ClassVar
+from typing import Any, ClassVar, TYPE_CHECKING
 
 from icij_common.registrable import RegistrableConfig
 from pydantic import Field
 
+from caul_core.constants import (
+    WHISPER_TRT_PROMPT_PREFIX,
+    WHISPER_TRT_DTYPE,
+    WHISPER_TRT_DECODER_HAS_POSITION_EMBEDDING,
+    WHISPER_TRT_DECODER_PAGED_KV_CACHE,
+    WHISPER_TRT_DECODER_GPT_ATTENTION_PLUGIN,
+    WHISPER_TRT_DECODER_NUM_HIDDEN_LAYERS,
+    WHISPER_TRT_DECODER_HIDDEN_SIZE,
+    WHISPER_TRT_DECODER_VOCAB_SIZE,
+    WHISPER_TRT_DECODER_BATCH_SIZE,
+    WHISPER_TRT_DECODER_BEAM_WIDTH,
+    WHISPER_TRT_DECODER_NUM_HEADS,
+    WHISPER_TRT_DECODER_CROSS_ATTENTION,
+    WHISPER_TRT_DECODER_HAS_TOKEN_TYPE_EMBEDDING,
+    WHISPER_TRT_DECODER_DEBUG_MODE,
+    WHISPER_TRT_N_MELS,
+    WHISPER_TRT_DECODER_REMOVE_INPUT_PADDING,
+    WHISPER_TRT_ENCODER_DOWNSAMPLING_FACTOR,
+    WHISPER_TRT_RETURN_TIMESTAMPS,
+    WHISPER_TRT_MAX_FRAMES,
+    WHISPER_TRT_MAX_MEL_PADDING_LEN,
+)
 from .constants import (
     DEFAULT_SAMPLE_RATE,
     DEFAULT_BATCH_SIZE,
@@ -46,8 +68,66 @@ from .constants import (
 )
 from .objects import BaseModel, ASRModel, FasterWhisperModel
 
+if TYPE_CHECKING:
+    try:
+        from tensorrt_llm.runtime import ModelConfig
+    except ImportError:
+        pass
+
 
 class _BaseConfig(BaseModel, RegistrableConfig, ABC): ...
+
+
+# TensorRT LLM
+class TrtLlmEncoderConfig(BaseModel):
+    downsampling_factor: int = WHISPER_TRT_ENCODER_DOWNSAMPLING_FACTOR
+
+
+class TrtLlmDecoderConfig(BaseModel):
+    batch_size: int = WHISPER_TRT_DECODER_BATCH_SIZE
+    beam_width: int = WHISPER_TRT_DECODER_BEAM_WIDTH
+    num_heads: int = WHISPER_TRT_DECODER_NUM_HEADS
+    num_kv_heads: int = WHISPER_TRT_DECODER_NUM_HEADS
+    hidden_size: int = WHISPER_TRT_DECODER_HIDDEN_SIZE
+    vocab_size: int = WHISPER_TRT_DECODER_VOCAB_SIZE
+    num_hidden_layers: int = WHISPER_TRT_DECODER_NUM_HIDDEN_LAYERS
+    gpt_attention_plugin: str = WHISPER_TRT_DECODER_GPT_ATTENTION_PLUGIN
+    remove_input_padding: bool = WHISPER_TRT_DECODER_REMOVE_INPUT_PADDING
+    paged_kv_cache: bool = WHISPER_TRT_DECODER_PAGED_KV_CACHE
+    has_position_embedding: bool = WHISPER_TRT_DECODER_HAS_POSITION_EMBEDDING
+    dtype: str = WHISPER_TRT_DTYPE
+    cross_attention: bool = WHISPER_TRT_DECODER_CROSS_ATTENTION
+    has_token_type_embedding: bool = WHISPER_TRT_DECODER_HAS_TOKEN_TYPE_EMBEDDING
+    debug_mode: bool = WHISPER_TRT_DECODER_DEBUG_MODE
+
+    def to_model_config(self) -> "ModelConfig":
+        from tensorrt_llm.runtime import (
+            ModelConfig,
+        )  # pylint: disable=import-outside-toplevel
+        from tensorrt_llm.llmapi.kv_cache_type import (
+            KVCacheType,
+        )  # pylint: disable=import-outside-toplevel
+
+        return ModelConfig(
+            max_batch_size=self.batch_size,
+            max_beam_width=self.beam_width,
+            num_heads=self.num_heads,
+            num_kv_heads=self.num_kv_heads,
+            hidden_size=self.hidden_size,
+            vocab_size=self.vocab_size,
+            cross_attention=self.cross_attention,
+            num_hidden_layers=self.num_hidden_layers,
+            gpt_attention_plugin=self.gpt_attention_plugin,
+            remove_input_padding=self.remove_input_padding,
+            kv_cache_type=(
+                KVCacheType.PAGED
+                if self.paged_kv_cache == True
+                else KVCacheType.CONTINUOUS
+            ),
+            has_position_embedding=self.has_position_embedding,
+            dtype=self.dtype,
+            has_token_type_embedding=self.has_token_type_embedding,
+        )
 
 
 class PreprocessorConfig(_BaseConfig):
@@ -171,3 +251,34 @@ class FireRedASR2InferenceRunnerConfig(InferenceRunnerConfig):
 
 class FireRedASR2PostprocessorConfig(PostprocessorConfig):
     model: ClassVar[str] = Field(frozen=True, default=ASRModel.FIREREDASR2_AED)
+
+
+# Whisper TRT
+
+
+class WhisperTrtPreprocessorConfig(PreprocessorConfig):
+    model: ClassVar[str] = Field(frozen=True, default=ASRModel.WHISPER_TRT)
+
+    n_mels: int = WHISPER_TRT_N_MELS
+    mel_filters_dir: str | None = None
+    dtype: str = WHISPER_TRT_DTYPE
+    batch_size: int = DEFAULT_BATCH_SIZE
+    max_frames: int = WHISPER_TRT_MAX_FRAMES
+
+
+class WhisperTrtInferenceRunnerConfig(InferenceRunnerConfig):
+    model: ClassVar[str] = Field(frozen=True, default=ASRModel.WHISPER_TRT)
+
+    encoder_config: TrtLlmEncoderConfig = Field(default_factory=TrtLlmEncoderConfig)
+    decoder_config: TrtLlmDecoderConfig = Field(default_factory=TrtLlmDecoderConfig)
+
+    encoder_path: str | None = None
+    decoder_path: str | None = None
+
+    prompt_prefix: str = WHISPER_TRT_PROMPT_PREFIX
+    return_timestamps: bool = WHISPER_TRT_RETURN_TIMESTAMPS
+    max_mel_padding_len: int = WHISPER_TRT_MAX_MEL_PADDING_LEN
+
+
+class WhisperTrtPostprocessorConfig(PostprocessorConfig):
+    model: ClassVar[str] = Field(frozen=True, default=ASRModel.WHISPER_TRT)

@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10"]
+        python-version: ["3.12"]
     steps:
     - uses: actions/checkout@v6
     - name: Setup Python project
@@ -23,7 +23,7 @@ jobs:
     - name: Install the project
       run: |
         cd caul
-        uv sync --all-extras --dev
+        uv sync --dev
     - name: Analysing the code with pylint
       run: |
         cd caul

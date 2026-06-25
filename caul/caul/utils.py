@@ -1,5 +1,6 @@
 import logging
 import tempfile
+from functools import lru_cache
 from pathlib import Path
 
 from caul_core.objects import PreprocessorOutput
@@ -123,3 +124,23 @@ def cache_hf_repo(
         force_download=False,
         token=get_token(),
     )
+
+
+@lru_cache(maxsize=None)
+def load_mel_filters(
+    n_mels: int, mel_filters_path: str = None, device: "str | torch.Device" = "cpu"
+) -> "torch.Tensor | None":
+    """Load the mel filterbank matrix for projecting an stft into a mel spectrogram
+
+    :param n_mels: number of mel filterbank matrix
+    :param mel_filters_dir: directory where mel filterbank matrix is saved
+    :param device: cpu or cuda
+    """
+    import numpy as np  # noqa
+    import torch  # noqa
+
+    if mel_filters_path is None or n_mels not in {80, 128}:
+        return None
+
+    with np.load(mel_filters_path) as f:
+        return torch.from_numpy(f[f"mel_{n_mels}"]).to(device)

@@ -5,17 +5,16 @@ description = "Python implementation of an ASR service"
 authors = [
     {name = "Lion Summerbell", email = "lsummerbell@icij.org"}
 ]
-requires-python = ">=3.11.0, <3.14.0"
+requires-python = ">=3.11.0, <3.13.0"
 dependencies = [
     "icij-common~=0.8.1",
     "kaldialign~=0.9",
     "langcodes~=3.5",
     "librosa>=0.10.1,<0.12",
-    "numpy~=2.3",
     "pydantic-extra-types[pycountry]~=2.11",
     "typer~=0.24",
     "huggingface-hub~=1.11",
-    "caul-core~=0.1.0",
+    "caul-core~=0.2.0",
 ]
 
 [project.scripts]
@@ -48,12 +47,17 @@ huggingface_hub = [
 parakeet_trt = [
     "tensorrt-lean~=11.0",
 ]
+whisper_trt = [
+    "tensorrt_llm~=1.2",
+    "tiktoken~=0.13",
+]
 
 # Nemo 2.7.2 has a very tight transformers version range (>=4.57.0,<4.58.dev0) which
 # conflicts with fireredasr2s. Pin the version from fireredasr2s here, since this throws
 # no errors with Nemo
 [tool.uv]
 package = true
+prerelease = "if-necessary"
 override-dependencies = [
   "transformers==5.1.0",
   "kaldialign==0.9.3",
