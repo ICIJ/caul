@@ -50,7 +50,7 @@ from .objects import BaseModel, ASRModel, FasterWhisperModel
 class _BaseConfig(BaseModel, RegistrableConfig, ABC): ...
 
 
-class PreprocessorConfig(_BaseConfig):
+class BasePreprocessorConfig(_BaseConfig):
     registry_key: ClassVar[str] = Field(frozen=True, default="model")
     model: ClassVar[ASRModel]
 
@@ -60,14 +60,14 @@ class PreprocessorConfig(_BaseConfig):
     large_file_threshold_bytes: int = DEFAULT_LARGE_FILE_THRESHOLD_BYTES
 
 
-class InferenceRunnerConfig(_BaseConfig):
+class BaseInferenceRunnerConfig(_BaseConfig):
     registry_key: ClassVar[str] = Field(frozen=True, default="model")
     model: ClassVar[ASRModel]
 
     tmp_dir_fallback: bool = False
 
 
-class PostprocessorConfig(_BaseConfig):
+class BasePostprocessorConfig(_BaseConfig):
     registry_key: ClassVar[str] = Field(frozen=True, default="model")
     model: ClassVar[ASRModel]
 
@@ -75,37 +75,37 @@ class PostprocessorConfig(_BaseConfig):
 # Parakeet
 
 
-class ParakeetPreprocessorConfig(PreprocessorConfig):
+class ParakeetPreprocessorConfig(BasePreprocessorConfig):
     model: ClassVar[str] = Field(default=ASRModel.PARAKEET)
 
     max_frames: int = PARAKEET_INFERENCE_MAX_FRAMES
 
 
-class ParakeetInferenceRunnerConfig(InferenceRunnerConfig):
+class ParakeetInferenceRunnerConfig(BaseInferenceRunnerConfig):
     model: ClassVar[str] = Field(frozen=True, default=ASRModel.PARAKEET)
     model_name: str = PARAKEET_MODEL_REF
     return_timestamps: bool = True
 
 
-class ParakeetTrtInferenceRunnerConfig(InferenceRunnerConfig):
+class ParakeetTrtInferenceRunnerConfig(BaseInferenceRunnerConfig):
     model_path: Path | str = None
     engine_path: Path | str = None
     model: ClassVar[str] = Field(frozen=True, default=ASRModel.PARAKEET_TRT)
     return_timestamps: bool = True
 
 
-class ParakeetPostprocessorConfig(PostprocessorConfig):
+class ParakeetPostprocessorConfig(BasePostprocessorConfig):
     model: ClassVar[str] = Field(frozen=True, default=ASRModel.PARAKEET)
 
 
 # Faster Whisper
 
 
-class FasterWhisperPreprocessorConfig(PreprocessorConfig):
+class FasterWhisperPreprocessorConfig(BasePreprocessorConfig):
     model: ClassVar[str] = Field(default=ASRModel.FASTER_WHISPER)
 
 
-class FasterWhisperInferenceRunnerConfig(InferenceRunnerConfig):
+class FasterWhisperInferenceRunnerConfig(BaseInferenceRunnerConfig):
     model: ClassVar[str] = Field(frozen=True, default=ASRModel.FASTER_WHISPER)
 
     whisper_model_name: FasterWhisperModel = FasterWhisperModel.MEDIUM
@@ -143,20 +143,20 @@ class FasterWhisperInferenceRunnerConfig(InferenceRunnerConfig):
     hotwords: str | None = None
 
 
-class FasterWhisperPostprocessorConfig(PostprocessorConfig):
+class FasterWhisperPostprocessorConfig(BasePostprocessorConfig):
     model: ClassVar[str] = Field(frozen=True, default=ASRModel.FASTER_WHISPER)
 
 
 # FireRedASR2s
 
 
-class FireRedASR2PreprocessorConfig(PreprocessorConfig):
+class FireRedASR2PreprocessorConfig(BasePreprocessorConfig):
     model: ClassVar[str] = Field(default=ASRModel.FIREREDASR2_AED)
 
     max_frames: int = FIREREDASR2_INFERENCE_MAX_FRAMES
 
 
-class FireRedASR2InferenceRunnerConfig(InferenceRunnerConfig):
+class FireRedASR2InferenceRunnerConfig(BaseInferenceRunnerConfig):
     model: ClassVar[str] = Field(frozen=True, default=ASRModel.FIREREDASR2_AED)
 
     use_half: bool = FIREREDASR2_USE_HALF_DEFAULT
@@ -169,5 +169,5 @@ class FireRedASR2InferenceRunnerConfig(InferenceRunnerConfig):
     return_timestamp: bool = FIREREDASR2_RETURN_TIMESTAMP_DEFAULT
 
 
-class FireRedASR2PostprocessorConfig(PostprocessorConfig):
+class FireRedASR2PostprocessorConfig(BasePostprocessorConfig):
     model: ClassVar[str] = Field(frozen=True, default=ASRModel.FIREREDASR2_AED)

@@ -6,9 +6,9 @@ from pydantic import Discriminator, Field
 
 from .objects import BaseModel, ASRModel, TorchDevice
 from .config import (
-    PreprocessorConfig,
-    InferenceRunnerConfig,
-    PostprocessorConfig,
+    BasePreprocessorConfig,
+    BaseInferenceRunnerConfig,
+    BasePostprocessorConfig,
     ParakeetPreprocessorConfig,
     ParakeetInferenceRunnerConfig,
     ParakeetPostprocessorConfig,
@@ -23,16 +23,16 @@ from .config import (
 
 logger = logging.getLogger(__name__)
 
-PreprocessorConfig_ = tagged_union(
-    PreprocessorConfig.__subclasses__(), lambda t: t.model.default.value
+PreprocessorConfig = tagged_union(
+    BasePreprocessorConfig.__subclasses__(), lambda t: t.model.default.value
 )
 
-InferenceRunnerConfig_ = tagged_union(
-    InferenceRunnerConfig.__subclasses__(), lambda t: t.model.default.value
+InferenceRunnerConfig = tagged_union(
+    BaseInferenceRunnerConfig.__subclasses__(), lambda t: t.model.default.value
 )
 
-PostprocessorConfig_ = tagged_union(
-    PostprocessorConfig.__subclasses__(), lambda t: t.model.default.value
+PostprocessorConfig = tagged_union(
+    BasePostprocessorConfig.__subclasses__(), lambda t: t.model.default.value
 )
 
 model_discriminator = make_enum_discriminator("model", ASRModel)
@@ -40,14 +40,14 @@ model_discriminator = make_enum_discriminator("model", ASRModel)
 
 class ASRPipelineConfig(BaseModel):  # pylint: disable=too-few-public-methods
     device: TorchDevice = TorchDevice.CPU
-    preprocessing: PreprocessorConfig_ = Field(
+    preprocessing: PreprocessorConfig = Field(
         discriminator=Discriminator(model_discriminator),
     )
-    inference: InferenceRunnerConfig_ = Field(
+    inference: InferenceRunnerConfig = Field(
         default_factory=InferenceRunnerConfig,
         discriminator=Discriminator(model_discriminator),
     )
-    postprocessing: PostprocessorConfig_ = Field(
+    postprocessing: PostprocessorConfig = Field(
         discriminator=Discriminator(model_discriminator),
     )
 
