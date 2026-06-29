@@ -5,10 +5,12 @@ from pathlib import Path
 from typing import Iterable
 
 from icij_common.registrable import FromConfig
+from torchaudio.models import Hypothesis
 
 from caul_core.config import ParakeetTrtInferenceRunnerConfig
 from caul_core.constants import PARAKEET_MODEL_REF
-from caul_core.objects import TorchDevice, ASRModel, ASRResult
+from caul_core.objects import TorchDevice, ASRModel
+from .trt_inference import TrtInferenceMixin
 from .. import ParakeetInferenceRunner
 from ..asr_task import InferenceRunner
 from ...trt.handler import TrtInferenceHandler
@@ -54,7 +56,7 @@ def _decoder_joint_connector():
 
 
 @InferenceRunner.register(ASRModel.PARAKEET_TRT)
-class ParakeetTrtInferenceRunner(ParakeetInferenceRunner):
+class ParakeetTrtInferenceRunner(ParakeetInferenceRunner, TrtInferenceMixin):
     """Inference handler for NVIDIA parakeet models converted to TRT. Expects only the
     encoder to be converted, passing its output to decoder and joint layers using Nemo.
     Note that batch_size must match the shape profile used to convert to TRT.
@@ -70,20 +72,24 @@ class ParakeetTrtInferenceRunner(ParakeetInferenceRunner):
         return_timestamps: bool = True,
         batch_size: int = 4,
     ):
-        super().__init__(
-            device=device, return_timestamps=return_timestamps, batch_size=batch_size
+        ParakeetInferenceRunner.__init__(
+            self,
+            device=device,
+            return_timestamps=return_timestamps,
+            batch_size=batch_size,
         )
+        TrtInferenceMixin.__init__(self)
 
         self._model_path = str(model_path)
         self._engine_path = str(engine_path)
-        self._encoder = None
-        self._decoder = None
 
     @classmethod
     def _from_config(
         cls, config: ParakeetTrtInferenceRunnerConfig, **extras
     ) -> FromConfig:
         return cls(
+            model_path=config.model_path,
+            engine_path=config.engine_path,
             return_timestamps=config.return_timestamps,
             **extras,
         )
@@ -111,8 +117,8 @@ class ParakeetTrtInferenceRunner(ParakeetInferenceRunner):
         self,
         audio_inputs: "torch.Tensor | Iterable[torch.Tensor]",
         trt_device: "TorchDevice | torch.device" = None,
-        **kwargs
-    ) -> Iterable[ASRResult]:
+        **kwargs,
+    ) -> list[Hypothesis] | list[list[Hypothesis]]:
         """Transcribe audio tensors
 
         :param audio_inputs: audio tensor inputs

@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10"]
+        python-version: ["3.12"]
     steps:
     - uses: actions/checkout@v6
     - name: Setup Python project
@@ -20,11 +20,7 @@ jobs:
         version: "0.9.24"
         python-version-file: "caul/pyproject.toml"
         enable-cache: true
-    - name: Install the project
-      run: |
-        cd caul
-        uv sync --all-extras --dev
     - name: Analysing the code with pylint
       run: |
         cd caul
-        uv run --dev pylint $(git ls-files '*.py')
+        uv run --extra preprocessing --extra nemo --extra pyannote --extra fireredasr2 --extra faster_whisper --extra huggingface_hub --frozen pylint $(git ls-files '*.py')

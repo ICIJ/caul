@@ -19,6 +19,9 @@ from .config import (
     FasterWhisperInferenceRunnerConfig,
     FasterWhisperPostprocessorConfig,
     ParakeetTrtInferenceRunnerConfig,
+    WhisperTrtPreprocessorConfig,
+    WhisperTrtInferenceRunnerConfig,
+    WhisperTrtPostprocessorConfig,
 )
 
 logger = logging.getLogger(__name__)
@@ -83,4 +86,12 @@ class ASRPipelineConfig(BaseModel):  # pylint: disable=too-few-public-methods
             preprocessing=FasterWhisperPreprocessorConfig(),
             inference=FasterWhisperInferenceRunnerConfig(),
             postprocessing=FasterWhisperPostprocessorConfig(),
+        )
+
+    @classmethod
+    def whisper_trt(cls) -> Self:
+        return cls(
+            preprocessing=WhisperTrtPreprocessorConfig(),
+            inference=WhisperTrtInferenceRunnerConfig(),
+            postprocessing=WhisperTrtPostprocessorConfig(),
         )

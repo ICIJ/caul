@@ -12,3 +12,9 @@ try:
     )
 except ModuleNotFoundError:
     FasterWhisperPostprocessor = None
+try:
+    from .whisper_trt import (
+        WhisperTrtPostprocessor,
+    )
+except ModuleNotFoundError:
+    WhisperTrtPostprocessor = None

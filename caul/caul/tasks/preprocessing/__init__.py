@@ -12,3 +12,7 @@ try:
     )
 except ModuleNotFoundError:
     FasterWhisperPreprocessor = None
+try:
+    from .whisper_trt import WhisperTrtPreprocessor
+except ModuleNotFoundError:
+    WhisperTrtPreprocessor = None

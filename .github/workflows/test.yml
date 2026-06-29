@@ -18,19 +18,19 @@ jobs:
       - name: Setup Python project
         uses: actions/setup-python@v6
         with:
-          python-version: "3.13"
+          python-version: "3.12"
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:
           version: "0.9.24"
-          python-version: "3.13"
+          python-version: "3.12"
           enable-cache: true
       - name: Install torchcodec deps
         run: sudo apt update && sudo apt install -y ffmpeg
       - name: Run tests
         run: |
           cd caul
-          uv run --dev --all-extras --frozen pytest -vvv --cache-clear --show-capture=all -r A ../test -m "not no_ci"
+          uv run --dev --extra preprocessing --extra nemo --extra pyannote --extra fireredasr2 --extra faster_whisper --extra huggingface_hub --frozen pytest -vvv --cache-clear --show-capture=all -r A ../test -m "not no_ci"
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true

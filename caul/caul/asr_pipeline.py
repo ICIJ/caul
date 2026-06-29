@@ -125,6 +125,14 @@ class ASRPipeline:
         config = safe_copy(config, update={"device": device})
         return cls.from_config(config)
 
+    @classmethod
+    def whisper_trt(
+        cls, device: "TorchDevice | torch._device" = TorchDevice.CPU
+    ) -> Self:
+        config = ASRPipelineConfig.whisper_trt()
+        config = safe_copy(config, update={"device": device})
+        return cls.from_config(config=config)
+
 
 def cache_models(asr_model: ASRModel | None, cache_dir: Path) -> None:
     if asr_model is None:

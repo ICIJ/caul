@@ -12,3 +12,7 @@ class MissingFireRedAsr2OutputDirException(Exception):
 
 class LanguageInputMismatchException(Exception):
     """Raise when inputs and input languages to ASRHandler.transcribe don't align"""
+
+
+class MissingTokenizerException(Exception):
+    """Raise if no tokenizer or tokenizer path provided"""
