@@ -272,8 +272,8 @@ class WhisperTrtInferenceRunnerConfig(InferenceRunnerConfig):
     encoder_config: TrtLlmEncoderConfig = Field(default_factory=TrtLlmEncoderConfig)
     decoder_config: TrtLlmDecoderConfig = Field(default_factory=TrtLlmDecoderConfig)
 
-    encoder_path: str | None = None
-    decoder_path: str | None = None
+    encoder_path: str
+    decoder_path: str
 
     prompt_prefix: str = WHISPER_TRT_PROMPT_PREFIX
     return_timestamps: bool = WHISPER_TRT_RETURN_TIMESTAMPS

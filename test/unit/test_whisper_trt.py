@@ -1,5 +1,6 @@
 import math
 import sys
+from typing import Callable
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -43,12 +44,18 @@ _ENC_LEN_VAL = 25
 
 _MEL_FILTER_PATH = "caul.tasks.preprocessing.whisper_trt.load_mel_filters"
 
+_STREAM_MOCK = MagicMock(cuda_stream=0)
 
-@pytest.fixture()
-def mel_filters() -> torch.Tensor:
-    return torch.ones(
-        WHISPER_TRT_N_MELS, WHISPER_TRT_N_FFT // 2 + 1, dtype=torch.float32
-    )
+
+def _mock_mel_filters_factory(
+    n_mels=WHISPER_TRT_N_MELS, mel_filters_dir="/mel/filters", device="cpu"
+) -> Callable[[], torch.Tensor]:
+    def _load_mel_filters() -> torch.Tensor:
+        return torch.ones(
+            WHISPER_TRT_N_MELS, WHISPER_TRT_N_FFT // 2 + 1, dtype=torch.float32
+        )
+
+    return _load_mel_filters
 
 
 def _make_tokenizer_mock() -> MagicMock:
@@ -61,17 +68,21 @@ def _make_tokenizer_mock() -> MagicMock:
     return tokenizer
 
 
-def _make_runner(max_new_tokens: int = _MAX_NEW_TOKENS) -> WhisperTrtInferenceRunner:
-    with patch(
-        "caul.tasks.inference.whisper_trt._get_tiktoken_tokenizer",
-        return_value=_make_tokenizer_mock(),
-    ):
-        runner = WhisperTrtInferenceRunner(
-            encoder_path="encoder.engine",
-            decoder_path="decoder.engine",
-            tokenizer_vocab_path="/tokenizer/vocab",
-            max_new_tokens=max_new_tokens,
-        )
+def _make_runner(
+    encoder_factory=None, decoder_factory=None, max_new_tokens: int = _MAX_NEW_TOKENS
+) -> WhisperTrtInferenceRunner:
+    if encoder_factory is None:
+        encoder_factory = MagicMock()
+
+    if decoder_factory is None:
+        decoder_factory = MagicMock()
+
+    runner = WhisperTrtInferenceRunner(
+        encoder_factory=encoder_factory,
+        decoder_factory=decoder_factory,
+        tokenizer=_make_tokenizer_mock(),
+        max_new_tokens=max_new_tokens,
+    )
     runner._encoder = MagicMock()
     runner._decoder = MagicMock()
     runner._device = torch.device("cpu")
@@ -95,18 +106,21 @@ class TestWhisperTrtPreprocessor:
     @property
     def _preprocessor(self):
         return WhisperTrtPreprocessor(
-            n_mels=WHISPER_TRT_N_MELS, mel_filters_dir=None, dtype=torch.float32
+            n_mels=WHISPER_TRT_N_MELS,
+            mel_filters_factory=_mock_mel_filters_factory,
+            dtype="float32",
         )
 
-    def test__output_shape_has_correct_mel_dim(self, mel_filters):
-        with patch(_MEL_FILTER_PATH, return_value=mel_filters):
-            out = self._preprocessor._additional_preprocessing(
+    def test__output_shape_has_correct_mel_dim(self):
+        preprocessor = self._preprocessor
+        with preprocessor:
+            out = preprocessor._additional_preprocessing(
                 torch.zeros(DEFAULT_SAMPLE_RATE)
             )
         assert out.ndim == 3
         assert out.shape[1] == WHISPER_TRT_N_MELS
 
-    def test__time_dim_consistent_with_stft_frame_count(self, mel_filters):
+    def test__time_dim_consistent_with_stft_frame_count(self):
         """T must equal the number of STFT frames minus the last dropped frame."""
         audio = torch.zeros(DEFAULT_SAMPLE_RATE)
         stft = torch.stft(
@@ -117,18 +131,49 @@ class TestWhisperTrtPreprocessor:
             return_complex=True,
         )
         expected_t = stft.shape[-1] - 1
-        with patch(_MEL_FILTER_PATH, return_value=mel_filters):
-            out = self._preprocessor._additional_preprocessing(audio)
+        out = self._preprocessor._additional_preprocessing(audio)
         assert out.shape[2] == expected_t
 
-    def test__normalized_values_in_bounded_range(self, mel_filters):
+    def test__normalized_values_in_bounded_range(self):
         """After (log10 + 4) / 4, values for real audio stay within bounded range"""
-        with patch(_MEL_FILTER_PATH, return_value=mel_filters):
-            out = self._preprocessor._additional_preprocessing(
-                torch.randn(DEFAULT_SAMPLE_RATE)
-            )
+        out = self._preprocessor._additional_preprocessing(
+            torch.randn(DEFAULT_SAMPLE_RATE)
+        )
         assert out.min() >= -2.0
         assert out.max() <= 3.0
+
+
+class TestInferenceRunnerSetup:
+    def test__sets_encoder_and_decoder_in__init__(self):
+        encoder_factory = MagicMock()
+        decoder_factory = MagicMock()
+
+        runner = _make_runner(
+            encoder_factory=encoder_factory, decoder_factory=decoder_factory
+        )
+
+        assert runner._encoder_factory is encoder_factory
+        assert runner._decoder_factory is decoder_factory
+
+    def test__sets_encoder_and_decoder_in_from_config(self):
+        encoder_factory = MagicMock()
+        decoder_factory = MagicMock()
+        config = MagicMock()
+        config.registry_key.default = "model"
+        config.model = "whisper_trt"
+
+        config.encoder_path = "encoder/path"
+        config.decoder_path = "decoder/path"
+
+        runner = WhisperTrtInferenceRunner.from_config(
+            config=config,
+            encoder_factory=encoder_factory,
+            decoder_factory=decoder_factory,
+            tokenizer=_make_tokenizer_mock(),
+        )
+
+        assert runner._encoder_factory is encoder_factory.return_value
+        assert runner._decoder_factory is decoder_factory.return_value
 
 
 class TestInferenceRunnerRunEncoder:
@@ -150,11 +195,10 @@ class TestInferenceRunnerRunEncoder:
         runner = _make_runner()
         audio, lens, positions = self._make_inputs()
         runner._encoder.infer_shapes.return_value = []
-        with patch("torch.cuda.current_stream", return_value=MagicMock(cuda_stream=0)):
-            try:
-                runner._run_encoder(audio, lens, positions)
-            except Exception:
-                pass
+        try:
+            runner._run_encoder(audio, lens, positions, stream=_STREAM_MOCK)
+        except Exception:
+            pass
 
         inputs = runner._encoder.run.call_args[1]["inputs"]
         assert set(inputs.keys()) == {"input_features", "input_lengths", "position_ids"}
@@ -173,12 +217,11 @@ class TestInferenceRunnerRunEncoder:
         )
         runner._encoder.infer_shapes.return_value = [fake_encoder_output]
 
-        with patch("torch.cuda.current_stream", return_value=MagicMock(cuda_stream=0)):
-            _, output_lens = runner._run_encoder(audio, lens, positions)
+        _, output_lens = runner._run_encoder(
+            audio, lens, positions, stream=_STREAM_MOCK
+        )
 
-            assert torch.equal(
-                output_lens, lens // WHISPER_TRT_ENCODER_DOWNSAMPLING_FACTOR
-            )
+        assert torch.equal(output_lens, lens // WHISPER_TRT_ENCODER_DOWNSAMPLING_FACTOR)
 
     def test__audio_inputs_len_are_padded_to_max_mel_padding_len(self):
         runner = _make_runner()
@@ -222,14 +265,11 @@ class TestInferenceRunnerRunEncoder:
 
 
 class TestInferenceRunnerRunDecoder:
-    def _call(self, runner, enc_out, enc_len):
+    def _run_decoder(self, runner, enc_out, enc_len):
         runner._decoder.decode.return_value = torch.zeros(
             enc_len.shape[0], WHISPER_TRT_N_MELS, _MAX_NEW_TOKENS, dtype=torch.int32
         )
-        with (
-            patch("torch.cuda.synchronize"),
-            patch.object(torch.Tensor, "cuda", lambda self: self),
-        ):
+        with (patch.object(torch.Tensor, "cuda", lambda self: self),):
             return runner._run_decoder(enc_out, enc_len)
 
     @staticmethod
@@ -240,14 +280,14 @@ class TestInferenceRunnerRunDecoder:
 
     def test__setup_called_with_correct_args(self):
         runner = _make_runner(max_new_tokens=_MAX_NEW_TOKENS)
-        self._call(runner, *self._encoder())
+        self._run_decoder(runner, *self._encoder())
         args = runner._decoder.setup.call_args[0]
         assert args[0] == _BATCH_SIZE
         assert args[2] == _MAX_NEW_TOKENS
 
     def test__prompt_inputs_shape_is_batch_size_x_prompt_len(self):
         runner = _make_runner()
-        self._call(runner, *self._encoder())
+        self._run_decoder(runner, *self._encoder())
 
         prompt_inputs = runner._decoder.decode.call_args[0][0]
         prompt_len = len(_PROMPT_IDS)
@@ -255,7 +295,7 @@ class TestInferenceRunnerRunDecoder:
 
     def test__cross_attention_mask_third_dim_is_encoder_length_only(self):
         runner = _make_runner()
-        self._call(runner, *self._encoder())
+        self._run_decoder(runner, *self._encoder())
 
         mask = runner._decoder.decode.call_args[1]["cross_attention_mask"]
         prompt_len = len(_PROMPT_IDS)
@@ -265,7 +305,7 @@ class TestInferenceRunnerRunDecoder:
     def test__encoder_output_forwarded_to_decode(self):
         runner = _make_runner()
         enc_out, enc_len = self._encoder()
-        self._call(runner, enc_out, enc_len)
+        self._run_decoder(runner, enc_out, enc_len)
 
         kw = runner._decoder.decode.call_args[1]
         assert torch.equal(kw["encoder_output"], enc_out)
@@ -275,7 +315,7 @@ class TestInferenceRunnerRunDecoder:
         from tensorrt_llm.runtime import SamplingConfig  # mocked
 
         runner = _make_runner()
-        self._call(runner, *self._encoder())
+        self._run_decoder(runner, *self._encoder())
 
         # SamplingConfig is mocked; verify it was called with the right end_id
         SamplingConfig.assert_called_with(

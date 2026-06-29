@@ -128,7 +128,9 @@ def cache_hf_repo(
 
 @lru_cache(maxsize=None)
 def load_mel_filters(
-    n_mels: int, mel_filters_path: str = None, device: "str | torch.Device" = "cpu"
+    n_mels: int,
+    mel_filters_path: Path | str = None,
+    device: "str | torch.Device" = "cpu",
 ) -> "torch.Tensor | None":
     """Load the mel filterbank matrix for projecting an stft into a mel spectrogram
 
@@ -136,8 +138,8 @@ def load_mel_filters(
     :param mel_filters_dir: directory where mel filterbank matrix is saved
     :param device: cpu or cuda
     """
-    import numpy as np  # noqa
-    import torch  # noqa
+    import numpy as np  # pylint: disable=import-outside-toplevel
+    import torch  # pylint: disable=import-outside-toplevel
 
     if mel_filters_path is None or n_mels not in {80, 128}:
         return None

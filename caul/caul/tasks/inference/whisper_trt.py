@@ -1,10 +1,11 @@
 import base64
 import math
 from pathlib import Path
-from typing import Iterable, OrderedDict, TYPE_CHECKING
+from typing import Callable, Iterable, OrderedDict, TYPE_CHECKING
 
 from icij_common.registrable import FromConfig
 
+from caul.exception import MissingTokenizerException
 from caul_core.constants import (
     WHISPER_TRT_WORLD_SIZE,
     WHISPER_TRT_PROMPT_PREFIX,
@@ -14,6 +15,9 @@ from caul_core.constants import (
     WHISPER_TRT_PATTERN_STR,
     WHISPER_TRT_PAD_TOKEN_ID,
     WHISPER_TRT_MAX_MEL_PADDING_LEN,
+    WHISPER_TRT_ENCODER_INPUT_LENGTHS,
+    WHISPER_TRT_ENCODER_INPUT_FEATURES,
+    WHISPER_TRT_ENCODER_POSITION_IDS,
 )
 from caul.tasks.asr_task import InferenceRunner
 from caul.tasks.inference.trt_inference import TrtInferenceMixin
@@ -27,6 +31,53 @@ from caul_core.objects import ASRModel, ASRResult, TorchDevice, PreprocessorOutp
 if TYPE_CHECKING:
     import torch
     import tiktoken
+    from tensorrt_llm.runtime.session import Session
+    from tensorrt_llm.runtime import GenerationSession
+
+
+def _encoder_factory(encoder_path: Path | str) -> "Callable[[], Session]":
+    def _load_encoder() -> "Session":
+        from tensorrt_llm.runtime.session import (
+            Session,
+        )  # pylint: disable=import-outside-toplevel
+
+        with open(encoder_path, "rb") as f:
+            return Session.from_serialized_engine(f.read())
+
+    return _load_encoder
+
+
+def _decoder_factory(
+    decoder_path: Path | str,
+    decoder_config: TrtLlmDecoderConfig | None = None,
+) -> "Callable[[torch.cuda.Stream | None], GenerationSession]":
+    def _load_decoder(stream: "torch.cuda.Stream | None" = None) -> "GenerationSession":
+        from tensorrt_llm import (
+            mpi_rank,
+            Mapping,
+        )  # pylint: disable=import-outside-toplevel
+        from tensorrt_llm.runtime import (
+            GenerationSession,
+        )  # pylint: disable=import-outside-toplevel
+
+        if decoder_config is None:
+            decoder_config = TrtLlmDecoderConfig()
+
+        with open(decoder_path, "rb") as f:
+            decoder_engine = f.read()
+
+        runtime_rank = mpi_rank()
+        runtime_mapping = Mapping(WHISPER_TRT_WORLD_SIZE, runtime_rank)
+
+        return GenerationSession(
+            decoder_config.to_model_config(),
+            decoder_engine,
+            runtime_mapping,
+            stream=stream,
+            debug_mode=decoder_config.debug_mode,
+        )
+
+    return _load_decoder
 
 
 def _get_tiktoken_tokenizer(vocab_path: Path) -> "tiktoken.Encoding":
@@ -80,9 +131,10 @@ class WhisperTrtInferenceRunner(InferenceRunner, TrtInferenceMixin):
 
     def __init__(
         self,
-        encoder_path: Path | str,
-        decoder_path: Path | str,
-        tokenizer_vocab_path: Path | str,
+        encoder_factory: Callable[[], "Session"],
+        decoder_factory: Callable[["torch.cuda.Stream | None"], "GenerationSession"],
+        tokenizer: "tiktoken.Encoding" = None,
+        tokenizer_vocab_path: Path | str = None,
         encoder_config: TrtLlmEncoderConfig = None,
         decoder_config: TrtLlmDecoderConfig = None,
         max_new_tokens: int = WHISPER_TRT_MAX_NEW_TOKENS,
@@ -91,6 +143,11 @@ class WhisperTrtInferenceRunner(InferenceRunner, TrtInferenceMixin):
         max_mel_padding_len: int = WHISPER_TRT_MAX_MEL_PADDING_LEN,
         device: "TorchDevice | torch.device" = TorchDevice.CPU,
     ):
+        if tokenizer is None and tokenizer_vocab_path is None:
+            raise MissingTokenizerException(
+                "Either tokenizer or tokenizer_path must be specified."
+            )
+
         import torch  # pylint: disable=import-outside-toplevel
 
         InferenceRunner.__init__(self, device=device)
@@ -107,12 +164,8 @@ class WhisperTrtInferenceRunner(InferenceRunner, TrtInferenceMixin):
             if isinstance(tokenizer_vocab_path, str)
             else tokenizer_vocab_path
         )
-        self._encoder_path = (
-            Path(encoder_path) if isinstance(encoder_path, str) else encoder_path
-        )
-        self._decoder_path = (
-            Path(decoder_path) if isinstance(decoder_path, str) else decoder_path
-        )
+        self._encoder_factory = encoder_factory
+        self._decoder_factory = decoder_factory
         self._encoder_config = encoder_config
         self._decoder_config = decoder_config
         self._max_new_tokens = max_new_tokens
@@ -120,8 +173,11 @@ class WhisperTrtInferenceRunner(InferenceRunner, TrtInferenceMixin):
         self._max_mel_padding_len = max_mel_padding_len
 
         # tokenizer
-
-        self._tokenizer = _get_tiktoken_tokenizer(tokenizer_vocab_path)
+        self._tokenizer = (
+            tokenizer
+            if tokenizer is not None
+            else _get_tiktoken_tokenizer(tokenizer_vocab_path)
+        )
 
         self._prompt_ids = torch.tensor(
             self._tokenizer.encode(
@@ -138,11 +194,18 @@ class WhisperTrtInferenceRunner(InferenceRunner, TrtInferenceMixin):
 
     @classmethod
     def _from_config(
-        cls, config: WhisperTrtInferenceRunnerConfig, **extras
+        cls,
+        config: WhisperTrtInferenceRunnerConfig,
+        encoder_factory: Callable[[Path | str], Callable[[], "Session"]],
+        decoder_factory: Callable[
+            [Path | str, TrtLlmDecoderConfig],
+            Callable[["torch.cuda.Stream"], "GenerationSession"],
+        ],
+        **extras,
     ) -> FromConfig:
         return cls(
-            encoder_path=config.encoder_path,
-            decoder_path=config.decoder_path,
+            encoder_factory=encoder_factory(config.encoder_path),
+            decoder_factory=decoder_factory(config.decoder_path, config.decoder_config),
             encoder_config=config.encoder_config,
             decoder_config=config.decoder_config,
             prompt_prefix=config.prompt_prefix,
@@ -151,37 +214,9 @@ class WhisperTrtInferenceRunner(InferenceRunner, TrtInferenceMixin):
             **extras,
         )
 
-    def __enter__(self):
-        from tensorrt_llm import (
-            mpi_rank,
-            Mapping,
-        )  # pylint: disable=import-outside-toplevel
-        from tensorrt_llm.runtime.session import (
-            Session,
-        )  # pylint: disable=import-outside-toplevel
-        from tensorrt_llm.runtime import (
-            ModelConfig,
-            GenerationSession,
-        )  # pylint: disable=import-outside-toplevel
-
-        with open(self._encoder_path, "rb") as f:
-            self._encoder = Session.from_serialized_engine(f.read())
-
-        with open(self._decoder_path, "rb") as f:
-            decoder_engine = f.read()
-
-            runtime_rank = mpi_rank()
-            runtime_mapping = Mapping(WHISPER_TRT_WORLD_SIZE, runtime_rank)
-
-            decoder_model_config = self._decoder_config.to_model_config()
-
-            self._decoder = GenerationSession(
-                decoder_model_config,
-                decoder_engine,
-                runtime_mapping,
-                debug_mode=self._decoder_config.debug_mode,
-            )
-
+    def __enter__(self, stream: "torch.cuda.stream | None" = None):
+        self._encoder = self._encoder_factory()
+        self._decoder = self._decoder_factory(stream)
         return self
 
     def process(  # pylint: disable=too-many-locals
@@ -260,6 +295,7 @@ class WhisperTrtInferenceRunner(InferenceRunner, TrtInferenceMixin):
         audio_inputs: "torch.Tensor",
         audio_inputs_lens: "torch.Tensor",
         position_ids: "torch.Tensor",
+        stream: "torch.cuda.Stream | None" = None,
     ) -> tuple["torch.Tensor", "torch.Tensor"]:
         import torch  # pylint: disable=import-outside-toplevel
         from tensorrt_llm.runtime.session import (
@@ -270,25 +306,25 @@ class WhisperTrtInferenceRunner(InferenceRunner, TrtInferenceMixin):
             trt_dtype_to_torch,
         )  # pylint: disable=import-outside-toplevel
 
-        encoder_output_list = [
+        encoder_input_list = [
             TensorInfo(
-                "input_features",
+                WHISPER_TRT_ENCODER_INPUT_FEATURES,
                 torch_dtype_to_trt(audio_inputs.dtype),
                 audio_inputs.shape,
             ),
             TensorInfo(
-                "input_lengths",
+                WHISPER_TRT_ENCODER_INPUT_LENGTHS,
                 torch_dtype_to_trt(audio_inputs_lens.dtype),
                 audio_inputs_lens.shape,
             ),
             TensorInfo(
-                "position_ids",
+                WHISPER_TRT_ENCODER_POSITION_IDS,
                 torch_dtype_to_trt(position_ids.dtype),
                 position_ids.shape,
             ),
         ]
 
-        encoder_output_shapes = self._encoder.infer_shapes(encoder_output_list)
+        encoder_output_shapes = self._encoder.infer_shapes(encoder_input_list)
 
         encoder_outputs = {
             t.name: torch.empty(
@@ -297,12 +333,13 @@ class WhisperTrtInferenceRunner(InferenceRunner, TrtInferenceMixin):
             for t in encoder_output_shapes
         }
 
-        stream = torch.cuda.current_stream()
+        if stream is None:
+            stream = torch.cuda.current_stream()
 
         encoder_inputs = OrderedDict()
-        encoder_inputs["input_features"] = audio_inputs
-        encoder_inputs["input_lengths"] = audio_inputs_lens
-        encoder_inputs["position_ids"] = position_ids
+        encoder_inputs[WHISPER_TRT_ENCODER_INPUT_FEATURES] = audio_inputs
+        encoder_inputs[WHISPER_TRT_ENCODER_INPUT_LENGTHS] = audio_inputs_lens
+        encoder_inputs[WHISPER_TRT_ENCODER_POSITION_IDS] = position_ids
 
         self._encoder.run(
             inputs=encoder_inputs, outputs=encoder_outputs, stream=stream.cuda_stream
@@ -351,11 +388,10 @@ class WhisperTrtInferenceRunner(InferenceRunner, TrtInferenceMixin):
                 prompt_inputs, pad_value=WHISPER_TRT_PAD_TOKEN_ID
             )
             if decoder_inputs.dim() == 3:
-                decoder_inputs_lens = torch.full(
+                decoder_inputs_lens = decoder_inputs.new_full(
                     (decoder_inputs.shape[0],),
                     decoder_inputs.shape[1],
                     dtype=torch.int32,
-                    device=self._device,
                 )
 
                 decoder_inputs = _remove_tensor_padding(
@@ -376,8 +412,6 @@ class WhisperTrtInferenceRunner(InferenceRunner, TrtInferenceMixin):
             encoder_max_input_length=decoder_inputs_max_len,
         )
 
-        torch.cuda.synchronize()
-
         decoder_output = self._decoder.decode(
             prompt_inputs,
             prompt_inputs_lens,
@@ -386,8 +420,6 @@ class WhisperTrtInferenceRunner(InferenceRunner, TrtInferenceMixin):
             encoder_input_lengths=decoder_inputs_lens,
             cross_attention_mask=cross_attention_mask,
         )
-
-        torch.cuda.synchronize()
 
         # get the list of int from output_ids tensor
         return decoder_output.cpu()

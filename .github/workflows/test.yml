@@ -30,7 +30,7 @@ jobs:
       - name: Run tests
         run: |
           cd caul
-          uv run --dev --extra preprocessing --extra nemo --extra pyannote --extra fireredasr2 --extra faster_whisper --extra huggingface_hub --extra parakeet_trt --frozen pytest -vvv --cache-clear --show-capture=all -r A ../test -m "not no_ci"
+          uv run --dev --extra preprocessing --extra nemo --extra pyannote --extra fireredasr2 --extra faster_whisper --extra huggingface_hub --frozen pytest -vvv --cache-clear --show-capture=all -r A ../test -m "not no_ci"
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true

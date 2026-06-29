@@ -15,6 +15,7 @@ dependencies = [
     "typer~=0.24",
     "huggingface-hub~=1.11",
     "caul-core~=0.2.0",
+    "tiktoken~=0.13",
 ]
 
 [project.scripts]
@@ -49,7 +50,6 @@ parakeet_trt = [
 ]
 whisper_trt = [
     "tensorrt_llm~=1.2",
-    "tiktoken~=0.13",
 ]
 
 # Nemo 2.7.2 has a very tight transformers version range (>=4.57.0,<4.58.dev0) which
