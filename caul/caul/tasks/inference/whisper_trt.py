@@ -196,16 +196,13 @@ class WhisperTrtInferenceRunner(InferenceRunner, TrtInferenceMixin):
     def _from_config(
         cls,
         config: WhisperTrtInferenceRunnerConfig,
-        encoder_factory: Callable[[Path | str], Callable[[], "Session"]],
-        decoder_factory: Callable[
-            [Path | str, TrtLlmDecoderConfig],
-            Callable[["torch.cuda.Stream"], "GenerationSession"],
-        ],
         **extras,
     ) -> FromConfig:
         return cls(
-            encoder_factory=encoder_factory(config.encoder_path),
-            decoder_factory=decoder_factory(config.decoder_path, config.decoder_config),
+            encoder_factory=_encoder_factory(config.encoder_path),
+            decoder_factory=_decoder_factory(
+                config.decoder_path, config.decoder_config
+            ),
             encoder_config=config.encoder_config,
             decoder_config=config.decoder_config,
             prompt_prefix=config.prompt_prefix,

@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 
 def _mel_filters_factory(
-    n_mels: int, mel_filters_dir: Path, device: "str | torch.Device" = "cpu"
+    n_mels: int, mel_filters_dir: Path | str, device: "str | torch.Device" = "cpu"
 ) -> Callable[[], "torch.Tensor"]:
     def _load_mel_filters() -> "torch.Tensor":
         return load_mel_filters(n_mels, mel_filters_dir, device)
@@ -36,12 +36,7 @@ class WhisperTrtPreprocessor(ASRPreprocessor):
     def __init__(
         self,
         n_mels: int = 80,
-        mel_filters_factory: (
-            Callable[
-                [int, Path | str, "str | torch.Device"], Callable[[], "torch.Tensor"]
-            ]
-            | None
-        ) = None,
+        mel_filters_factory: Callable[[], "torch.Tensor"] = None,
         dtype: "str | None" = None,
         batch_size: int = DEFAULT_BATCH_SIZE,
         max_frames: int = WHISPER_TRT_MAX_FRAMES,
@@ -59,20 +54,12 @@ class WhisperTrtPreprocessor(ASRPreprocessor):
     def _from_config(
         cls,
         config: WhisperTrtPreprocessorConfig,
-        mel_filters_factory: (
-            Callable[
-                [int, Path | str, "str | torch.Device"], Callable[[], "torch.Tensor"]
-            ]
-            | None
-        ) = None,
         **extras,
     ) -> Self:
         return cls(
             n_mels=config.n_mels,
-            mel_filters_factory=(
-                mel_filters_factory(config.mel_filters_dir)
-                if mel_filters_factory is not None
-                else None
+            mel_filters_factory=_mel_filters_factory(
+                config.n_mels, config.mel_filters_dir
             ),
             dtype=config.dtype,
             batch_size=config.batch_size,

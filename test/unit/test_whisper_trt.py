@@ -155,26 +155,6 @@ class TestInferenceRunnerSetup:
         assert runner._encoder_factory is encoder_factory
         assert runner._decoder_factory is decoder_factory
 
-    def test__sets_encoder_and_decoder_in_from_config(self):
-        encoder_factory = MagicMock()
-        decoder_factory = MagicMock()
-        config = MagicMock()
-        config.registry_key.default = "model"
-        config.model = "whisper_trt"
-
-        config.encoder_path = "encoder/path"
-        config.decoder_path = "decoder/path"
-
-        runner = WhisperTrtInferenceRunner.from_config(
-            config=config,
-            encoder_factory=encoder_factory,
-            decoder_factory=decoder_factory,
-            tokenizer=_make_tokenizer_mock(),
-        )
-
-        assert runner._encoder_factory is encoder_factory.return_value
-        assert runner._decoder_factory is decoder_factory.return_value
-
 
 class TestInferenceRunnerRunEncoder:
     @staticmethod
