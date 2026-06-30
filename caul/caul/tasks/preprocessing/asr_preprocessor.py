@@ -5,8 +5,7 @@ from typing import Iterable, Self, TYPE_CHECKING, Callable
 
 from hashlib import sha256
 
-
-from caul_core.config import PreprocessorConfig
+from caul_core.config import BasePreprocessorConfig
 from caul_core.constants import (
     DEFAULT_SAMPLE_RATE,
     DEFAULT_BATCH_SIZE,
@@ -50,7 +49,7 @@ class ASRPreprocessor(Preprocessor):
         self._large_file_threshold_bytes = large_file_threshold_bytes
 
     @classmethod
-    def _from_config(cls, config: PreprocessorConfig, **extras) -> Self:
+    def _from_config(cls, config: BasePreprocessorConfig, **extras) -> Self:
         return cls(
             max_frames=config.max_frames,
             batch_size=config.batch_size,

@@ -1,4 +1,5 @@
 import logging
+from abc import ABC
 from contextlib import ExitStack
 from copy import copy
 from pathlib import Path
@@ -27,7 +28,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class ASRPipeline:
+class ASRPipeline(ABC):
     def __init__(
         self, tasks: list[ASRTask], device: TorchDevice = TorchDevice.CPU
     ) -> None:

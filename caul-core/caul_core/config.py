@@ -1,6 +1,6 @@
 from abc import ABC
 from pathlib import Path
-from typing import Any, ClassVar, TYPE_CHECKING
+from typing import ClassVar, TYPE_CHECKING
 
 from icij_common.registrable import RegistrableConfig
 from pydantic import Field
@@ -153,8 +153,6 @@ class BasePostprocessorConfig(_BaseConfig):
 
 
 # Parakeet
-
-
 class ParakeetPreprocessorConfig(BasePreprocessorConfig):
     model: ClassVar[str] = Field(default=ASRModel.PARAKEET)
 

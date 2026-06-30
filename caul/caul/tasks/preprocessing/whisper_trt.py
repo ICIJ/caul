@@ -6,15 +6,14 @@ from caul_core.constants import (
     WHISPER_TRT_HOP_LENGTH,
     WHISPER_TRT_MAX_FRAMES,
     DEFAULT_BATCH_SIZE,
-    WHISPER_TRT_MAX_NEW_TOKENS,
     WHISPER_TRT_PREPROCESSOR_LOG_RANGE_NORMALIZER,
     WHISPER_TRT_PREPROCESSOR_CLAMP_MIN,
     WHISPER_TRT_PREPROCESSOR_LOG_RANGE_MAX_SHIFT,
 )
 from caul.tasks.asr_task import Preprocessor
-from caul.tasks.preprocessing.asr_preprocessor import ASRPreprocessor, _NoneType
+from caul.tasks.preprocessing.asr_preprocessor import ASRPreprocessor
 from caul.utils import load_mel_filters
-from caul_core.config import PreprocessorConfig, WhisperTrtPreprocessorConfig
+from caul_core.config import WhisperTrtPreprocessorConfig
 from caul_core.objects import ASRModel
 
 if TYPE_CHECKING:
@@ -32,7 +31,6 @@ def _mel_filters_factory(
 
 @Preprocessor.register(ASRModel.WHISPER_TRT)
 class WhisperTrtPreprocessor(ASRPreprocessor):
-
     def __init__(
         self,
         n_mels: int = 80,
