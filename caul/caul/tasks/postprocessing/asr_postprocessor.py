@@ -2,10 +2,11 @@ from typing import Callable, Iterable
 
 from icij_common.registrable import FromConfig
 
-from caul_core.config import PostprocessorConfig
 from caul_core.objects import ASRResult
 from caul.task_defaults import generic_unbatching_fn
 from caul.tasks.asr_task import Postprocessor
+
+from caul_core.config import BasePreprocessorConfig
 
 
 class ASRPostprocessor(Postprocessor):
@@ -15,7 +16,7 @@ class ASRPostprocessor(Postprocessor):
         self._unbatching_fn = unbatching_fn
 
     @classmethod
-    def _from_config(cls, config: PostprocessorConfig, **extras) -> FromConfig:
+    def _from_config(cls, config: BasePreprocessorConfig, **extras) -> FromConfig:
         return cls(**extras)
 
     def process(

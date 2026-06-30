@@ -1,6 +1,6 @@
 from typing import Callable, Iterable, Self
 
-from caul_core.config import PreprocessorConfig
+from caul_core.config import ParakeetPreprocessorConfig
 from caul_core.constants import (
     DEFAULT_LARGE_FILE_THRESHOLD_BYTES,
     DEFAULT_SAMPLE_RATE,
@@ -69,7 +69,7 @@ class ParakeetPreprocessor(ASRPreprocessor):
         )
 
     @classmethod
-    def _from_config(cls, config: PreprocessorConfig, **extras) -> Self:
+    def _from_config(cls, config: ParakeetPreprocessorConfig, **extras) -> Self:
         return cls(
             max_frames=config.max_frames,
             sample_rate=config.sample_rate,
