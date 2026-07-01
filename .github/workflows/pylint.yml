@@ -23,4 +23,4 @@ jobs:
     - name: Analysing the code with pylint
       run: |
         cd caul
-        uv run --extra preprocessing --extra nemo --extra pyannote --extra fireredasr2 --extra faster_whisper --extra huggingface_hub --frozen pylint $(git ls-files '*.py')
+        uv run --extra preprocessing --extra nemo --extra pyannote --extra fireredasr2 --extra faster_whisper --frozen pylint $(git ls-files '*.py')
