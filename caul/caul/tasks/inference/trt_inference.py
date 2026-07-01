@@ -1,6 +1,6 @@
 import gc
 
-from caul_core.objects import TorchDevice
+from caul_core import TorchDevice
 
 
 class TrtInferenceMixin:

@@ -1,7 +1,7 @@
-from caul.tasks.asr_task import Postprocessor
-from caul.tasks.postprocessing.asr_postprocessor import ASRPostprocessor
-from caul_core.objects import ASRModel
+from caul_core import ASRModel, Postprocessor
+
+from .asr_postprocessor import PostprocessorMixin
 
 
 @Postprocessor.register(ASRModel.WHISPER_TRT)
-class WhisperTrtPostprocessor(ASRPostprocessor): ...
+class WhisperTrtPostprocessor(PostprocessorMixin): ...

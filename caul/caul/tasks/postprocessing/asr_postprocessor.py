@@ -1,15 +1,12 @@
 from typing import Callable, Iterable
 
+from caul_core import ASRResult, BasePreprocessorConfig, Postprocessor
 from icij_common.registrable import FromConfig
 
-from caul_core.objects import ASRResult
-from caul.task_defaults import generic_unbatching_fn
-from caul.tasks.asr_task import Postprocessor
-
-from caul_core.config import BasePreprocessorConfig
+from ...task_defaults import generic_unbatching_fn
 
 
-class ASRPostprocessor(Postprocessor):
+class PostprocessorMixin(Postprocessor):
     """Postprocessing logic"""
 
     def __init__(self, unbatching_fn: Callable = generic_unbatching_fn):

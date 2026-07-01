@@ -1,6 +1,6 @@
 import pytest
 
-from caul_core.objects import ASRModel
+from caul_core import ASRModel
 
 
 def test_all_asr_models_expose_languages() -> None:

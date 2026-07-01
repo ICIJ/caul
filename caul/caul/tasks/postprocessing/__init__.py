@@ -7,14 +7,10 @@ try:
 except ModuleNotFoundError:
     FireRedASR2Postprocessor = None
 try:
-    from .faster_whisper import (
-        FasterWhisperPostprocessor,
-    )
+    from .faster_whisper import FasterWhisperPostprocessor
 except ModuleNotFoundError:
     FasterWhisperPostprocessor = None
 try:
-    from .whisper_trt import (
-        WhisperTrtPostprocessor,
-    )
+    from .whisper_trt import WhisperTrtPostprocessor
 except ModuleNotFoundError:
     WhisperTrtPostprocessor = None

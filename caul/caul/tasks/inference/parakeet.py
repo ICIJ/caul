@@ -1,16 +1,24 @@
 import logging
 from pathlib import Path, PurePosixPath
-from typing import Iterable
+from typing import Iterable, TYPE_CHECKING
 
 from icij_common.registrable import FromConfig
 
-from caul_core.constants import PARAKEET_MODEL_REF
-from caul_core.objects import TorchDevice, ASRModel, ASRResult, PreprocessorOutput
-from caul_core.config import ParakeetInferenceRunnerConfig
-from ..asr_task import InferenceRunner
+from caul_core import (
+    PARAKEET_MODEL_REF,
+    TorchDevice,
+    ASRModel,
+    ASRResult,
+    PreprocessorOutput,
+    ParakeetInferenceRunnerConfig,
+    InferenceRunner,
+)
 from ...utils import cache_hf_model_file
 
 logger = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    import torch
 
 
 @InferenceRunner.register(ASRModel.PARAKEET)
@@ -25,7 +33,7 @@ class ParakeetInferenceRunner(InferenceRunner):
     def __init__(
         self,
         model_name: str = PARAKEET_MODEL_REF,
-        device: "TorchDevice | torch.device" = TorchDevice.CPU,
+        device: TorchDevice = TorchDevice.CPU,
         return_timestamps: bool = True,
         batch_size: int = 4,
     ):
@@ -64,18 +72,16 @@ class ParakeetInferenceRunner(InferenceRunner):
                 # DataLoader workers, but AudioToBPEDataset defines a class TokenizerWrapper
                 # inside __init__, meaning it can't be pickled.
                 num_workers=0,
-                _internal=InternalTranscribeConfig(device=self._device),
+                _internal=InternalTranscribeConfig(device=self._torch_device),
             )
 
         return self.__transcribe_config
 
     def __enter__(self):
         import nemo.collections.asr as nemo_asr  # pylint: disable=import-outside-toplevel
-        import torch  # pylint: disable=import-outside-toplevel
 
-        device = self._device
         self._model = nemo_asr.models.ASRModel.from_pretrained(
-            self.model_name, map_location=torch.device(device)
+            self.model_name, map_location=self._torch_device
         ).eval()
         return self
 
@@ -132,7 +138,7 @@ class ParakeetInferenceRunner(InferenceRunner):
             if not input_batch:
                 continue
             if hasattr(input_batch[0], "tensor"):
-                audios = [i.tensor.to(self._device) for i in input_batch]
+                audios = [i.tensor.to(self._torch_device) for i in input_batch]
             else:
                 audios = [str(i.metadata.preprocessed_file_path) for i in input_batch]
 

@@ -1,38 +1,44 @@
 import base64
 import math
 from pathlib import Path
-from typing import Callable, Iterable, OrderedDict, TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable, Iterable, OrderedDict
 
+from caul_core import (
+    WHISPER_TRT_ENCODER_INPUT_FEATURES,
+    WHISPER_TRT_ENCODER_INPUT_LENGTHS,
+    WHISPER_TRT_ENCODER_POSITION_IDS,
+    WHISPER_TRT_EOT_TOKEN,
+    WHISPER_TRT_MAX_MEL_PADDING_LEN,
+    WHISPER_TRT_MAX_NEW_TOKENS,
+    WHISPER_TRT_PAD_TOKEN_ID,
+    WHISPER_TRT_PATTERN_STR,
+    WHISPER_TRT_PROMPT_PREFIX,
+    WHISPER_TRT_SPECIAL_TOKENS,
+    WHISPER_TRT_WORLD_SIZE,
+    ASRModel,
+    ASRResult,
+    InferenceRunner,
+    PreprocessorOutput,
+    TorchDevice,
+    TrtLlmDecoderConfig,
+    TrtLlmEncoderConfig,
+    WhisperTrtInferenceRunnerConfig,
+)
 from icij_common.registrable import FromConfig
 
-from caul.exception import MissingTokenizerException
-from caul_core.constants import (
-    WHISPER_TRT_WORLD_SIZE,
-    WHISPER_TRT_PROMPT_PREFIX,
-    WHISPER_TRT_MAX_NEW_TOKENS,
-    WHISPER_TRT_EOT_TOKEN,
-    WHISPER_TRT_SPECIAL_TOKENS,
-    WHISPER_TRT_PATTERN_STR,
-    WHISPER_TRT_PAD_TOKEN_ID,
-    WHISPER_TRT_MAX_MEL_PADDING_LEN,
-    WHISPER_TRT_ENCODER_INPUT_LENGTHS,
-    WHISPER_TRT_ENCODER_INPUT_FEATURES,
-    WHISPER_TRT_ENCODER_POSITION_IDS,
-)
-from caul.tasks.asr_task import InferenceRunner
-from caul.tasks.inference.trt_inference import TrtInferenceMixin
-from caul_core.config import (
-    WhisperTrtInferenceRunnerConfig,
-    TrtLlmEncoderConfig,
-    TrtLlmDecoderConfig,
-)
-from caul_core.objects import ASRModel, ASRResult, TorchDevice, PreprocessorOutput
+from ...exception import MissingTokenizerException
+from .trt_inference import TrtInferenceMixin
 
 if TYPE_CHECKING:
-    import torch
     import tiktoken
-    from tensorrt_llm.runtime.session import Session
-    from tensorrt_llm.runtime import GenerationSession
+    import torch
+
+    try:
+        from tensorrt_llm.runtime import GenerationSession
+        from tensorrt_llm.runtime.session import Session
+    except ModuleNotFoundError:
+        Session = None
+        GenerationSession = None
 
 
 def _encoder_factory(encoder_path: Path | str) -> "Callable[[], Session]":
@@ -53,8 +59,8 @@ def _decoder_factory(
 ) -> "Callable[[torch.cuda.Stream | None], GenerationSession]":
     def _load_decoder(stream: "torch.cuda.Stream | None" = None) -> "GenerationSession":
         from tensorrt_llm import (
-            mpi_rank,
             Mapping,
+            mpi_rank,
         )  # pylint: disable=import-outside-toplevel
         from tensorrt_llm.runtime import (
             GenerationSession,
@@ -128,7 +134,6 @@ def _remove_tensor_padding(
 
 @InferenceRunner.register(ASRModel.WHISPER_TRT)
 class WhisperTrtInferenceRunner(InferenceRunner, TrtInferenceMixin):
-
     def __init__(
         self,
         encoder_factory: Callable[[], "Session"],
@@ -141,7 +146,7 @@ class WhisperTrtInferenceRunner(InferenceRunner, TrtInferenceMixin):
         prompt_prefix: str = WHISPER_TRT_PROMPT_PREFIX,
         return_timestamps: bool = True,
         max_mel_padding_len: int = WHISPER_TRT_MAX_MEL_PADDING_LEN,
-        device: "TorchDevice | torch.device" = TorchDevice.CPU,
+        device: TorchDevice = TorchDevice.CPU,
     ):
         if tokenizer is None and tokenizer_vocab_path is None:
             raise MissingTokenizerException(
@@ -222,11 +227,11 @@ class WhisperTrtInferenceRunner(InferenceRunner, TrtInferenceMixin):
         *args,
         **kwargs,
     ) -> Iterable[ASRResult]:
-        from caul_core.objects import (
+        import torch  # pylint: disable=import-outside-toplevel
+        from caul_core import (
             PreprocessedInput,
             PreprocessedInputWithTensor,
         )  # pylint: disable=import-outside-toplevel
-        import torch  # pylint: disable=import-outside-toplevel
 
         if isinstance(inputs, (PreprocessedInput, PreprocessedInputWithTensor)):
             inputs = [inputs]
@@ -247,12 +252,12 @@ class WhisperTrtInferenceRunner(InferenceRunner, TrtInferenceMixin):
                     )
                     for preprocessed_input in input_batch
                 ]
-            ).to(self._device)
+            ).to(self._torch_device)
 
             # capture original (unpadded) time lengths before padding
             audio_inputs_lens = torch.tensor(
                 [t.shape[-1] for t in audio_inputs], dtype=torch.int32
-            ).to(self._device)
+            ).to(self._torch_device)
 
             # ravel tensors for GPU
             audio_inputs = audio_inputs.contiguous()
@@ -263,7 +268,7 @@ class WhisperTrtInferenceRunner(InferenceRunner, TrtInferenceMixin):
                 torch.arange(
                     math.ceil(seq_len / self._encoder_config.downsampling_factor),
                     dtype=torch.int32,
-                    device=self._device,
+                    device=self._torch_device,
                 )
                 .expand(batch_size, -1)
                 .contiguous()
@@ -295,12 +300,12 @@ class WhisperTrtInferenceRunner(InferenceRunner, TrtInferenceMixin):
         stream: "torch.cuda.Stream | None" = None,
     ) -> tuple["torch.Tensor", "torch.Tensor"]:
         import torch  # pylint: disable=import-outside-toplevel
-        from tensorrt_llm.runtime.session import (
-            TensorInfo,
-        )  # pylint: disable=import-outside-toplevel
         from tensorrt_llm._utils import (
             torch_dtype_to_trt,
             trt_dtype_to_torch,
+        )  # pylint: disable=import-outside-toplevel
+        from tensorrt_llm.runtime.session import (
+            TensorInfo,
         )  # pylint: disable=import-outside-toplevel
 
         encoder_input_list = [
@@ -325,7 +330,9 @@ class WhisperTrtInferenceRunner(InferenceRunner, TrtInferenceMixin):
 
         encoder_outputs = {
             t.name: torch.empty(
-                tuple(t.shape), dtype=trt_dtype_to_torch(t.dtype), device=self._device
+                tuple(t.shape),
+                dtype=trt_dtype_to_torch(t.dtype),
+                device=self._torch_device,
             )
             for t in encoder_output_shapes
         }

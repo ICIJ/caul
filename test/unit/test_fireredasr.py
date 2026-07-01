@@ -3,14 +3,14 @@ import torch
 from fireredasr2s.fireredasr2 import FireRedAsr2
 from huggingface_hub.constants import HF_HUB_CACHE
 
-from caul_core.constants import FIREREDASR2_INFERENCE_MAX_FRAMES
-from caul_core.objects import (
+from caul_core import FIREREDASR2_INFERENCE_MAX_FRAMES
+from caul_core import (
     ASRResult,
     PreprocessedInput,
     PreprocessedInputWithTensor,
     InputMetadata,
 )
-from caul_core.config import FireRedASR2InferenceRunnerConfig
+from caul_core import FireRedASR2InferenceRunnerConfig
 from caul.tasks import FireRedASR2InferenceRunner, FireRedASR2Preprocessor
 
 

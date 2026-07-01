@@ -1,11 +1,12 @@
 import uuid
 from typing import Callable, TYPE_CHECKING
 
-from caul_core.constants import DEFAULT_SAMPLE_RATE, PARAKEET_INFERENCE_MAX_DURATION_S
+from caul_core import DEFAULT_SAMPLE_RATE, PARAKEET_INFERENCE_MAX_DURATION_S
 from .objects import TensorSegment
 
 if TYPE_CHECKING:
     import torch
+    import pyannote
 
 
 def _split_range_fixed(  # pylint: disable=too-many-arguments

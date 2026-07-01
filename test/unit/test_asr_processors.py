@@ -3,15 +3,15 @@ from pathlib import Path
 import pytest
 import torch
 
-from caul_core.constants import FIREREDASR2_INFERENCE_MAX_FRAMES
-from caul_core.objects import ASRResult
-from caul.tasks.postprocessing.asr_postprocessor import ASRPostprocessor
-from caul.tasks.preprocessing.asr_preprocessor import ASRPreprocessor
+from caul_core import FIREREDASR2_INFERENCE_MAX_FRAMES
+from caul_core import ASRResult
+from caul.tasks.postprocessing.asr_postprocessor import PostprocessorMixin
+from caul.tasks.preprocessing.asr_preprocessor import ASRPreprocessorMixin
 
 
 class TestASRPreprocessor:
     def setup_method(self):
-        self._preprocessor = ASRPreprocessor()
+        self._preprocessor = ASRPreprocessorMixin()
 
     def test__short_audio_single_segment(self):
         """Audio shorter than 60 seconds should produce exactly one segment"""
@@ -61,7 +61,7 @@ class TestASRPreprocessor:
 
 class TestASRPostprocessor:
     def setup_method(self):
-        self._postprocessor = ASRPostprocessor()
+        self._postprocessor = PostprocessorMixin()
 
     def test__merges_segments(self):
         """Segments belonging to the same input_ordering are merged in time order"""

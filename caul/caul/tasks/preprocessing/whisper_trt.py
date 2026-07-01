@@ -1,20 +1,21 @@
 from pathlib import Path
-from typing import Self, TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Callable, Self
 
-from caul_core.constants import (
-    WHISPER_TRT_N_FFT,
+from caul_core import (
+    DEFAULT_BATCH_SIZE,
     WHISPER_TRT_HOP_LENGTH,
     WHISPER_TRT_MAX_FRAMES,
-    DEFAULT_BATCH_SIZE,
-    WHISPER_TRT_PREPROCESSOR_LOG_RANGE_NORMALIZER,
+    WHISPER_TRT_N_FFT,
     WHISPER_TRT_PREPROCESSOR_CLAMP_MIN,
     WHISPER_TRT_PREPROCESSOR_LOG_RANGE_MAX_SHIFT,
+    WHISPER_TRT_PREPROCESSOR_LOG_RANGE_NORMALIZER,
+    ASRModel,
+    Preprocessor,
+    WhisperTrtPreprocessorConfig,
 )
-from caul.tasks.asr_task import Preprocessor
-from caul.tasks.preprocessing.asr_preprocessor import ASRPreprocessor
-from caul.utils import load_mel_filters
-from caul_core.config import WhisperTrtPreprocessorConfig
-from caul_core.objects import ASRModel
+
+from ...utils import load_mel_filters
+from .asr_preprocessor import ASRPreprocessorMixin
 
 if TYPE_CHECKING:
     import torch
@@ -30,7 +31,7 @@ def _mel_filters_factory(
 
 
 @Preprocessor.register(ASRModel.WHISPER_TRT)
-class WhisperTrtPreprocessor(ASRPreprocessor):
+class WhisperTrtPreprocessor(ASRPreprocessorMixin):
     def __init__(
         self,
         n_mels: int = 80,

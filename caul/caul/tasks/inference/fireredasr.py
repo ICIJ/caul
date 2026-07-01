@@ -6,24 +6,24 @@ from typing import Iterable, TYPE_CHECKING
 
 from icij_common.registrable import FromConfig
 
-from caul_core.constants import FIREREDASR2_MODEL_HUB_PREFIX
-from caul_core.objects import (
+from caul_core import (
     TorchDevice,
     ASRResult,
     PreprocessorOutput,
     ASRModel,
+    FIREREDASR2_MODEL_HUB_PREFIX,
+    FireRedASR2InferenceRunnerConfig,
     FireRedASR2ModelTag,
     FireRedASR2ModelRef,
+    InferenceRunner,
 )
-from caul_core.config import FireRedASR2InferenceRunnerConfig
-from caul.tasks.asr_task import InferenceRunner
 from caul.utils import cache_hf_repo, prepare_file_input_batch
 
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     import torch
-    from fireredasr2s.fireredasr2 import FireRedAsr2
+    from fireredasr2s.fireredasr2 import FireRedAsr2, FireRedAsr2Config
 
 
 def fireredasr2_from_pretrained(
@@ -108,7 +108,7 @@ class FireRedASR2InferenceRunner(InferenceRunner):
     def __init__(
         self,
         config: FireRedASR2InferenceRunnerConfig = None,
-        device: "TorchDevice | torch.device" = TorchDevice.CPU,
+        device: TorchDevice = TorchDevice.CPU,
     ):
         super().__init__(device)
         if config is None:
@@ -121,13 +121,13 @@ class FireRedASR2InferenceRunner(InferenceRunner):
     def _from_config(
         cls,
         config: FireRedASR2InferenceRunnerConfig,
-        device: "TorchDevice | torch.device" = TorchDevice.CPU,
+        device: TorchDevice = TorchDevice.CPU,
         **extras,
     ) -> FromConfig:
         return cls(config=config, device=device, **extras)
 
     def __enter__(self):
-        use_gpu = self._device.type.startswith("cuda")
+        use_gpu = self._device is TorchDevice.GPU
         self._model = inference_config_to_fire_red_asr_model(self._config, use_gpu)
         return self
 

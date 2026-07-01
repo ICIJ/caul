@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 import torch
 
 from caul.tasks.inference.parakeet_trt import ParakeetTrtInferenceRunner
-from caul_core.constants import PARAKEET_MODEL_REF
+from caul_core import PARAKEET_MODEL_REF
 
 _ENGINE_PATH = "/fake/encoder.trt"
 _INFERENCE_HANDLER_PATH = "caul.tasks.inference.parakeet_trt.TrtInferenceHandler"
@@ -65,9 +65,7 @@ class TestParakeetTrtInferenceRunner:
         mock_inference_runner = _mock_inference_runner()
         mock_trt_handler = _mock_trt_handler(_ENC_OUT, _ENC_OUT_LEN)
         expected = [MagicMock(), MagicMock()]
-        mock_inference_runner._decoder.decoding.rnnt_decoder_predictions_tensor.return_value = (
-            expected
-        )
+        mock_inference_runner._decoder.decoding.rnnt_decoder_predictions_tensor.return_value = expected
 
         with patch(_INFERENCE_HANDLER_PATH, mock_trt_handler):
             result = mock_inference_runner._transcribe(
