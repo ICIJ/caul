@@ -1,16 +1,16 @@
-from caul_core.constants import (
+from caul_core import (
     FIREREDASR2_INFERENCE_MAX_FRAMES,
     DEFAULT_BATCH_SIZE,
     DEFAULT_SAMPLE_RATE,
     DEFAULT_LARGE_FILE_THRESHOLD_BYTES,
 )
-from caul_core.objects import ASRModel
-from caul.tasks.asr_task import Preprocessor
-from .asr_preprocessor import ASRPreprocessor
+from caul_core import ASRModel
+from caul_core import Preprocessor
+from .asr_preprocessor import ASRPreprocessorMixin
 
 
 @Preprocessor.register(ASRModel.FIREREDASR2_AED)
-class FireRedASR2Preprocessor(ASRPreprocessor):
+class FireRedASR2Preprocessor(ASRPreprocessorMixin):
     def __init__(
         self,
         max_frames: int = FIREREDASR2_INFERENCE_MAX_FRAMES,

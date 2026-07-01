@@ -5,14 +5,14 @@ from typing import Iterable, Self, TYPE_CHECKING, Callable
 
 from hashlib import sha256
 
-from caul_core.config import BasePreprocessorConfig
-from caul_core.constants import (
+from caul_core import BasePreprocessorConfig, Preprocessor
+from caul_core import (
     DEFAULT_SAMPLE_RATE,
     DEFAULT_BATCH_SIZE,
     DEFAULT_MAX_FRAMES,
     DEFAULT_LARGE_FILE_THRESHOLD_BYTES,
 )
-from caul_core.objects import (
+from caul_core import (
     InputMetadata,
     PreprocessedInput,
     PreprocessedInputWithTensor,
@@ -21,7 +21,6 @@ from caul_core.objects import (
 from caul.task_defaults import generic_batching_fn
 from caul.segmentation import segment_by_silence
 from caul.filesystem import save_tensor
-from caul.tasks.asr_task import Preprocessor
 
 if TYPE_CHECKING:
     import torch
@@ -30,7 +29,7 @@ if TYPE_CHECKING:
 _NoneType = type(None)
 
 
-class ASRPreprocessor(Preprocessor):
+class ASRPreprocessorMixin(Preprocessor):
     """Preprocessing logic for ASR model inputs"""
 
     def __init__(

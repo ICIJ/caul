@@ -1,22 +1,19 @@
 from typing import ClassVar
 
+import numpy as np
+import torch
+from caul.tasks import ParakeetInferenceRunner
+from caul_core import InferenceRunner, ParakeetInferenceRunnerConfig, TorchDevice
 from nemo.collections.asr.parts.mixins import TranscribeConfig
 from nemo.collections.asr.parts.utils import Hypothesis
 from pydantic import Field
 
-from caul_core.objects import TorchDevice
-from caul_core.config import ParakeetInferenceRunnerConfig
-from caul.tasks import InferenceRunner, ParakeetInferenceRunner
 from test.unit.constant import (
     PARAKEET_TEST_CONFIDENCE,
-    TEST_WAV_TRANSCRIPTION,
-    PARAKEET_TEST_SEGMENT_START,
     PARAKEET_TEST_SEGMENT_END,
+    PARAKEET_TEST_SEGMENT_START,
+    TEST_WAV_TRANSCRIPTION,
 )
-
-import torch
-
-import numpy as np
 
 
 class MockNvidiaASRInferenceHandlerResult:

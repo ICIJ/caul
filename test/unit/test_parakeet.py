@@ -3,9 +3,7 @@ from pathlib import Path
 import pytest
 from huggingface_hub.constants import HF_HUB_CACHE
 
-from caul.asr_pipeline import ASRPipeline
-from caul_core.objects import TorchDevice, ASRResult
-from caul_core.constants import DEFAULT_SAMPLE_RATE
+from caul_core import TorchDevice, ASRResult, DEFAULT_SAMPLE_RATE, ASRPipeline
 
 import torch
 
@@ -14,7 +12,7 @@ from caul.tasks import (
     ParakeetPostprocessor,
     ParakeetPreprocessor,
 )
-from caul_core.config import ParakeetInferenceRunnerConfig
+from caul_core import ParakeetInferenceRunnerConfig
 from caul.tasks.preprocessing.parakeet import _parakeet_batching_fn
 
 
@@ -104,14 +102,14 @@ def test__parakeet_device_setting():
     """Test parakeet device setting"""
     # Given
     pipeline = ASRPipeline.parakeet(TorchDevice.CPU)
-    assert pipeline.tasks[1].device == torch.device("cpu")
+    assert pipeline.tasks[1].device == TorchDevice.CPU
 
     # When
-    pipeline.set_device(TorchDevice.MPS)
+    pipeline.device = TorchDevice.MPS
 
     # Then
-    assert pipeline.device == torch.device("mps")
-    assert pipeline.tasks[1].device == torch.device("mps")
+    assert pipeline.device == TorchDevice.MPS
+    assert pipeline.tasks[1].device == TorchDevice.MPS
 
 
 @pytest.mark.no_ci

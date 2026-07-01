@@ -8,9 +8,9 @@ from huggingface_hub.constants import HF_HUB_CACHE
 from numpy import ndarray
 from torchcodec.encoders import AudioEncoder
 
-from caul_core.config import FasterWhisperInferenceRunnerConfig
-from caul_core.constants import DEFAULT_SAMPLE_RATE
-from caul_core.objects import (
+from caul_core import FasterWhisperInferenceRunnerConfig
+from caul_core import DEFAULT_SAMPLE_RATE
+from caul_core import (
     ASRResult,
     InputMetadata,
     PreprocessedInput,

@@ -1,15 +1,17 @@
 from typing import Callable, Iterable, Self
 
-from caul_core.config import ParakeetPreprocessorConfig
-from caul_core.constants import (
+from caul_core import (
     DEFAULT_LARGE_FILE_THRESHOLD_BYTES,
     DEFAULT_SAMPLE_RATE,
     PARAKEET_INFERENCE_MAX_DURATION_S,
     PARAKEET_INFERENCE_MAX_FRAMES,
+    ASRModel,
+    ParakeetPreprocessorConfig,
+    PreprocessedInput,
+    Preprocessor,
 )
-from caul_core.objects import ASRModel, PreprocessedInput
-from caul.tasks.asr_task import Preprocessor
-from .asr_preprocessor import ASRPreprocessor
+
+from .asr_preprocessor import ASRPreprocessorMixin
 
 
 # TODO: something approximate here would be nice to avoid loading all data in memory
@@ -53,7 +55,7 @@ def _parakeet_batching_fn(  # pylint: disable=R0914
 
 
 @Preprocessor.register(ASRModel.PARAKEET)
-class ParakeetPreprocessor(ASRPreprocessor):
+class ParakeetPreprocessor(ASRPreprocessorMixin):
     def __init__(
         self,
         batching_fn: Callable = _parakeet_batching_fn,

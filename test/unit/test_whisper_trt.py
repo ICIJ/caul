@@ -3,7 +3,6 @@ import sys
 from typing import Callable
 from unittest.mock import MagicMock, patch
 
-import pytest
 import torch
 
 for _mod in [
@@ -20,7 +19,7 @@ for _mod in [
 sys.modules["tensorrt_llm._utils"].trt_dtype_to_torch = lambda _: torch.float32
 sys.modules["tensorrt_llm._utils"].torch_dtype_to_trt = MagicMock()
 
-from caul_core.constants import (
+from caul_core import (
     WHISPER_TRT_HOP_LENGTH,
     WHISPER_TRT_N_FFT,
     WHISPER_TRT_N_MELS,
@@ -30,7 +29,7 @@ from caul_core.constants import (
 )
 from caul.tasks.inference.whisper_trt import WhisperTrtInferenceRunner
 from caul.tasks.preprocessing.whisper_trt import WhisperTrtPreprocessor
-from caul_core.objects import InputMetadata, PreprocessedInputWithTensor
+from caul_core import InputMetadata, PreprocessedInputWithTensor
 
 
 _BATCH_SIZE = 2
@@ -102,7 +101,6 @@ def _make_batch(
 
 
 class TestWhisperTrtPreprocessor:
-
     @property
     def _preprocessor(self):
         return WhisperTrtPreprocessor(
@@ -249,7 +247,9 @@ class TestInferenceRunnerRunDecoder:
         runner._decoder.decode.return_value = torch.zeros(
             enc_len.shape[0], WHISPER_TRT_N_MELS, _MAX_NEW_TOKENS, dtype=torch.int32
         )
-        with (patch.object(torch.Tensor, "cuda", lambda self: self),):
+        with (
+            patch.object(torch.Tensor, "cuda", lambda self: self),
+        ):
             return runner._run_decoder(enc_out, enc_len)
 
     @staticmethod

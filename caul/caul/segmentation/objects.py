@@ -5,7 +5,7 @@ from typing import ClassVar, TYPE_CHECKING
 from icij_common.registrable import RegistrableConfig
 from pydantic import Field
 
-from caul_core.constants import DEFAULT_SAMPLE_RATE, PARAKEET_INFERENCE_MAX_DURATION_S
+from caul_core import DEFAULT_SAMPLE_RATE, PARAKEET_INFERENCE_MAX_DURATION_S
 
 if TYPE_CHECKING:
     import torch

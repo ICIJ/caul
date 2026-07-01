@@ -1,8 +1,8 @@
 from itertools import groupby
 from typing import Iterable
 
-from caul_core.constants import DEFAULT_BATCH_SIZE
-from caul_core.objects import ASRResult, PreprocessorOutput
+from caul_core import DEFAULT_BATCH_SIZE
+from caul_core import ASRResult, PreprocessorOutput
 
 
 def generic_batching_fn(

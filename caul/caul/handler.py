@@ -5,10 +5,8 @@ from pathlib import Path
 from typing import Iterable, TYPE_CHECKING
 
 
-from caul_core.asr_pipeline import ASRPipelineConfig
-from caul_core.objects import ASRModel, ASRResult
-from .asr_pipeline import ASRPipeline
-from .default_configs import MODEL_FAMILY_CONFIG_MAP
+from caul_core import ASRModel, ASRResult, ASRPipelineConfig, ASRPipeline
+from .default_factories import MODEL_DEFAULT_FACTORIES
 from .utils import fuzzy_match
 from .exception import (
     MissingModelSpecificationException,
@@ -19,7 +17,7 @@ from .exception import (
 if TYPE_CHECKING:
     import torch
     import numpy as np
-    from caul_core.objects import TorchDevice
+    from caul_core import TorchDevice
 
 
 logger = logging.getLogger(__name__)
@@ -65,7 +63,7 @@ class ASRHandler:
         for model in models:
             if isinstance(model, str):
                 matching_keys = fuzzy_match(
-                    model, set(k.value for k in MODEL_FAMILY_CONFIG_MAP)
+                    model, set(k.value for k in MODEL_DEFAULT_FACTORIES)
                 )
                 if len(matching_keys) > 1:
                     msg = (
@@ -76,7 +74,7 @@ class ASRHandler:
                 if not matching_keys:
                     raise UnsupportedModelException(f"Unsupported model '{model}'")
                 model = ASRModel(model)
-                asr_pipeline = MODEL_FAMILY_CONFIG_MAP[model]
+                asr_pipeline = MODEL_DEFAULT_FACTORIES[model]()
                 self._pipelines.append(asr_pipeline)
             elif isinstance(model, ASRPipelineConfig):
                 self._pipelines.append(ASRPipeline.from_config(model))

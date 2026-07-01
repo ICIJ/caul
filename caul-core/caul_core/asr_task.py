@@ -6,7 +6,8 @@ from typing import Any, Iterable, TYPE_CHECKING
 
 from icij_common.registrable import RegistrableFromConfig
 
-from caul_core.objects import TorchDevice, ASRResult, PreprocessorOutput
+from .objects import ASRResult, PreprocessorOutput
+from .constants import TorchDevice
 
 
 if TYPE_CHECKING:
@@ -18,6 +19,8 @@ class ASRTask(AbstractContextManager, ABC):
     """Generic ASR task"""
 
     # pylint: disable=R0903
+    def __init__(self, device: TorchDevice = TorchDevice.CPU) -> None:
+        self._device = device
 
     @abstractmethod
     def process(
@@ -30,10 +33,13 @@ class ASRTask(AbstractContextManager, ABC):
 
     def __exit__(self, exc_type, exc_val, exc_tb): ...
 
-    def set_device(
-        self, device: "TorchDevice | torch._device"
-    ) -> None:  # pylint: disable=unused-argument
-        pass
+    @property
+    def device(self) -> TorchDevice:
+        return self._device
+
+    @device.setter
+    def device(self, device: TorchDevice) -> None:  # pylint: disable=unused-argument
+        self._device = device
 
 
 class Preprocessor(ASRTask, RegistrableFromConfig):
@@ -54,12 +60,7 @@ class Preprocessor(ASRTask, RegistrableFromConfig):
 class InferenceRunner(ASRTask, RegistrableFromConfig):
     """Abstract for ASR inference"""
 
-    def __init__(self, device: "TorchDevice | torch._device" = TorchDevice.CPU):
-        import torch  # pylint: disable=import-outside-toplevel
-
-        if isinstance(device, TorchDevice):
-            device = torch.device(device)
-
+    def __init__(self, device: TorchDevice = TorchDevice.CPU):
         self._device = device
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -82,18 +83,18 @@ class InferenceRunner(ASRTask, RegistrableFromConfig):
     def cache_models(cls, cache_dir: Path | None = None) -> None: ...
 
     @property
-    def device(self) -> "torch.device":
+    def _torch_device(self) -> "torch.device":
+        import torch
+
+        return torch.device(self.device)
+
+    @property
+    def device(self) -> TorchDevice:
         return self._device
 
-    def set_device(self, device: "TorchDevice | torch.device" = TorchDevice.CPU):
-        import torch  # pylint: disable=import-outside-toplevel
-
-        if isinstance(device, TorchDevice):
-            device = torch.device(device)
-
+    @device.setter
+    def device(self, device: TorchDevice) -> None:  # pylint: disable=unused-argument
         self._device = device
-
-        return self
 
 
 class Postprocessor(ASRTask, RegistrableFromConfig):

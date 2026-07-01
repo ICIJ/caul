@@ -1,22 +1,21 @@
 import gc
 from functools import partial
-from typing import Any, Callable, Protocol, Self, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Callable, Protocol, Self
 
+from caul_core import SILERO_VAD_MODEL, VadModelRef
 from icij_common.registrable import RegistrableFromConfig
 
-from caul_core.constants import SILERO_VAD_MODEL
-from caul_core.objects import VadModelRef
 from .methods import (
     segment_by_pyannote_vad,
     segment_by_silence,
-    segment_fixed,
     segment_by_silero_vad,
+    segment_fixed,
 )
 from .objects import (
-    SegmentationConfig,
-    TensorSegment,
-    SegmentationStrategy,
     PyannoteVoiceSegmentationConfig,
+    SegmentationConfig,
+    SegmentationStrategy,
+    TensorSegment,
 )
 
 if TYPE_CHECKING:

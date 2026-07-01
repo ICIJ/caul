@@ -1,6 +1,5 @@
 from .parakeet import ParakeetInferenceRunner
-from .faster_whisper import (
-    FasterWhisperInferenceRunner,
-)
+from .faster_whisper import FasterWhisperInferenceRunner
 from .fireredasr import FireRedASR2InferenceRunner
+from .parakeet_trt import ParakeetTrtInferenceRunner
 from .whisper_trt import WhisperTrtInferenceRunner

@@ -5,8 +5,8 @@ from typing import Iterable, TYPE_CHECKING
 
 from icij_common.registrable import FromConfig
 
-from caul_core.constants import DEFAULT_SAMPLE_RATE
-from caul_core.objects import (
+from caul_core import DEFAULT_SAMPLE_RATE
+from caul_core import (
     TorchDevice,
     ASRModel,
     ASRResult,
@@ -14,12 +14,11 @@ from caul_core.objects import (
     PreprocessedInput,
     PreprocessedInputWithTensor,
     FasterWhisperModel,
+    FasterWhisperInferenceRunnerConfig,
+    InferenceRunner,
 )
-from caul_core.config import FasterWhisperInferenceRunnerConfig
-from ..asr_task import InferenceRunner
 
 if TYPE_CHECKING:
-    import torch
     from faster_whisper.transcribe import TranscriptionOptions
 
 logger = logging.getLogger(__name__)
@@ -73,7 +72,7 @@ class FasterWhisperInferenceRunner(InferenceRunner):
     def __init__(
         self,
         config: FasterWhisperInferenceRunnerConfig = None,
-        device: "TorchDevice | torch.device" = TorchDevice.CPU,
+        device: TorchDevice = TorchDevice.CPU,
     ):
         super().__init__(device=device)
         if config is None:
@@ -85,7 +84,7 @@ class FasterWhisperInferenceRunner(InferenceRunner):
     def _from_config(
         cls,
         config: FasterWhisperInferenceRunnerConfig,
-        device: "TorchDevice | torch.device" = TorchDevice.CPU,
+        device: TorchDevice = TorchDevice.CPU,
         **extras,
     ) -> FromConfig:
         return cls(config=config, device=device, **extras)
@@ -96,7 +95,7 @@ class FasterWhisperInferenceRunner(InferenceRunner):
         self._model = faster_whisper.BatchedInferencePipeline(
             faster_whisper.WhisperModel(
                 self._config.whisper_model_name,
-                device=str(self._device),
+                device=str(self._torch_device),
                 compute_type=self._config.compute_type,
             )
         )

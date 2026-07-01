@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 import pytest
 import torch
 
-from caul_core.constants import DEFAULT_SAMPLE_RATE
+from caul_core import DEFAULT_SAMPLE_RATE
 from caul.segmentation import (
     FixedSegmentationConfig,
     PyannoteVoiceSegmentationConfig,

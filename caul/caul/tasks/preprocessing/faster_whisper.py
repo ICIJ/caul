@@ -1,7 +1,7 @@
-from caul_core.objects import ASRModel
-from caul.tasks.asr_task import Preprocessor
-from .asr_preprocessor import ASRPreprocessor
+from caul_core import ASRModel
+from caul_core import Preprocessor
+from .asr_preprocessor import ASRPreprocessorMixin
 
 
 @Preprocessor.register(ASRModel.FASTER_WHISPER)
-class FasterWhisperPreprocessor(ASRPreprocessor): ...
+class FasterWhisperPreprocessor(ASRPreprocessorMixin): ...

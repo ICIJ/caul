@@ -1,20 +1,24 @@
 from pathlib import Path
 
-import pytest
 import numpy as np
-
+import pytest
 from caul.handler import ASRHandler
-from caul.asr_pipeline import ASRPipeline
-from caul_core.config import ParakeetPreprocessorConfig, ParakeetPostprocessorConfig
-from caul.tasks import Postprocessor, Preprocessor
+from caul_core import (
+    ASRPipeline,
+    ParakeetPostprocessorConfig,
+    ParakeetPreprocessorConfig,
+    Postprocessor,
+    Preprocessor,
+)
+
 from test.unit.constant import (
-    TEST_MP4_TRANSCRIPTION,
-    TEST_WAV_TRANSCRIPTION,
     PARAKEET_TEST_CONFIDENCE,
-    PARAKEET_TEST_SEGMENT_START,
     PARAKEET_TEST_SEGMENT_END,
+    PARAKEET_TEST_SEGMENT_START,
     TEST_MP4_PATH,
+    TEST_MP4_TRANSCRIPTION,
     TEST_WAV_PATH,
+    TEST_WAV_TRANSCRIPTION,
 )
 from test.unit.mock import (
     MockNvidiaASRInferenceRunner,

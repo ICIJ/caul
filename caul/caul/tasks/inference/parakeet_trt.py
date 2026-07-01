@@ -1,21 +1,26 @@
 import logging
 from functools import lru_cache
-
 from pathlib import Path
-from typing import Iterable
+from typing import TYPE_CHECKING, Iterable
 
+from caul_core import (
+    PARAKEET_MODEL_REF,
+    ASRModel,
+    InferenceRunner,
+    ParakeetTrtInferenceRunnerConfig,
+    TorchDevice,
+)
 from icij_common.registrable import FromConfig
 from torchaudio.models import Hypothesis
 
-from caul_core.config import ParakeetTrtInferenceRunnerConfig
-from caul_core.constants import PARAKEET_MODEL_REF
-from caul_core.objects import TorchDevice, ASRModel
-from .trt_inference import TrtInferenceMixin
-from .. import ParakeetInferenceRunner
-from ..asr_task import InferenceRunner
 from ...trt.handler import TrtInferenceHandler
+from ..inference.parakeet import ParakeetInferenceRunner
+from .trt_inference import TrtInferenceMixin
 
 logger = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    import torch
 
 
 @lru_cache(maxsize=None)
@@ -25,10 +30,9 @@ def _decoder_joint_connector():
     )  # pylint: disable=import-outside-toplevel
 
     class DecoderJointConnector(SaveRestoreConnector):
-
         @staticmethod
         def _load_state_dict_from_disk(
-            model_weights: dict, device: "TorchDevice | torch.device"
+            model_weights: dict, device: TorchDevice
         ) -> dict:
             """Maps model weights into virtual address space
 
@@ -68,7 +72,7 @@ class ParakeetTrtInferenceRunner(ParakeetInferenceRunner, TrtInferenceMixin):
         self,
         model_path: Path | str,
         engine_path: Path | str,
-        device: "TorchDevice | torch.device" = TorchDevice.CPU,
+        device: TorchDevice = TorchDevice.CPU,
         return_timestamps: bool = True,
         batch_size: int = 4,
     ):
@@ -96,7 +100,6 @@ class ParakeetTrtInferenceRunner(ParakeetInferenceRunner, TrtInferenceMixin):
 
     def __enter__(self):
         import nemo.collections.asr as nemo_asr  # pylint: disable=import-outside-toplevel
-        import torch  # pylint: disable=import-outside-toplevel
         import tensorrt as trt  # pylint: disable=import-outside-toplevel
 
         with open(self._engine_path, "rb") as f:
@@ -106,7 +109,7 @@ class ParakeetTrtInferenceRunner(ParakeetInferenceRunner, TrtInferenceMixin):
 
         self._decoder = nemo_asr.models.ASRModel.restore_from(
             self._model_path,
-            map_location=torch.device(self._device),
+            map_location=self._torch_device,
             save_restore_connector=_decoder_joint_connector(),
             strict=False,
         ).eval()
@@ -116,7 +119,7 @@ class ParakeetTrtInferenceRunner(ParakeetInferenceRunner, TrtInferenceMixin):
     def _transcribe(
         self,
         audio_inputs: "torch.Tensor | Iterable[torch.Tensor]",
-        trt_device: "TorchDevice | torch.device" = None,
+        trt_device: TorchDevice = None,
         **kwargs,
     ) -> list[Hypothesis] | list[list[Hypothesis]]:
         """Transcribe audio tensors
@@ -147,8 +150,8 @@ class ParakeetTrtInferenceRunner(ParakeetInferenceRunner, TrtInferenceMixin):
                 {"input_signal": audio_inputs, "input_signal_length": audio_inputs_len}
             )
 
-        enc_out = enc_out.to(self._device)
-        enc_len = enc_len.to(self._device)
+        enc_out = enc_out.to(self._torch_device)
+        enc_len = enc_len.to(self._torch_device)
 
         with torch.no_grad():
             return self._decoder.decoding.rnnt_decoder_predictions_tensor(

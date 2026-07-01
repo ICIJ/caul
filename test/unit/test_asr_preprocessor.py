@@ -7,9 +7,9 @@ import pytest
 import torch
 from torchcodec.encoders import AudioEncoder
 
-from caul_core.constants import DEFAULT_SAMPLE_RATE
+from caul_core import DEFAULT_SAMPLE_RATE
 
-from caul.tasks.preprocessing.asr_preprocessor import ASRPreprocessor, load_audio
+from caul.tasks.preprocessing.asr_preprocessor import ASRPreprocessorMixin, load_audio
 from test.unit.constant import TEST_WAV_PATH
 
 
@@ -22,9 +22,9 @@ def long_wav(tmp_path) -> Path:
     return path
 
 
-def _chunking_preprocessor(max_frames: int = DEFAULT_SAMPLE_RATE) -> ASRPreprocessor:
+def _chunking_preprocessor(max_frames: int = DEFAULT_SAMPLE_RATE) -> ASRPreprocessorMixin:
     """Preprocessor with threshold=1 so every file triggers the chunked path"""
-    return ASRPreprocessor(large_file_threshold_bytes=1, max_frames=max_frames)
+    return ASRPreprocessorMixin(large_file_threshold_bytes=1, max_frames=max_frames)
 
 
 def test_load_stereo_24bit_audio() -> None:
@@ -35,7 +35,7 @@ def test_load_stereo_24bit_audio() -> None:
 class TestASRPreprocessorChunking:
     def test__below_threshold_loads_eagerly(self, long_wav):
         """Files under the byte threshold produce exactly one chunk"""
-        preprocessor = ASRPreprocessor(large_file_threshold_bytes=sys.maxsize)
+        preprocessor = ASRPreprocessorMixin(large_file_threshold_bytes=sys.maxsize)
         chunks = list(preprocessor._load_file_as_chunks(str(long_wav)))
         assert len(chunks) == 1
 
@@ -83,11 +83,11 @@ class TestASRPreprocessorChunking:
             int(meta.duration_seconds * meta.sample_rate) * meta.num_channels * 4
         )
 
-        eager = ASRPreprocessor(
+        eager = ASRPreprocessorMixin(
             large_file_threshold_bytes=estimated_bytes + 1,
             max_frames=DEFAULT_SAMPLE_RATE,
         )
-        chunked = ASRPreprocessor(
+        chunked = ASRPreprocessorMixin(
             large_file_threshold_bytes=estimated_bytes - 1,
             max_frames=DEFAULT_SAMPLE_RATE,
         )

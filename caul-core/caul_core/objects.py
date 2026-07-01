@@ -36,12 +36,6 @@ class VadModelRef(StrEnum):
     PYANNOTE_MODEL = "pyannote/segmentation-3.0"
 
 
-class TorchDevice(StrEnum):
-    CPU = "cpu"
-    GPU = "cuda"
-    MPS = "mps"
-
-
 @unique
 class FasterWhisperModel(StrEnum):
     TINY = "tiny"

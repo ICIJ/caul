@@ -2,11 +2,29 @@ import logging
 import tempfile
 from functools import lru_cache
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-from caul_core.objects import PreprocessorOutput
+from caul_core import PreprocessorOutput, TorchDevice
 from .filesystem import save_tensor
 
 logger = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    import torch
+
+
+def device_to_torch(device: TorchDevice) -> "torch.device":
+    import torch
+
+    match device:
+        case TorchDevice.GPU:
+            return torch.device("cuda")
+        case TorchDevice.CPU:
+            return torch.device("cpu")
+        case TorchDevice.MPS:
+            return torch.device("mps")
+        case _:
+            raise ValueError(f"unknown device for torch: {device}")
 
 
 def fuzzy_match(key: str, candidates: set[str]) -> set[str]:

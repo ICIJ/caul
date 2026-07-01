@@ -4,7 +4,7 @@ from typing import Annotated
 
 import typer
 
-from caul_core.objects import ASRModel
+from caul_core import ASRModel
 from caul.asr_pipeline import cache_models
 from .utils import AsyncTyper
 

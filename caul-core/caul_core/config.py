@@ -1,11 +1,12 @@
 from abc import ABC
 from pathlib import Path
-from typing import ClassVar, TYPE_CHECKING
+from typing import ClassVar, Self, TYPE_CHECKING
 
+from icij_common.pydantic_utils import make_enum_discriminator, tagged_union
 from icij_common.registrable import RegistrableConfig
-from pydantic import Field
+from pydantic import Discriminator, Field
 
-from caul_core.constants import (
+from .constants import (
     WHISPER_TRT_PROMPT_PREFIX,
     WHISPER_TRT_DTYPE,
     WHISPER_TRT_DECODER_HAS_POSITION_EMBEDDING,
@@ -65,6 +66,7 @@ from .constants import (
     FASTER_WHISPER_APPEND_PUNCTUATIONS_DEFAULT,
     FASTER_WHISPER_MULTILINGUAL_DEFAULT,
     FASTER_WHISPER_CLIP_TIMESTAMPS_DEFAULT,
+    TorchDevice,
 )
 from .objects import BaseModel, ASRModel, FasterWhisperModel
 
@@ -280,3 +282,74 @@ class WhisperTrtInferenceRunnerConfig(BaseInferenceRunnerConfig):
 
 class WhisperTrtPostprocessorConfig(BasePostprocessorConfig):
     model: ClassVar[str] = Field(frozen=True, default=ASRModel.WHISPER_TRT)
+
+
+PreprocessorConfig = tagged_union(
+    BasePreprocessorConfig.__subclasses__(), lambda t: t.model.default.value
+)
+
+InferenceRunnerConfig = tagged_union(
+    BaseInferenceRunnerConfig.__subclasses__(), lambda t: t.model.default.value
+)
+
+PostprocessorConfig = tagged_union(
+    BasePostprocessorConfig.__subclasses__(), lambda t: t.model.default.value
+)
+
+model_discriminator = make_enum_discriminator("model", ASRModel)
+
+
+class ASRPipelineConfig(BaseModel):  # pylint: disable=too-few-public-methods
+    device: TorchDevice = TorchDevice.CPU
+    preprocessing: PreprocessorConfig = Field(
+        discriminator=Discriminator(model_discriminator),
+    )
+    inference: InferenceRunnerConfig = Field(
+        default_factory=InferenceRunnerConfig,
+        discriminator=Discriminator(model_discriminator),
+    )
+    postprocessing: PostprocessorConfig = Field(
+        discriminator=Discriminator(model_discriminator),
+    )
+
+    @classmethod
+    def parakeet(cls) -> Self:
+        return cls(
+            preprocessing=ParakeetPreprocessorConfig(),
+            inference=ParakeetInferenceRunnerConfig(),
+            postprocessing=ParakeetPostprocessorConfig(),
+        )
+
+    @classmethod
+    def parakeet_trt(cls) -> Self:
+        return cls(
+            preprocessing=ParakeetPreprocessorConfig(),
+            inference=ParakeetTrtInferenceRunnerConfig(),
+            postprocessing=ParakeetPostprocessorConfig(),
+        )
+
+    @classmethod
+    def fireredasr2(cls, tmp_dir_fallback: bool = True) -> Self:
+        return cls(
+            preprocessing=FireRedASR2PreprocessorConfig(),
+            inference=FireRedASR2InferenceRunnerConfig(
+                tmp_dir_fallback=tmp_dir_fallback
+            ),
+            postprocessing=FireRedASR2PostprocessorConfig(),
+        )
+
+    @classmethod
+    def faster_whisper(cls) -> Self:
+        return cls(
+            preprocessing=FasterWhisperPreprocessorConfig(),
+            inference=FasterWhisperInferenceRunnerConfig(),
+            postprocessing=FasterWhisperPostprocessorConfig(),
+        )
+
+    @classmethod
+    def whisper_trt(cls) -> Self:
+        return cls(
+            preprocessing=WhisperTrtPreprocessorConfig(),
+            inference=WhisperTrtInferenceRunnerConfig(),
+            postprocessing=WhisperTrtPostprocessorConfig(),
+        )
