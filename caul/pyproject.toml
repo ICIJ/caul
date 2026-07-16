@@ -14,7 +14,7 @@ dependencies = [
     "pydantic-extra-types[pycountry]~=2.11",
     "typer~=0.24",
     "huggingface-hub~=1.11",
-    "caul-core~=0.2.0",
+    "caul-core~=0.3.0",
     "tiktoken~=0.13",
 ]
 
