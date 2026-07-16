@@ -1,5 +1,5 @@
-from .asr_pipeline import ASRPipeline, InferenceRunner
-from .asr_task import Postprocessor, Preprocessor
+from .asr_pipeline import ASRPipeline
+from .asr_task import Postprocessor, Preprocessor, InferenceRunner
 from .config import (
     ASRPipelineConfig,
     BasePreprocessorConfig,
