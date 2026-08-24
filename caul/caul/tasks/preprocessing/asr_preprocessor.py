@@ -1,3 +1,4 @@
+import logging
 import uuid
 from itertools import repeat
 from pathlib import Path
@@ -27,6 +28,8 @@ if TYPE_CHECKING:
     import numpy as np
 
 _NoneType = type(None)
+
+logger = logging.getLogger(__name__)
 
 
 class ASRPreprocessorMixin(Preprocessor):
@@ -141,41 +144,56 @@ class ASRPreprocessorMixin(Preprocessor):
 
             # seg_i is global across chunks so output file names are stable
             seg_idx = 0
-            for chunk in audio_chunks:
-                n_frames = chunk.shape[-1]
-                tensor_segments = [chunk]
+            try:
+                for chunk in audio_chunks:
+                    n_frames = chunk.shape[-1]
+                    tensor_segments = [chunk]
 
-                if n_frames > self._max_frames:
-                    max_segment_len_s = self._max_frames / self._sample_rate
-                    tensor_segments = [
-                        s.tensor
-                        for s in segment_by_silence(
-                            chunk, max_segment_len_s=max_segment_len_s
+                    if n_frames > self._max_frames:
+                        max_segment_len_s = self._max_frames / self._sample_rate
+                        tensor_segments = [
+                            s.tensor
+                            for s in segment_by_silence(
+                                chunk, max_segment_len_s=max_segment_len_s
+                            )
+                        ]
+
+                    for tensor_segment in tensor_segments:
+                        segment_path = None
+                        tensor_segment = self._additional_preprocessing(tensor_segment)
+                        if output_dir is not None:
+                            segment_name = f"{original_file}-{seg_idx}.wav"
+                            segment_path = output_dir / segment_name
+                            save_tensor(tensor_segment, segment_path)
+                            segment_path = segment_path.relative_to(output_dir)
+                        metadata = InputMetadata(
+                            input_ordering=input_idx,
+                            duration_s=n_frames / DEFAULT_SAMPLE_RATE,
+                            input_format=input_format,
+                            input_file_path=input_file_path,
+                            preprocessed_file_path=segment_path,
                         )
-                    ]
-
-                for tensor_segment in tensor_segments:
-                    segment_path = None
-                    tensor_segment = self._additional_preprocessing(tensor_segment)
-                    if output_dir is not None:
-                        segment_name = f"{original_file}-{seg_idx}.wav"
-                        segment_path = output_dir / segment_name
-                        save_tensor(tensor_segment, segment_path)
-                        segment_path = segment_path.relative_to(output_dir)
-                    metadata = InputMetadata(
+                        if metadata.preprocessed_file_path is None:
+                            yield PreprocessedInputWithTensor(
+                                metadata=metadata, tensor=tensor_segment
+                            )
+                        else:
+                            yield PreprocessedInput(metadata=metadata)
+                        seg_idx += 1
+            except ValueError as e:
+                logger.warning(
+                    f"Audio file at {input_file_path} raised '{e}' during decoding. Skipping."
+                )
+                yield PreprocessedInput(
+                    metadata=InputMetadata(
                         input_ordering=input_idx,
-                        duration_s=n_frames / DEFAULT_SAMPLE_RATE,
+                        duration_s=0.0,
                         input_format=input_format,
                         input_file_path=input_file_path,
-                        preprocessed_file_path=segment_path,
+                        preprocessed_file_path=None,
+                        error=str(e),
                     )
-                    if metadata.preprocessed_file_path is None:
-                        yield PreprocessedInputWithTensor(
-                            metadata=metadata, tensor=tensor_segment
-                        )
-                    else:
-                        yield PreprocessedInput(metadata=metadata)
-                    seg_idx += 1
+                )
 
     def _additional_preprocessing(self, audio_tensor: "torch.Tensor") -> "torch.Tensor":
         """Stub for subclasses that have added preprocessing logic"""

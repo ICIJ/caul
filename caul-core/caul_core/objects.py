@@ -225,6 +225,7 @@ class InputMetadata(BaseModel):
     input_format: str | None = None
     input_file_path: Path | None = None
     preprocessed_file_path: Path | None = None
+    error: str | None = None
 
 
 class PreprocessedInput(BaseModel):
