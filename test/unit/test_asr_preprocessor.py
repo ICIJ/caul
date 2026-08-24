@@ -22,7 +22,9 @@ def long_wav(tmp_path) -> Path:
     return path
 
 
-def _chunking_preprocessor(max_frames: int = DEFAULT_SAMPLE_RATE) -> ASRPreprocessorMixin:
+def _chunking_preprocessor(
+    max_frames: int = DEFAULT_SAMPLE_RATE,
+) -> ASRPreprocessorMixin:
     """Preprocessor with threshold=1 so every file triggers the chunked path"""
     return ASRPreprocessorMixin(large_file_threshold_bytes=1, max_frames=max_frames)
 
@@ -117,3 +119,24 @@ class TestASRPreprocessorChunking:
             _chunking_preprocessor().preprocess_inputs([str(long_wav), str(long_wav)])
         )
         assert {r.metadata.input_ordering for r in results} == {0, 1}
+
+    def test__decode_failure_yields_error_record_instead_of_raising(self, monkeypatch):
+        """A ValueError during decoding (as, for instance, when there is no audio stream
+        is kept as an error record to preserve input ordering"""
+        import torchcodec.decoders
+
+        def _raise(*args, **kwargs):
+            raise ValueError(
+                "The best audio stream is unknown and there is no specified stream."
+            )
+
+        monkeypatch.setattr(torchcodec.decoders, "AudioDecoder", _raise)
+
+        results = list(
+            ASRPreprocessorMixin().preprocess_inputs(["no_audio_stream.mp4"])
+        )
+
+        assert len(results) == 1
+        assert results[0].metadata.input_ordering == 0
+        assert results[0].metadata.preprocessed_file_path is None
+        assert results[0].metadata.error is not None
