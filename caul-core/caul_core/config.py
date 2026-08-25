@@ -305,7 +305,6 @@ class ASRPipelineConfig(BaseModel):  # pylint: disable=too-few-public-methods
         discriminator=Discriminator(model_discriminator),
     )
     inference: InferenceRunnerConfig = Field(
-        default_factory=InferenceRunnerConfig,
         discriminator=Discriminator(model_discriminator),
     )
     postprocessing: PostprocessorConfig = Field(
