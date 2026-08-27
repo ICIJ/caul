@@ -1,22 +1,23 @@
 import datetime
 import math
+import uuid
 from dataclasses import dataclass
 from enum import StrEnum, unique
 from pathlib import Path
-from typing import Self, TYPE_CHECKING
-
-import uuid
+from typing import TYPE_CHECKING, Self
 
 import langcodes
 from icij_common.pydantic_utils import icij_config, merge_configs, no_enum_values_config
-from pydantic import BaseModel as _BaseModel, Field, GetCoreSchemaHandler, TypeAdapter
+from pydantic import BaseModel as _BaseModel
+from pydantic import Field, GetCoreSchemaHandler, TypeAdapter
 from pydantic_core import core_schema
 from pydantic_extra_types.language_code import LanguageAlpha2
 
-from .constants import PARAKEET_TDT_0_6B_V3_LANGUAGES, FIREREDASR2_LANGUAGES
+from .constants import FIREREDASR2_LANGUAGES, PARAKEET_TDT_0_6B_V3_LANGUAGES
 
 if TYPE_CHECKING:
     import torch
+    from nemo.collections.asr.parts.utils.rnnt_utils import Hypothesis
 
 
 # Enums
@@ -208,7 +209,7 @@ class ASRResult(BaseModel):
 
 
 def _utc_now() -> datetime.datetime:
-    return datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0)
+    return datetime.datetime.now(datetime.UTC).replace(microsecond=0)
 
 
 def _uuid() -> str:

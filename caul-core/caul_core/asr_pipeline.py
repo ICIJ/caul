@@ -1,16 +1,21 @@
 import logging
 from abc import ABC
+from collections.abc import Iterable
 from contextlib import ExitStack
 from copy import copy
 from pathlib import Path
-from typing import Iterable, Self
+from typing import TYPE_CHECKING, Self
 
 from icij_common.pydantic_utils import safe_copy
 
-from .constants import TorchDevice
-from .config import ASRPipelineConfig
-from .objects import ASRResult
 from .asr_task import ASRTask, InferenceRunner, Postprocessor, Preprocessor
+from .config import ASRPipelineConfig
+from .constants import TorchDevice
+from .objects import ASRResult
+
+if TYPE_CHECKING:
+    import numpy as np
+    import torch
 
 logger = logging.getLogger(__name__)
 
@@ -70,8 +75,7 @@ class ASRPipeline(ABC):
 
     @classmethod
     def parakeet(cls, device: TorchDevice = TorchDevice.CPU) -> Self:
-        config = ASRPipelineConfig.parakeet()
-        config = safe_copy(config, update={"device": device})
+        config = ASRPipelineConfig.parakeet(device)
         return cls.from_config(config)
 
     @classmethod
@@ -81,14 +85,10 @@ class ASRPipeline(ABC):
         engine_path: str | Path,
         device: TorchDevice = TorchDevice.CPU,
     ) -> Self:
-        config = ASRPipelineConfig.parakeet_trt()
+        config = ASRPipelineConfig.parakeet_trt(device)
         config = safe_copy(
             config,
-            update={
-                "device": device,
-                "model_path": model_path,
-                "engine_path": engine_path,
-            },
+            update={"model_path": model_path, "engine_path": engine_path},
         )
         return cls.from_config(config=config)
 
@@ -98,18 +98,25 @@ class ASRPipeline(ABC):
         device: TorchDevice = TorchDevice.CPU,
         tmp_dir_fallback: bool = False,
     ) -> Self:
-        config = ASRPipelineConfig.fireredasr2(tmp_dir_fallback=tmp_dir_fallback)
-        config = safe_copy(config, update={"device": device})
+        config = ASRPipelineConfig.fireredasr2(
+            tmp_dir_fallback=tmp_dir_fallback, device=device
+        )
         return cls.from_config(config)
 
     @classmethod
     def faster_whisper(cls, device: TorchDevice = TorchDevice.CPU) -> Self:
-        config = ASRPipelineConfig.faster_whisper()
-        config = safe_copy(config, update={"device": device})
+        config = ASRPipelineConfig.faster_whisper(device=device)
         return cls.from_config(config)
 
     @classmethod
-    def whisper_trt(cls, device: TorchDevice = TorchDevice.CPU) -> Self:
-        config = ASRPipelineConfig.whisper_trt()
-        config = safe_copy(config, update={"device": device})
+    def whisper_trt(
+        cls,
+        encoder_path: str,
+        *,
+        decoder_path: str,
+        device: TorchDevice = TorchDevice.CPU,
+    ) -> Self:
+        config = ASRPipelineConfig.whisper_trt(
+            encoder_path=encoder_path, decoder_path=decoder_path, device=device
+        )
         return cls.from_config(config=config)
