@@ -1,74 +1,72 @@
 from abc import ABC
 from pathlib import Path
-from typing import ClassVar, Self, TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar, Self
 
 from icij_common.pydantic_utils import make_enum_discriminator, tagged_union
 from icij_common.registrable import RegistrableConfig
 from pydantic import Discriminator, Field
 
 from .constants import (
-    WHISPER_TRT_PROMPT_PREFIX,
-    WHISPER_TRT_DTYPE,
-    WHISPER_TRT_DECODER_HAS_POSITION_EMBEDDING,
-    WHISPER_TRT_DECODER_PAGED_KV_CACHE,
-    WHISPER_TRT_DECODER_GPT_ATTENTION_PLUGIN,
-    WHISPER_TRT_DECODER_NUM_HIDDEN_LAYERS,
-    WHISPER_TRT_DECODER_HIDDEN_SIZE,
-    WHISPER_TRT_DECODER_VOCAB_SIZE,
-    WHISPER_TRT_DECODER_BATCH_SIZE,
-    WHISPER_TRT_DECODER_BEAM_WIDTH,
-    WHISPER_TRT_DECODER_NUM_HEADS,
-    WHISPER_TRT_DECODER_CROSS_ATTENTION,
-    WHISPER_TRT_DECODER_HAS_TOKEN_TYPE_EMBEDDING,
-    WHISPER_TRT_DECODER_DEBUG_MODE,
-    WHISPER_TRT_N_MELS,
-    WHISPER_TRT_DECODER_REMOVE_INPUT_PADDING,
-    WHISPER_TRT_ENCODER_DOWNSAMPLING_FACTOR,
-    WHISPER_TRT_RETURN_TIMESTAMPS,
-    WHISPER_TRT_MAX_FRAMES,
-    WHISPER_TRT_MAX_MEL_PADDING_LEN,
-)
-from .constants import (
-    DEFAULT_SAMPLE_RATE,
     DEFAULT_BATCH_SIZE,
-    DEFAULT_MAX_FRAMES,
     DEFAULT_LARGE_FILE_THRESHOLD_BYTES,
-    PARAKEET_INFERENCE_MAX_FRAMES,
-    PARAKEET_MODEL_REF,
-    FIREREDASR2_USE_HALF_DEFAULT,
-    FIREREDASR2_BEAM_SIZE_DEFAULT,
-    FIREREDASR2_NBEST_DEFAULT,
-    FIREREDASR2_DECODE_MAX_LEN_DEFAULT,
-    FIREREDASR2_SOFTMAX_SMOOTHING_DEFAULT,
-    FIREREDASR2_AED_LENGTH_PENALTY_DEFAULT,
-    FIREREDASR2_EOS_PENALTY_DEFAULT,
-    FIREREDASR2_RETURN_TIMESTAMP_DEFAULT,
-    FIREREDASR2_INFERENCE_MAX_FRAMES,
-    FASTER_WHISPER_COMPUTE_TYPE_DEFAULT,
-    FASTER_WHISPER_WORD_TIMESTAMPS_DEFAULT,
+    DEFAULT_MAX_FRAMES,
+    DEFAULT_SAMPLE_RATE,
+    FASTER_WHISPER_APPEND_PUNCTUATIONS_DEFAULT,
     FASTER_WHISPER_BEAM_SIZE_DEFAULT,
     FASTER_WHISPER_BEST_OF_DEFAULT,
-    FASTER_WHISPER_PATIENCE_DEFAULT,
-    FASTER_WHISPER_LENGTH_PENALTY_DEFAULT,
-    FASTER_WHISPER_REPETITION_PENALTY_DEFAULT,
-    FASTER_WHISPER_NO_REPEAT_NGRAM_SIZE_DEFAULT,
-    FASTER_WHISPER_LOG_PROB_THRESHOLD_DEFAULT,
-    FASTER_WHISPER_NO_SPEECH_THRESHOLD_DEFAULT,
-    FASTER_WHISPER_COMPRESSION_RATIO_THRESHOLD_DEFAULT,
-    FASTER_WHISPER_CONDITION_ON_PREVIOUS_TEXT_DEFAULT,
-    FASTER_WHISPER_PROMPT_RESET_ON_TEMPERATURE_DEFAULT,
-    FASTER_WHISPER_TEMPERATURES_DEFAULT,
-    FASTER_WHISPER_SUPPRESS_BLANK_DEFAULT,
-    FASTER_WHISPER_LARGE_V3_TURBO_SUPPRESSED_TOKENS,
-    FASTER_WHISPER_WITHOUT_TIMESTAMPS_DEFAULT,
-    FASTER_WHISPER_MAX_INITIAL_TIMESTAMP_DEFAULT,
-    FASTER_WHISPER_PREPEND_PUNCTUATIONS_DEFAULT,
-    FASTER_WHISPER_APPEND_PUNCTUATIONS_DEFAULT,
-    FASTER_WHISPER_MULTILINGUAL_DEFAULT,
     FASTER_WHISPER_CLIP_TIMESTAMPS_DEFAULT,
+    FASTER_WHISPER_COMPRESSION_RATIO_THRESHOLD_DEFAULT,
+    FASTER_WHISPER_COMPUTE_TYPE_DEFAULT,
+    FASTER_WHISPER_CONDITION_ON_PREVIOUS_TEXT_DEFAULT,
+    FASTER_WHISPER_LARGE_V3_TURBO_SUPPRESSED_TOKENS,
+    FASTER_WHISPER_LENGTH_PENALTY_DEFAULT,
+    FASTER_WHISPER_LOG_PROB_THRESHOLD_DEFAULT,
+    FASTER_WHISPER_MAX_INITIAL_TIMESTAMP_DEFAULT,
+    FASTER_WHISPER_MULTILINGUAL_DEFAULT,
+    FASTER_WHISPER_NO_REPEAT_NGRAM_SIZE_DEFAULT,
+    FASTER_WHISPER_NO_SPEECH_THRESHOLD_DEFAULT,
+    FASTER_WHISPER_PATIENCE_DEFAULT,
+    FASTER_WHISPER_PREPEND_PUNCTUATIONS_DEFAULT,
+    FASTER_WHISPER_PROMPT_RESET_ON_TEMPERATURE_DEFAULT,
+    FASTER_WHISPER_REPETITION_PENALTY_DEFAULT,
+    FASTER_WHISPER_SUPPRESS_BLANK_DEFAULT,
+    FASTER_WHISPER_TEMPERATURES_DEFAULT,
+    FASTER_WHISPER_WITHOUT_TIMESTAMPS_DEFAULT,
+    FASTER_WHISPER_WORD_TIMESTAMPS_DEFAULT,
+    FIREREDASR2_AED_LENGTH_PENALTY_DEFAULT,
+    FIREREDASR2_BEAM_SIZE_DEFAULT,
+    FIREREDASR2_DECODE_MAX_LEN_DEFAULT,
+    FIREREDASR2_EOS_PENALTY_DEFAULT,
+    FIREREDASR2_INFERENCE_MAX_FRAMES,
+    FIREREDASR2_NBEST_DEFAULT,
+    FIREREDASR2_RETURN_TIMESTAMP_DEFAULT,
+    FIREREDASR2_SOFTMAX_SMOOTHING_DEFAULT,
+    FIREREDASR2_USE_HALF_DEFAULT,
+    PARAKEET_INFERENCE_MAX_FRAMES,
+    PARAKEET_MODEL_REF,
+    WHISPER_TRT_DECODER_BATCH_SIZE,
+    WHISPER_TRT_DECODER_BEAM_WIDTH,
+    WHISPER_TRT_DECODER_CROSS_ATTENTION,
+    WHISPER_TRT_DECODER_DEBUG_MODE,
+    WHISPER_TRT_DECODER_GPT_ATTENTION_PLUGIN,
+    WHISPER_TRT_DECODER_HAS_POSITION_EMBEDDING,
+    WHISPER_TRT_DECODER_HAS_TOKEN_TYPE_EMBEDDING,
+    WHISPER_TRT_DECODER_HIDDEN_SIZE,
+    WHISPER_TRT_DECODER_NUM_HEADS,
+    WHISPER_TRT_DECODER_NUM_HIDDEN_LAYERS,
+    WHISPER_TRT_DECODER_PAGED_KV_CACHE,
+    WHISPER_TRT_DECODER_REMOVE_INPUT_PADDING,
+    WHISPER_TRT_DECODER_VOCAB_SIZE,
+    WHISPER_TRT_DTYPE,
+    WHISPER_TRT_ENCODER_DOWNSAMPLING_FACTOR,
+    WHISPER_TRT_MAX_FRAMES,
+    WHISPER_TRT_MAX_MEL_PADDING_LEN,
+    WHISPER_TRT_N_MELS,
+    WHISPER_TRT_PROMPT_PREFIX,
+    WHISPER_TRT_RETURN_TIMESTAMPS,
     TorchDevice,
 )
-from .objects import BaseModel, ASRModel, FasterWhisperModel
+from .objects import ASRModel, BaseModel, FasterWhisperModel
 
 if TYPE_CHECKING:
     try:
@@ -103,11 +101,11 @@ class TrtLlmDecoderConfig(BaseModel):
     debug_mode: bool = WHISPER_TRT_DECODER_DEBUG_MODE
 
     def to_model_config(self) -> "ModelConfig":
-        from tensorrt_llm.runtime import (
-            ModelConfig,
-        )  # pylint: disable=import-outside-toplevel
         from tensorrt_llm.llmapi.kv_cache_type import (
             KVCacheType,
+        )  # pylint: disable=import-outside-toplevel
+        from tensorrt_llm.runtime import (
+            ModelConfig,
         )  # pylint: disable=import-outside-toplevel
 
         return ModelConfig(
@@ -312,24 +310,29 @@ class ASRPipelineConfig(BaseModel):  # pylint: disable=too-few-public-methods
     )
 
     @classmethod
-    def parakeet(cls) -> Self:
+    def parakeet(cls, device: TorchDevice = TorchDevice.CPU) -> Self:
         return cls(
+            device=device,
             preprocessing=ParakeetPreprocessorConfig(),
             inference=ParakeetInferenceRunnerConfig(),
             postprocessing=ParakeetPostprocessorConfig(),
         )
 
     @classmethod
-    def parakeet_trt(cls) -> Self:
+    def parakeet_trt(cls, device: TorchDevice = TorchDevice.CPU) -> Self:
         return cls(
+            device=device,
             preprocessing=ParakeetPreprocessorConfig(),
             inference=ParakeetTrtInferenceRunnerConfig(),
             postprocessing=ParakeetPostprocessorConfig(),
         )
 
     @classmethod
-    def fireredasr2(cls, tmp_dir_fallback: bool = True) -> Self:
+    def fireredasr2(
+        cls, tmp_dir_fallback: bool = True, device: TorchDevice = TorchDevice.CPU
+    ) -> Self:
         return cls(
+            device=device,
             preprocessing=FireRedASR2PreprocessorConfig(),
             inference=FireRedASR2InferenceRunnerConfig(
                 tmp_dir_fallback=tmp_dir_fallback
@@ -338,17 +341,27 @@ class ASRPipelineConfig(BaseModel):  # pylint: disable=too-few-public-methods
         )
 
     @classmethod
-    def faster_whisper(cls) -> Self:
+    def faster_whisper(cls, device: TorchDevice = TorchDevice.CPU) -> Self:
         return cls(
+            device=device,
             preprocessing=FasterWhisperPreprocessorConfig(),
             inference=FasterWhisperInferenceRunnerConfig(),
             postprocessing=FasterWhisperPostprocessorConfig(),
         )
 
     @classmethod
-    def whisper_trt(cls) -> Self:
+    def whisper_trt(
+        cls,
+        encoder_path: str,
+        *,
+        decoder_path: str,
+        device: TorchDevice = TorchDevice.CPU,
+    ) -> Self:
         return cls(
+            device=device,
             preprocessing=WhisperTrtPreprocessorConfig(),
-            inference=WhisperTrtInferenceRunnerConfig(),
+            inference=WhisperTrtInferenceRunnerConfig(
+                encoder_path=encoder_path, decoder_path=decoder_path
+            ),
             postprocessing=WhisperTrtPostprocessorConfig(),
         )
