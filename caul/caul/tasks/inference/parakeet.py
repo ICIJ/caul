@@ -150,8 +150,10 @@ class ParakeetInferenceRunner(InferenceRunner):
                 if isinstance(best_hyp, (list, tuple)):
                     best_hyp = hyps[0]
 
-                input_ordering_idx = input_batch[idx].metadata.input_ordering
+                input_metadata = input_batch[idx].metadata
                 model_result = ASRResult.from_parakeet_hypothesis(
-                    best_hyp, input_ordering=input_ordering_idx
+                    best_hyp,
+                    input_ordering=input_metadata.input_ordering,
+                    preprocessed_input_uuids=[input_metadata.uuid],
                 )
                 yield model_result

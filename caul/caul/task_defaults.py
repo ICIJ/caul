@@ -1,8 +1,11 @@
+import logging
 from itertools import groupby
 from typing import Iterable
 
 from caul_core import DEFAULT_BATCH_SIZE
 from caul_core import ASRResult, PreprocessorOutput
+
+logger = logging.getLogger(__name__)
 
 
 def generic_batching_fn(
@@ -36,10 +39,17 @@ def generic_unbatching_fn(batched_results: Iterable[ASRResult]) -> Iterable[ASRR
     for input_ordering, group_results in results_grouped_by_index:
         # Drop segments with no recognized speech
         group_results = [r for r in group_results if r.transcription]
-        group_results = sorted(group_results, key=lambda r: r.transcription[0])
         if input_ordering in seen:
-            raise ValueError("expected contiguous batches !")
+            logger.warning(
+                "Dropping %d result(s) for input_ordering=%s: this PreprocessedInput was "
+                "merged in a previous batch: %s",
+                len(group_results),
+                input_ordering,
+                group_results,
+            )
+            continue
         seen.add(input_ordering)
+        group_results = sorted(group_results, key=lambda r: r.transcription[0])
         base = ASRResult(input_ordering=input_ordering, transcription=[], score=1.0)
         merged_results = sum(group_results, base)
         yield merged_results

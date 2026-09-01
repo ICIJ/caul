@@ -172,5 +172,7 @@ class FireRedASR2InferenceRunner(InferenceRunner):
                 # just to be safe.
                 input_ordering = inp_id_ordering_map[result["uttid"]]
                 yield ASRResult.from_fireredasr2_result(
-                    result, input_ordering=input_ordering
+                    result,
+                    input_ordering=input_ordering,
+                    preprocessed_input_uuids=[result["uttid"]],
                 )

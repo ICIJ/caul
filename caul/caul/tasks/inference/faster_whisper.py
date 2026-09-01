@@ -216,7 +216,9 @@ class FasterWhisperInferenceRunner(InferenceRunner):
                     for seg_idx, out in enumerate(output)
                 ]
                 yield ASRResult.from_faster_whisper_result(
-                    segments, input_ordering=inp.metadata.input_ordering
+                    segments,
+                    input_ordering=inp.metadata.input_ordering,
+                    preprocessed_input_uuids=[inp.metadata.uuid],
                 )
 
 

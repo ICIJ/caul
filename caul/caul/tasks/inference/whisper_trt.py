@@ -285,11 +285,11 @@ class WhisperTrtInferenceRunner(InferenceRunner, TrtInferenceMixin):
             ):
                 transcription = self._decode_model_output(decoder_out[0])
 
-                input_ordering_idx = input_batch[
-                    decoder_out_idx
-                ].metadata.input_ordering
+                input_metadata = input_batch[decoder_out_idx].metadata
                 yield ASRResult(
-                    transcription=transcription, input_ordering=input_ordering_idx
+                    transcription=transcription,
+                    input_ordering=input_metadata.input_ordering,
+                    preprocessed_input_uuids=[input_metadata.uuid],
                 )
 
     def _run_encoder(

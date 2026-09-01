@@ -182,15 +182,13 @@ class ASRPreprocessorMixin(Preprocessor):
                         seg_idx += 1
             except ValueError as e:
                 logger.warning(
-                    f"Audio file at {input_file_path} raised '{e}' during decoding. Skipping."
+                    "Error while decoding file at path '%s': %s", input_file_path, e
                 )
                 yield PreprocessedInput(
                     metadata=InputMetadata(
                         input_ordering=input_idx,
-                        duration_s=0.0,
                         input_format=input_format,
                         input_file_path=input_file_path,
-                        preprocessed_file_path=None,
                         error=str(e),
                     )
                 )

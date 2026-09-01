@@ -20,6 +20,17 @@ if TYPE_CHECKING:
     from nemo.collections.asr.parts.utils.rnnt_utils import Hypothesis
 
 
+# Helpers
+
+
+def _utc_now() -> datetime.datetime:
+    return datetime.datetime.now(datetime.UTC).replace(microsecond=0)
+
+
+def _uuid() -> str:
+    return uuid.uuid4().hex
+
+
 # Enums
 
 
@@ -127,6 +138,7 @@ class ASRResult(BaseModel):
     input_ordering: int = -1
     transcription: list[tuple] = Field(default_factory=list)
     score: float = 1.0
+    preprocessed_input_uuids: list[str] = Field(default_factory=list)
 
     @property
     def duration(self) -> float:
@@ -203,23 +215,21 @@ class ASRResult(BaseModel):
         if total_duration:
             score = self.score * self.duration + other.score * other.duration
             score /= total_duration
-        return ASRResult(
-            input_ordering=self.input_ordering, transcription=transcription, score=score
+        preprocessed_input_uuids = (
+            self.preprocessed_input_uuids + other.preprocessed_input_uuids
         )
-
-
-def _utc_now() -> datetime.datetime:
-    return datetime.datetime.now(datetime.UTC).replace(microsecond=0)
-
-
-def _uuid() -> str:
-    return uuid.uuid4().hex
+        return ASRResult(
+            input_ordering=self.input_ordering,
+            transcription=transcription,
+            score=score,
+            preprocessed_input_uuids=preprocessed_input_uuids,
+        )
 
 
 class InputMetadata(BaseModel):
     """Preprocessed input metadata"""
 
-    duration_s: float
+    duration_s: float = 0.0
     input_ordering: int = -1
     preprocessed_at: datetime.datetime = Field(default_factory=_utc_now)
     uuid: str = Field(default_factory=_uuid)
