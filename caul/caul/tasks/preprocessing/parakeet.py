@@ -14,44 +14,33 @@ from caul_core import (
 from .asr_preprocessor import ASRPreprocessorMixin
 
 
-# TODO: something approximate here would be nice to avoid loading all data in memory
-def _parakeet_batching_fn(  # pylint: disable=R0914
+def _parakeet_batching_fn(
     preprocessed_inputs: Iterable[PreprocessedInput], *args, **kwargs
 ) -> Iterable[list[PreprocessedInput]]:
-    """Batch audio tensors by duration, 20 minutes max per batch, optimizing for tightly packed
-    batches.
+    """Batch audio tensors by duration, 20 minutes max per batch, preserving input ordering
+    and streaming batches as they fill up rather than buffering every input in memory.
 
-    :param preprocessed_inputs: list of PreprocessedInput
-    :return: list of list[PreprocessedInput]
+    :param preprocessed_inputs: iterable of PreprocessedInput
+    :return: iterable of list[PreprocessedInput]
     """
-    import numpy as np  # pylint: disable=import-outside-toplevel
+    current_batch: list[PreprocessedInput] = []
+    current_batch_duration_s = 0.0
 
-    # Sort by duration
-    preprocessed_inputs = sorted(
-        preprocessed_inputs, key=lambda p: p.metadata.duration_s, reverse=True
-    )
-
-    # Now this becomes a bin-packing minimization problem. We'll use a variant of best-fit
-    # decreasing.
-
-    bins = [[]]
-    bins_len = [0]
-
-    # With each pass, choose a bin by maximizing remaining space
     for preprocessed_input in preprocessed_inputs:
-        remaining_spaces = [
-            PARAKEET_INFERENCE_MAX_DURATION_S - bin_len for bin_len in bins_len
-        ]
         input_duration_s = preprocessed_input.metadata.duration_s
-        if input_duration_s > max(remaining_spaces):
-            bins.append([])
-            bins_len.append(0)
-            remaining_spaces.append(PARAKEET_INFERENCE_MAX_DURATION_S)
-        most_empty_bin = np.argmax(remaining_spaces)
-        bins[most_empty_bin].append(preprocessed_input)
-        bins_len[most_empty_bin] += input_duration_s
+        if (
+            current_batch
+            and current_batch_duration_s + input_duration_s
+            > PARAKEET_INFERENCE_MAX_DURATION_S
+        ):
+            yield current_batch
+            current_batch = []
+            current_batch_duration_s = 0.0
+        current_batch.append(preprocessed_input)
+        current_batch_duration_s += input_duration_s
 
-    yield from bins
+    if current_batch:
+        yield current_batch
 
 
 @Preprocessor.register(ASRModel.PARAKEET)

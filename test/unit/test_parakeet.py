@@ -44,11 +44,11 @@ def test__parakeet_batching_unbatching():
         [(r.metadata.input_ordering, r.tensor.shape[-1] / samples_per_min) for r in re]
         for re in result
     ] == [
+        [(0, 12.0)],
+        [(1, 11.0), (2, 5.0), (3, 4.0)],
+        [(4, 7.0), (5, 10.0)],
         [(6, 20.0)],
         [(6, 10.0)],
-        [(0, 12.0), (3, 4.0)],
-        [(1, 11.0), (2, 5.0)],
-        [(5, 10.0), (4, 7.0)],
     ]
 
 
