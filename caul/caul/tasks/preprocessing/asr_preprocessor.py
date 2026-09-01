@@ -81,6 +81,7 @@ class ASRPreprocessorMixin(Preprocessor):
         preprocessed_inputs = self.preprocess_inputs(
             inputs, input_sample_rates, output_dir=output_dir
         )
+        preprocessed_inputs = _drop_errored_inputs(preprocessed_inputs)
         for batch in self._batch_fn(preprocessed_inputs, self._batch_size):
             for start in range(0, len(batch), self._batch_size):
                 yield batch[start : start + self._batch_size]
@@ -263,6 +264,22 @@ class ASRPreprocessorMixin(Preprocessor):
             audio_tensor = audio_tensor.squeeze(0)
 
         return audio_tensor
+
+
+def _drop_errored_inputs(
+    preprocessed_inputs: "Iterable[PreprocessorOutput]",
+) -> "Iterable[PreprocessorOutput]":
+    for preprocessed_input in preprocessed_inputs:
+        metadata = preprocessed_input.metadata
+        if metadata.error is not None:
+            logger.warning(
+                "Dropping input %s at path %s with error: %s",
+                metadata.uuid,
+                metadata.input_file_path,
+                metadata.error,
+            )
+            continue
+        yield preprocessed_input
 
 
 def _resample_audio(

@@ -140,3 +140,42 @@ class TestASRPreprocessorChunking:
         assert results[0].metadata.input_ordering == 0
         assert results[0].metadata.preprocessed_file_path is None
         assert results[0].metadata.error is not None
+
+    def test__process_drops_errored_inputs_from_batches(self, monkeypatch):
+        """process() must not batch PreprocessedInputs that failed decoding"""
+        import torchcodec.decoders
+
+        real_decoder = torchcodec.decoders.AudioDecoder
+
+        def _maybe_raise(path, *args, **kwargs):
+            if path == "bad.mp4":
+                raise ValueError("no audio stream")
+            return real_decoder(path, *args, **kwargs)
+
+        monkeypatch.setattr(torchcodec.decoders, "AudioDecoder", _maybe_raise)
+
+        batches = list(ASRPreprocessorMixin().process([str(TEST_WAV_PATH), "bad.mp4"]))
+
+        results = [r for batch in batches for r in batch]
+        assert all(r.metadata.error is None for r in results)
+        assert {r.metadata.input_ordering for r in results} == {0}
+
+    def test__process_logs_dropped_errored_inputs(self, monkeypatch, caplog):
+        """Dropping an errored input must be logged with its id and file path"""
+        import re
+        import torchcodec.decoders
+
+        def _raise(*args, **kwargs):
+            raise ValueError("no audio stream")
+
+        monkeypatch.setattr(torchcodec.decoders, "AudioDecoder", _raise)
+
+        with caplog.at_level("WARNING"):
+            list(ASRPreprocessorMixin().process(["bad.mp4"]))
+
+        [record] = [
+            r for r in caplog.records if "Dropping errored input" in r.getMessage()
+        ]
+        message = record.getMessage()
+        assert "bad.mp4" in message
+        assert re.search(r"input [0-9a-f]{32}", message)
