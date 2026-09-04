@@ -1,18 +1,18 @@
 import gc
 from abc import ABC, abstractmethod
+from collections.abc import Iterable
 from contextlib import AbstractContextManager
 from pathlib import Path
-from typing import Any, Iterable, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, TypeAlias
 
 from icij_common.registrable import RegistrableFromConfig
 
-from .objects import ASRResult, PreprocessorOutput
 from .constants import TorchDevice
-
+from .objects import ASRResult, PreprocessorOutput
 
 if TYPE_CHECKING:
-    import torch
     import numpy as np
+    import torch
 
 
 class ASRTask(AbstractContextManager, ABC):
@@ -42,11 +42,16 @@ class ASRTask(AbstractContextManager, ABC):
         self._device = device
 
 
+PreprocessInputItem: TypeAlias = "np.ndarray | torch.Tensor | str | Path"
+PreprocessorInput: TypeAlias = "Iterable[PreprocessInputItem] | PreprocessInputItem"
+
+
 class Preprocessor(ASRTask, RegistrableFromConfig):
     @abstractmethod
     def process(
         self,
-        inputs: "Iterable[np.ndarray | torch.Tensor | str] | np.ndarray | torch.Tensor | str",
+        inputs: PreprocessorInput,
+        input_sample_rates: Iterable[int] | int | None = None,
         output_dir: Path | None = None,
         **kwargs,
     ) -> Iterable[list[PreprocessorOutput]]:

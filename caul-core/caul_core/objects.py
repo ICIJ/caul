@@ -1,5 +1,6 @@
 import datetime
 import math
+import traceback
 import uuid
 from dataclasses import dataclass
 from enum import StrEnum, unique
@@ -219,6 +220,21 @@ def _uuid() -> str:
     return uuid.uuid4().hex
 
 
+class Error(BaseModel):
+    title: str
+    detail: str
+
+    @classmethod
+    def from_exception(cls, exception: BaseException) -> "Error":
+        title = exception.__class__.__name__
+        trace_lines = traceback.format_exception(
+            None, value=exception, tb=exception.__traceback__
+        )
+        detail = f"{exception}\n{''.join(trace_lines)}"
+        error = Error(title=title, detail=detail)
+        return error
+
+
 class InputMetadata(BaseModel):
     """Preprocessed input metadata"""
 
@@ -229,7 +245,7 @@ class InputMetadata(BaseModel):
     input_format: str | None = None
     input_file_path: Path | None = None
     preprocessed_file_path: Path | None = None
-    error: str | None = None
+    error: Error | None = None
 
 
 class PreprocessedInput(BaseModel):

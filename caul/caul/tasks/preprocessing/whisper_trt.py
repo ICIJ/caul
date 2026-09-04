@@ -77,7 +77,7 @@ class WhisperTrtPreprocessor(ASRPreprocessorMixin):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self._mel_filters = None
 
-    def _additional_preprocessing(self, audio_tensor: "torch.Tensor") -> "torch.Tensor":
+    def _preprocess_segment(self, audio_tensor: "torch.Tensor") -> "torch.Tensor":
         """Map input tensor to log mel spectrogram, needed by Whisper TRT
 
         :audio_tensor: input audio tensor

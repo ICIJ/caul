@@ -1,3 +1,6 @@
+from pathlib import Path
+
+
 class MissingModelSpecificationException(Exception):
     """Raise if referencing a missing model"""
 
@@ -16,3 +19,9 @@ class LanguageInputMismatchException(Exception):
 
 class MissingTokenizerException(Exception):
     """Raise if no tokenizer or tokenizer path provided"""
+
+
+class UnreadableAudio(Exception):
+    def __init__(self, path: Path):
+        msg = f"failed to read audio file at {path}"
+        super().__init__(msg)

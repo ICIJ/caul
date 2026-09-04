@@ -1,11 +1,10 @@
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import ClassVar, TYPE_CHECKING
-
-from icij_common.registrable import RegistrableConfig
-from pydantic import Field
+from typing import TYPE_CHECKING, ClassVar
 
 from caul_core import DEFAULT_SAMPLE_RATE, PARAKEET_INFERENCE_MAX_DURATION_S
+from icij_common.registrable import RegistrableConfig
+from pydantic import Field
 
 if TYPE_CHECKING:
     import torch
@@ -25,7 +24,11 @@ class TensorSegment:
     @property
     def duration(self) -> float:
         """Duration of segment in seconds"""
-        return (self.segment_end - self.segment_start) / self.sample_rate
+        return self.n_frames / self.sample_rate
+
+    @property
+    def n_frames(self) -> int:
+        return self.segment_end - self.segment_start
 
 
 class SegmentationStrategy(StrEnum):
