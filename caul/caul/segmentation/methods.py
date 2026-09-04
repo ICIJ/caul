@@ -1,12 +1,20 @@
 import uuid
-from typing import Callable, TYPE_CHECKING
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Protocol
 
 from caul_core import DEFAULT_SAMPLE_RATE, PARAKEET_INFERENCE_MAX_DURATION_S
+
 from .objects import TensorSegment
 
 if TYPE_CHECKING:
-    import torch
     import pyannote
+    import torch
+
+
+class SegmentationFunction(Protocol):
+    def __call__(
+        self, audio_tensor: "torch.Tensor", *args, sample_rate: int, **kwargs
+    ) -> list[TensorSegment]: ...
 
 
 def _split_range_fixed(  # pylint: disable=too-many-arguments
@@ -50,7 +58,6 @@ def segment_fixed(
     *,
     sample_rate: int = DEFAULT_SAMPLE_RATE,
     max_segment_len_s: float = PARAKEET_INFERENCE_MAX_DURATION_S,
-    **kwargs,
 ) -> list[TensorSegment]:
     """Split an audio tensor into fixed-length chunks.
 
@@ -81,7 +88,6 @@ def segment_by_silence(  # pylint: disable=too-many-arguments,too-many-locals
     kept_silence_len_s: float = 0.15,
     min_silence_len_s: float = 0.5,
     max_segment_len_s: float = PARAKEET_INFERENCE_MAX_DURATION_S,
-    **kwargs,
 ) -> list[TensorSegment]:
     """Split an audio tensor on silences using librosa, falling back to fixed splits
     where merged intervals exceed the maximum segment length.
@@ -163,7 +169,6 @@ def segment_by_silero_vad(  # pylint: disable=too-many-arguments
     min_silence_duration_ms: int = 100,
     speech_pad_ms: int = 30,
     max_segment_len_s: float = PARAKEET_INFERENCE_MAX_DURATION_S,
-    **kwargs,
 ) -> list[TensorSegment]:
     """Split an audio tensor into voiced segments using silero VAD.
 
@@ -217,7 +222,6 @@ def segment_by_pyannote_vad(  # pylint: disable=too-many-arguments
     min_speech_duration_ms: int = 100,
     min_silence_duration_ms: int = 100,
     max_segment_len_s: float = PARAKEET_INFERENCE_MAX_DURATION_S,
-    **kwargs,
 ) -> list[TensorSegment]:
     """Split an audio tensor into voiced segments using pyannote VAD.
 

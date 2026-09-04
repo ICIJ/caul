@@ -112,7 +112,7 @@ class TestWhisperTrtPreprocessor:
     def test__output_shape_has_correct_mel_dim(self):
         preprocessor = self._preprocessor
         with preprocessor:
-            out = preprocessor._additional_preprocessing(
+            out = preprocessor._preprocess_segment(
                 torch.zeros(DEFAULT_SAMPLE_RATE)
             )
         assert out.ndim == 3
@@ -129,12 +129,12 @@ class TestWhisperTrtPreprocessor:
             return_complex=True,
         )
         expected_t = stft.shape[-1] - 1
-        out = self._preprocessor._additional_preprocessing(audio)
+        out = self._preprocessor._preprocess_segment(audio)
         assert out.shape[2] == expected_t
 
     def test__normalized_values_in_bounded_range(self):
         """After (log10 + 4) / 4, values for real audio stay within bounded range"""
-        out = self._preprocessor._additional_preprocessing(
+        out = self._preprocessor._preprocess_segment(
             torch.randn(DEFAULT_SAMPLE_RATE)
         )
         assert out.min() >= -2.0

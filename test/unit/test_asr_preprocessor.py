@@ -5,11 +5,10 @@ from pathlib import Path
 
 import pytest
 import torch
+from caul.tasks.preprocessing.asr_preprocessor import ASRPreprocessorMixin, load_audio
+from caul_core import DEFAULT_SAMPLE_RATE, Error
 from torchcodec.encoders import AudioEncoder
 
-from caul_core import DEFAULT_SAMPLE_RATE
-
-from caul.tasks.preprocessing.asr_preprocessor import ASRPreprocessorMixin, load_audio
 from test.unit.constant import TEST_WAV_PATH
 
 
@@ -35,52 +34,62 @@ def test_load_stereo_24bit_audio() -> None:
 
 
 class TestASRPreprocessorChunking:
-    def test__below_threshold_loads_eagerly(self, long_wav):
+    def test__below_threshold_loads_eagerly(self, long_wav: Path):
         """Files under the byte threshold produce exactly one chunk"""
         preprocessor = ASRPreprocessorMixin(large_file_threshold_bytes=sys.maxsize)
-        chunks = list(preprocessor._load_file_as_chunks(str(long_wav)))
+        chunks = list(
+            preprocessor._load_file_as_chunks(long_wav, DEFAULT_SAMPLE_RATE),
+        )
         assert len(chunks) == 1
 
-    def test__above_threshold_produces_multiple_chunks(self, long_wav):
+    def test__above_threshold_produces_multiple_chunks(self, long_wav: Path):
         """Files over the byte threshold are split into several time-window chunks"""
-        chunks = list(_chunking_preprocessor()._load_file_as_chunks(str(long_wav)))
+        chunks = list(
+            _chunking_preprocessor()._load_file_as_chunks(long_wav, DEFAULT_SAMPLE_RATE)
+        )
         assert len(chunks) > 1
 
-    def test__chunk_count_matches_expected(self, long_wav):
+    def test__chunk_count_matches_expected(self, long_wav: Path):
         """Number of chunks equals ceil(file_duration / chunk_duration)"""
         from torchcodec.decoders import AudioDecoder
 
         preprocessor = _chunking_preprocessor()
-        duration_s = AudioDecoder(str(long_wav)).metadata.duration_seconds
+        duration_s = AudioDecoder(long_wav).metadata.duration_seconds
         chunk_duration_s = DEFAULT_SAMPLE_RATE / DEFAULT_SAMPLE_RATE
         expected = math.ceil(duration_s / chunk_duration_s)
 
-        chunks = list(preprocessor._load_file_as_chunks(str(long_wav)))
+        chunks = list(preprocessor._load_file_as_chunks(long_wav, DEFAULT_SAMPLE_RATE))
         assert len(chunks) == expected
 
-    def test__each_chunk_at_most_max_frames(self, long_wav):
+    def test__each_chunk_at_most_max_frames(self, long_wav: Path):
         """No chunk contains more than max_frames samples"""
-        chunks = list(_chunking_preprocessor()._load_file_as_chunks(str(long_wav)))
+        chunks = list(
+            _chunking_preprocessor()._load_file_as_chunks(long_wav, DEFAULT_SAMPLE_RATE)
+        )
         for chunk in chunks:
             # +1 tolerance for floating-point rounding in the decoder's resampler
             assert chunk.shape[-1] <= DEFAULT_SAMPLE_RATE + 1
 
-    def test__chunks_are_1d_tensors(self, long_wav):
+    def test__chunks_are_1d_tensors(self, long_wav: Path):
         """Chunks are 1D (mono, squeezed) tensors at the target sample rate"""
-        chunks = list(_chunking_preprocessor()._load_file_as_chunks(str(long_wav)))
+        chunks = list(
+            _chunking_preprocessor()._load_file_as_chunks(long_wav, DEFAULT_SAMPLE_RATE)
+        )
         for chunk in chunks:
             assert len(chunk.shape) == 1
 
-    def test__load_file_as_chunks_is_lazy(self, long_wav):
+    def test__load_file_as_chunks_is_lazy(self, long_wav: Path):
         """_load_file_as_chunks must return a generator, not a materialized list"""
-        result = _chunking_preprocessor()._load_file_as_chunks(str(long_wav))
+        result = _chunking_preprocessor()._load_file_as_chunks(
+            long_wav, DEFAULT_SAMPLE_RATE
+        )
         assert inspect.isgenerator(result)
 
-    def test__chunking_triggered_by_byte_threshold(self, long_wav):
+    def test__chunking_triggered_by_byte_threshold(self, long_wav: Path):
         """Threshold comparison uses byte size derived from file metadata"""
         from torchcodec.decoders import AudioDecoder
 
-        meta = AudioDecoder(str(long_wav)).metadata
+        meta = AudioDecoder(long_wav).metadata
         estimated_bytes = (
             int(meta.duration_seconds * meta.sample_rate) * meta.num_channels * 4
         )
@@ -94,30 +103,30 @@ class TestASRPreprocessorChunking:
             max_frames=DEFAULT_SAMPLE_RATE,
         )
 
-        assert len(list(eager._load_file_as_chunks(str(long_wav)))) == 1
-        assert len(list(chunked._load_file_as_chunks(str(long_wav)))) > 1
+        assert len(list(eager._load_file_as_chunks(long_wav, DEFAULT_SAMPLE_RATE))) == 1
+        assert (
+            len(list(chunked._load_file_as_chunks(long_wav, DEFAULT_SAMPLE_RATE))) > 1
+        )
 
-    def test__seg_i_contiguous_across_chunks(self, long_wav, tmp_path):
+    def test__seg_i_contiguous_across_chunks(self, long_wav: Path, tmp_path):
         """Segment output file indices are sequential even across chunk boundaries"""
         preprocessor = _chunking_preprocessor()
         output_dir = tmp_path / "segments"
         output_dir.mkdir()
         results = list(
-            preprocessor.preprocess_inputs([str(long_wav)], output_dir=output_dir)
+            preprocessor.preprocess_inputs([long_wav], output_dir=output_dir)
         )
         indices = sorted(int(f.stem.rsplit("-", 1)[-1]) for f in output_dir.iterdir())
         assert indices == list(range(len(results)))
 
-    def test__all_segments_share_input_ordering(self, long_wav):
+    def test__all_segments_share_input_ordering(self, long_wav: Path):
         """All segments produced from one file have the same input_ordering"""
-        results = list(_chunking_preprocessor().preprocess_inputs([str(long_wav)]))
+        results = list(_chunking_preprocessor().preprocess_inputs([long_wav]))
         assert all(r.metadata.input_ordering == 0 for r in results)
 
-    def test__two_large_files_have_distinct_orderings(self, long_wav):
+    def test__two_large_files_have_distinct_orderings(self, long_wav: Path):
         """Two chunked files produce segments with input_ordering 0 and 1"""
-        results = list(
-            _chunking_preprocessor().preprocess_inputs([str(long_wav), str(long_wav)])
-        )
+        results = list(_chunking_preprocessor().preprocess_inputs([long_wav, long_wav]))
         assert {r.metadata.input_ordering for r in results} == {0, 1}
 
     def test__decode_failure_yields_error_record_instead_of_raising(self, monkeypatch):
@@ -139,4 +148,6 @@ class TestASRPreprocessorChunking:
         assert len(results) == 1
         assert results[0].metadata.input_ordering == 0
         assert results[0].metadata.preprocessed_file_path is None
-        assert results[0].metadata.error is not None
+        error = results[0].metadata.error
+        assert isinstance(error, Error)
+        assert error.title == "UnreadableAudio"
