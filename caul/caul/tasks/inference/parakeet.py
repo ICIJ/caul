@@ -6,9 +6,10 @@ from caul_core import (
     PARAKEET_MODEL_REF,
     ASRModel,
     ASRResult,
-    AudioSegment,
+    Error,
     InferenceRunner,
     ParakeetInferenceRunnerConfig,
+    ProcessedAudioSegment,
     TorchDevice,
 )
 from icij_common.registrable import FromConfig
@@ -96,8 +97,8 @@ class ParakeetInferenceRunner(InferenceRunner):
         )
 
     def process(  # pylint: disable=too-many-locals
-        self, inputs: list[AudioSegment], *args, **kwargs
-    ) -> Iterable[ASRResult]:
+        self, inputs: Iterable[tuple[ProcessedAudioSegment, ...]], *args, **kwargs
+    ) -> Iterable[ASRResult | Error]:
         """Transcribe a batch of audio tensors or file names of max duration <= 20 minutes
 
         :param inputs: List of np.ndarray or torch.Tensor or str, or singleton of same types

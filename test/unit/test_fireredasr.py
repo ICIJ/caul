@@ -4,6 +4,7 @@ from caul.tasks import FireRedASR2InferenceRunner, FireRedASR2Preprocessor
 from caul_core import (
     FIREREDASR2_INFERENCE_MAX_FRAMES,
     ASRResult,
+    ConstantSizeBatcherConfig,
     FireRedASR2InferenceRunnerConfig,
     SegmentIndex,
 )
@@ -88,7 +89,9 @@ class TestFireRedASR2InferenceRunner:
 
     def test__yields_asr_results(self, tmp_path):
         """Inference runner should yield one ASRResult per segment in the batch"""
-        preprocessor = FireRedASR2Preprocessor(batch_size=4)
+        preprocessor = FireRedASR2Preprocessor(
+            batcher=ConstantSizeBatcherConfig(batch_size=4)
+        )
         # Use audio shorter than max so each input produces exactly one segment
         audio = [
             torch.zeros(FIREREDASR2_INFERENCE_MAX_FRAMES // 2),

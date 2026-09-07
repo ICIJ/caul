@@ -42,6 +42,7 @@ from .constants import (
     FIREREDASR2_RETURN_TIMESTAMP_DEFAULT,
     FIREREDASR2_SOFTMAX_SMOOTHING_DEFAULT,
     FIREREDASR2_USE_HALF_DEFAULT,
+    PARAKEET_INFERENCE_MAX_DURATION_S,
     PARAKEET_INFERENCE_MAX_FRAMES,
     PARAKEET_MODEL_REF,
     WHISPER_TRT_DECODER_BATCH_SIZE,
@@ -66,7 +67,7 @@ from .constants import (
     WHISPER_TRT_RETURN_TIMESTAMPS,
     TorchDevice,
 )
-from .objects import ASRModel, BaseModel, FasterWhisperModel
+from .objects import ASRModel, BaseModel, BatcherType, FasterWhisperModel
 
 if TYPE_CHECKING:
     try:
@@ -130,14 +131,37 @@ class TrtLlmDecoderConfig(BaseModel):
         )
 
 
+class BaseBatcherConfig(_BaseConfig):
+    registry_key: ClassVar[str] = Field(frozen=True, default="type")
+    type: ClassVar[BatcherType]
+
+
+class ConstantSizeBatcherConfig(BaseBatcherConfig):
+    type: ClassVar[str] = Field(default=BatcherType.CONSTANT_SIZE)
+
+    batch_size: int = DEFAULT_BATCH_SIZE
+
+
+class MaxDurationBatcherConfig(BaseBatcherConfig):
+    type: ClassVar[str] = Field(default=BatcherType.MAX_DURATION)
+
+    max_duration_s: float = PARAKEET_INFERENCE_MAX_DURATION_S
+
+
+BatcherConfig = tagged_union(
+    BaseBatcherConfig.__subclasses__(), lambda t: t.type.default.value
+)
+
+
 class BasePreprocessorConfig(_BaseConfig):
     registry_key: ClassVar[str] = Field(frozen=True, default="model")
     model: ClassVar[ASRModel]
 
     max_frames: int = DEFAULT_MAX_FRAMES
-    batch_size: int = DEFAULT_BATCH_SIZE
     sample_rate: int = DEFAULT_SAMPLE_RATE
     large_file_threshold_bytes: int = DEFAULT_LARGE_FILE_THRESHOLD_BYTES
+
+    batcher: BatcherConfig = Field(default_factory=ConstantSizeBatcherConfig)
 
 
 class BaseInferenceRunnerConfig(_BaseConfig):
@@ -293,6 +317,7 @@ InferenceRunnerConfig = tagged_union(
 PostprocessorConfig = tagged_union(
     BasePostprocessorConfig.__subclasses__(), lambda t: t.model.default.value
 )
+
 
 model_discriminator = make_enum_discriminator("model", ASRModel)
 

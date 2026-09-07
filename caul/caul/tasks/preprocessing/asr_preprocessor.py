@@ -1,10 +1,11 @@
 import logging
 import uuid
-from collections.abc import Callable, Iterable
+from collections.abc import Iterable
+from functools import partial
 from hashlib import sha256
 from itertools import repeat
 from pathlib import Path
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING, Self, final
 
 from caul_core import (
     DEFAULT_BATCH_SIZE,
@@ -13,23 +14,27 @@ from caul_core import (
     DEFAULT_SAMPLE_RATE,
     ASRInput,
     AudioMetadata,
+    BaseBatcherConfig,
     BasePreprocessorConfig,
+    ConstantSizeBatcherConfig,
     Error,
-    FSPreprocessedSegment,
+    FSProcessedSegment,
     InputItem,
-    MemoryPreprocessedSegment,
+    MemoryProcessedSegment,
     Preprocessor,
-    PreprocessorOutput,
+    ProcessedAudioSegment,
     SegmentIndex,
     SegmentMetadata,
 )
+from caul_core.asr_task import SampleRate
 from torch import Tensor
 
-from caul.exception import UnprocessableAudio, UnreadableAudio
-from caul.filesystem import save_tensor
-from caul.segmentation import segment_by_silence
 from caul.segmentation.methods import SegmentationFunction
-from caul.task_defaults import generic_batching_fn
+
+from ...exception import UnprocessableAudio, UnreadableAudio
+from ...segmentation import segment_by_silence
+from ...utils import save_tensor
+from .batcher import Batcher
 
 if TYPE_CHECKING:
     import numpy as np
@@ -45,18 +50,18 @@ class ASRPreprocessorMixin(Preprocessor):
 
     def __init__(
         self,
-        batching_fn: Callable = generic_batching_fn,
+        batcher: BaseBatcherConfig | None = None,
         max_frames: int = DEFAULT_MAX_FRAMES,
-        batch_size: int = DEFAULT_BATCH_SIZE,
         sample_rate: int = DEFAULT_SAMPLE_RATE,
         large_file_threshold_bytes: int = DEFAULT_LARGE_FILE_THRESHOLD_BYTES,
         segmentation_fn: SegmentationFunction = segment_by_silence,
         reported_errors: tuple[type[Exception]] | None = None,
     ):
         super().__init__()
-        self._batch_fn = batching_fn
+        if batcher is None:
+            batcher = ConstantSizeBatcherConfig(batch_size=DEFAULT_BATCH_SIZE)
+        self._batcher_factory = partial(Batcher.from_config, config=batcher)
         self._max_frames = max_frames
-        self._batch_size = batch_size
         self._sample_rate = sample_rate
         self._large_file_threshold_bytes = large_file_threshold_bytes
         self._segmentation_fn = segmentation_fn
@@ -69,7 +74,7 @@ class ASRPreprocessorMixin(Preprocessor):
         # TODO: configure segmentation fn
         return cls(
             max_frames=config.max_frames,
-            batch_size=config.batch_size,
+            batcher=config.batcher,
             sample_rate=config.sample_rate,
             large_file_threshold_bytes=config.large_file_threshold_bytes,
         )
@@ -77,30 +82,35 @@ class ASRPreprocessorMixin(Preprocessor):
     def process(
         self,
         inputs: ASRInput,
-        input_sample_rates: Iterable[int] | int | None = None,
+        sample_rates: SampleRate | None = None,
         output_dir: Path | None = None,
         **kwargs,
-    ) -> Iterable[list[PreprocessorOutput]]:
+    ) -> Iterable[tuple[ProcessedAudioSegment, ...] | Error]:
         """Segment and batch audio inputs
 
         :param inputs: List of np.ndarray or torch.Tensor or str, or singleton of same types
-        :param input_sample_rates: sample rate(s) of audio inputs
+        :param sample_rates: sample rate(s) of audio inputs
         :param output_dir: optional directory to write preprocessed wav segments
         :return: batches of indexed preprocessed audio tensors (input_idx, preprocessed_input)
         """
-        preprocessed_inputs = self.preprocess_inputs(
-            inputs, input_sample_rates, output_dir=output_dir
+        processed_segments = self.preprocess_inputs(
+            inputs, sample_rates, output_dir=output_dir
         )
-        for batch in self._batch_fn(preprocessed_inputs, batch_size=self._batch_size):
-            for start in range(0, len(batch), self._batch_size):
-                yield batch[start : start + self._batch_size]
+        batcher = self._batcher_factory(items=processed_segments)
+        # Yield result first, we need to iterate on all processed segments to batch
+        # only successful segments and collect failures. Order is not maintained
+        # between successful results and errors which is fine as long order is
+        # maintained for results which processed downstream
+        yield from batcher.results()
+        yield from batcher.errors
 
+    @final
     def preprocess_inputs(  # pylint: disable=too-many-locals
         self,
         inputs: ASRInput,
-        input_sample_rates: Iterable[int] | int | None = None,
+        input_sample_rates: SampleRate | None = None,
         output_dir: str | Path | None = None,
-    ) -> Iterable[PreprocessorOutput]:
+    ) -> Iterable[ProcessedAudioSegment | Error]:
         """Accepts audio inputs as a list of file paths, np.ndarray, or torch.Tensor, converting to
         torch.Tensor, normalizing, segmenting inputs longer than seg_max and batching segments
 
@@ -140,11 +150,9 @@ class ASRPreprocessorMixin(Preprocessor):
                             audio_meta.audio_path,
                             output_dir=output_dir,
                         ).relative_to(output_dir)
-                        res = FSPreprocessedSegment(
-                            metadata=seg_meta.now(), path=seg_path
-                        )
+                        res = FSProcessedSegment(metadata=seg_meta.now(), path=seg_path)
                     else:
-                        res = MemoryPreprocessedSegment(
+                        res = MemoryProcessedSegment(
                             metadata=seg_meta.now(), tensor=audio_seg
                         )
                     yield res

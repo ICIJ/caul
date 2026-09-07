@@ -1,8 +1,8 @@
+from collections.abc import Callable
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, Self
+from typing import TYPE_CHECKING, Self
 
 from caul_core import (
-    DEFAULT_BATCH_SIZE,
     WHISPER_TRT_HOP_LENGTH,
     WHISPER_TRT_MAX_FRAMES,
     WHISPER_TRT_N_FFT,
@@ -10,6 +10,7 @@ from caul_core import (
     WHISPER_TRT_PREPROCESSOR_LOG_RANGE_MAX_SHIFT,
     WHISPER_TRT_PREPROCESSOR_LOG_RANGE_NORMALIZER,
     ASRModel,
+    BaseBatcherConfig,
     Preprocessor,
     WhisperTrtPreprocessorConfig,
 )
@@ -34,15 +35,15 @@ def _mel_filters_factory(
 class WhisperTrtPreprocessor(ASRPreprocessorMixin):
     def __init__(
         self,
+        batcher: BaseBatcherConfig | None = None,
         n_mels: int = 80,
         mel_filters_factory: Callable[[], "torch.Tensor"] = None,
         dtype: "str | None" = None,
-        batch_size: int = DEFAULT_BATCH_SIZE,
         max_frames: int = WHISPER_TRT_MAX_FRAMES,
     ) -> None:
         import torch  # pylint: disable=import-outside-toplevel
 
-        super().__init__(batch_size=batch_size, max_frames=max_frames)
+        super().__init__(batcher=batcher, max_frames=max_frames)
         self._n_mels = n_mels
         self._mel_filters_factory = mel_filters_factory()
         self._mel_filters = None

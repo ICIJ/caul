@@ -19,8 +19,9 @@ from caul_core import (
     WHISPER_TRT_WORLD_SIZE,
     ASRModel,
     ASRResult,
-    AudioSegment,
+    Error,
     InferenceRunner,
+    ProcessedAudioSegment,
     TorchDevice,
     TrtLlmDecoderConfig,
     TrtLlmEncoderConfig,
@@ -220,8 +221,8 @@ class WhisperTrtInferenceRunner(InferenceRunner, TrtInferenceMixin):
         return self
 
     def process(  # pylint: disable=too-many-locals
-        self, inputs: Iterable[list[AudioSegment]], *args, **kwargs
-    ) -> Iterable[ASRResult]:
+        self, inputs: Iterable[tuple[ProcessedAudioSegment, ...]], *args, **kwargs
+    ) -> Iterable[ASRResult | Error]:
         import torch  # pylint: disable=import-outside-toplevel
 
         for input_batch in inputs:

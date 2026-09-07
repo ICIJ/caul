@@ -1,20 +1,40 @@
 import logging
+from collections.abc import Iterable
 from functools import cache
 from pathlib import Path, PurePosixPath
-from typing import TYPE_CHECKING, Iterable
+from typing import TYPE_CHECKING
 
 from caul_core import (
-    FSPreprocessedSegment,
-    MemoryPreprocessedSegment,
+    DEFAULT_SAMPLE_RATE,
+    FSProcessedSegment,
+    MemoryProcessedSegment,
     TorchDevice,
 )
 
-from .filesystem import save_tensor
+from .constants import DEFAULT_BIT_RATE
 
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     import torch
+
+
+def save_tensor(audio: "torch.Tensor", path: Path) -> None:
+    """Filesystem routine for audio tensor; defaults to wav
+
+    :param audio: input tensor
+    :return: string file uri
+    """
+    # TODO: Change paths to run_id + tensor uuid + pagination
+    #  Allow for remote paths
+    from torchcodec.encoders import AudioEncoder
+
+    # Channel required as first dim
+    audio = audio.unsqueeze(0)
+    encoder = AudioEncoder(samples=audio, sample_rate=DEFAULT_SAMPLE_RATE)
+    encoder.to_file(
+        path, sample_rate=DEFAULT_SAMPLE_RATE, num_channels=1, bit_rate=DEFAULT_BIT_RATE
+    )
 
 
 def device_to_torch(device: TorchDevice) -> "torch.device":
@@ -39,20 +59,20 @@ def fuzzy_match(key: str, candidates: set[str]) -> set[str]:
 
 
 def to_filesystem(
-    input_batch: Iterable[FSPreprocessedSegment | MemoryPreprocessedSegment],
+    input_batch: Iterable[FSProcessedSegment | MemoryProcessedSegment],
     output_dir: Path | None,
-) -> Iterable[tuple[FSPreprocessedSegment | MemoryPreprocessedSegment], Path]:
+) -> Iterable[tuple[FSProcessedSegment | MemoryProcessedSegment, Path]]:
     for inp in input_batch:
         inp_id = inp.metadata.uuid
 
         match inp:
-            case FSPreprocessedSegment():
+            case FSProcessedSegment():
                 wav_path = inp.path
-            case MemoryPreprocessedSegment():
+            case MemoryProcessedSegment():
                 if output_dir is None:
                     msg = (
                         f"output_dir was not provided for "
-                        f"{MemoryPreprocessedSegment.__name__} input"
+                        f"{MemoryProcessedSegment.__name__} input"
                     )
                     raise ValueError(msg)
                 filename = f"{inp.metadata.index.audio}-{inp.metadata.index.segment}-{inp_id}.wav"

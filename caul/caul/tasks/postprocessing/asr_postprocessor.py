@@ -1,9 +1,9 @@
-from typing import Callable, Iterable
+from collections.abc import Callable, Iterable
 
 from caul_core import ASRResult, BasePreprocessorConfig, Postprocessor
 from icij_common.registrable import FromConfig
 
-from ...task_defaults import generic_unbatching_fn
+from .default import generic_unbatching_fn
 
 
 class PostprocessorMixin(Postprocessor):

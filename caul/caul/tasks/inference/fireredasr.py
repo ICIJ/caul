@@ -9,11 +9,12 @@ from caul_core import (
     FIREREDASR2_MODEL_HUB_PREFIX,
     ASRModel,
     ASRResult,
-    AudioSegment,
+    Error,
     FireRedASR2InferenceRunnerConfig,
     FireRedASR2ModelRef,
     FireRedASR2ModelTag,
     InferenceRunner,
+    ProcessedAudioSegment,
     TorchDevice,
 )
 from icij_common.registrable import FromConfig
@@ -134,11 +135,11 @@ class FireRedASR2InferenceRunner(InferenceRunner):
 
     def process(
         self,
-        inputs: Iterable[list[AudioSegment]],
+        inputs: Iterable[tuple[ProcessedAudioSegment, ...]],
         *,
         output_dir: str | Path = None,
         **kwargs,
-    ) -> Iterable[ASRResult]:
+    ) -> Iterable[ASRResult | Error]:
         """Transcribe batches of preprocessed audio segments.
 
         :param inputs: batches of PreprocessorOutput (file-backed or tensor)

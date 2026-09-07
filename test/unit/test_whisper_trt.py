@@ -28,7 +28,7 @@ from caul_core import (
     WHISPER_TRT_MAX_MEL_PADDING_LEN,
     WHISPER_TRT_N_FFT,
     WHISPER_TRT_N_MELS,
-    MemoryPreprocessedSegment,
+    MemoryProcessedSegment,
     SegmentIndex,
     SegmentMetadata,
 )
@@ -91,9 +91,9 @@ def _make_runner(
 
 def _make_batch(
     batch_size: int = _BATCH_SIZE, t: int = 100
-) -> list[MemoryPreprocessedSegment]:
+) -> list[MemoryProcessedSegment]:
     return [
-        MemoryPreprocessedSegment(
+        MemoryProcessedSegment(
             metadata=SegmentMetadata(index=SegmentIndex(audio=i), duration_s=1.0),
             tensor=torch.zeros(1, WHISPER_TRT_N_MELS, t),
         )
@@ -204,11 +204,11 @@ class TestInferenceRunnerRunEncoder:
         inputs_a = torch.zeros(1, WHISPER_TRT_N_MELS, t_a)
         inputs_b = torch.zeros(1, WHISPER_TRT_N_MELS, t_b)
         batch = [
-            MemoryPreprocessedSegment(
+            MemoryProcessedSegment(
                 metadata=SegmentMetadata(index=SegmentIndex(audio=0), duration_s=1.0),
                 tensor=inputs_a,
             ),
-            MemoryPreprocessedSegment(
+            MemoryProcessedSegment(
                 metadata=SegmentMetadata(index=SegmentIndex(audio=1), duration_s=1.0),
                 tensor=inputs_b,
             ),

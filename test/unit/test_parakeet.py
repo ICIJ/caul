@@ -7,7 +7,7 @@ from caul.tasks import (
     ParakeetPostprocessor,
     ParakeetPreprocessor,
 )
-from caul.tasks.preprocessing.parakeet import parakeet_batching_fn
+from caul.tasks.preprocessing.batcher import MaxDurationBatcher
 from caul_core import (
     DEFAULT_SAMPLE_RATE,
     ASRPipeline,
@@ -41,7 +41,7 @@ def test__parakeet_batching_unbatching():
 
     audio = [torch.zeros([samples_per_min * i]) for i in [12, 11, 5, 4, 7, 10, 30]]
 
-    result = parakeet_batching_fn(preprocessor.preprocess_inputs(audio))
+    result = MaxDurationBatcher(preprocessor.preprocess_inputs(audio)).results()
 
     expected = [
         [(SegmentIndex(audio=0, segment=0), 12.0)],

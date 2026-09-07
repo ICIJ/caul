@@ -130,6 +130,11 @@ class ASRModel(StrEnum):
                 raise NotImplementedError(msg)
 
 
+class BatcherType(StrEnum):
+    CONSTANT_SIZE = "constant_size"
+    MAX_DURATION = "max_duration"
+
+
 class SegmentIndex(BaseModel):
     audio: int = 0
     segment: int = 0
@@ -262,17 +267,16 @@ class SegmentMetadata(BaseModel):
         return safe_copy(self, update=update)
 
 
-class FSPreprocessedSegment(BaseModel):
+class FSProcessedSegment(BaseModel):
     metadata: SegmentMetadata
     path: Path
 
 
 @dataclass(frozen=True)
-class MemoryPreprocessedSegment:
+class MemoryProcessedSegment:
     # Avoid importing torch when importing objects
     metadata: SegmentMetadata
     tensor: "torch.Tensor"
 
 
-AudioSegment = FSPreprocessedSegment | MemoryPreprocessedSegment
-PreprocessorOutput = AudioSegment | Error
+ProcessedAudioSegment = FSProcessedSegment | MemoryProcessedSegment

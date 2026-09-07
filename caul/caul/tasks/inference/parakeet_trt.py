@@ -118,7 +118,6 @@ class ParakeetTrtInferenceRunner(ParakeetInferenceRunner, TrtInferenceMixin):
         self,
         audio_inputs: "torch.Tensor | Iterable[torch.Tensor]",
         trt_device: TorchDevice = None,
-        **kwargs,
     ) -> list[Hypothesis] | list[list[Hypothesis]]:
         """Transcribe audio tensors
 
