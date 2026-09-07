@@ -1,11 +1,13 @@
 from caul_core import (
-    FIREREDASR2_INFERENCE_MAX_FRAMES,
+    BaseBatcherConfig,
     DEFAULT_BATCH_SIZE,
-    DEFAULT_SAMPLE_RATE,
     DEFAULT_LARGE_FILE_THRESHOLD_BYTES,
+    DEFAULT_SAMPLE_RATE,
+    FIREREDASR2_INFERENCE_MAX_FRAMES,
+    ASRModel,
+    Preprocessor,
 )
-from caul_core import ASRModel
-from caul_core import Preprocessor
+
 from .asr_preprocessor import ASRPreprocessorMixin
 
 
@@ -14,13 +16,13 @@ class FireRedASR2Preprocessor(ASRPreprocessorMixin):
     def __init__(
         self,
         max_frames: int = FIREREDASR2_INFERENCE_MAX_FRAMES,
-        batch_size: int = DEFAULT_BATCH_SIZE,
+        batcher: BaseBatcherConfig | None = None,
         sample_rate: int = DEFAULT_SAMPLE_RATE,
         large_file_threshold_bytes: int = DEFAULT_LARGE_FILE_THRESHOLD_BYTES,
     ):
         super().__init__(
             max_frames=max_frames,
-            batch_size=batch_size,
+            batcher=batcher,
             sample_rate=sample_rate,
             large_file_threshold_bytes=large_file_threshold_bytes,
         )

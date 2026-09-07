@@ -6,11 +6,12 @@ from caul_core import (
     DEFAULT_SAMPLE_RATE,
     ASRModel,
     ASRResult,
-    AudioSegment,
+    Error,
     FasterWhisperInferenceRunnerConfig,
-    FSPreprocessedSegment,
+    FSProcessedSegment,
     InferenceRunner,
-    MemoryPreprocessedSegment,
+    MemoryProcessedSegment,
+    ProcessedAudioSegment,
     TorchDevice,
 )
 from icij_common.registrable import FromConfig
@@ -100,11 +101,11 @@ class FasterWhisperInferenceRunner(InferenceRunner):
 
     def process(  # pylint: disable=too-many-locals
         self,
-        inputs: Iterable[list[AudioSegment]],
+        inputs: Iterable[tuple[ProcessedAudioSegment, ...]],
         *,
-        languages: list[str] | None = None,
+        languages: tuple[str] | None = None,
         **kwargs,
-    ) -> Iterable[ASRResult]:
+    ) -> Iterable[ASRResult | Error]:
         """Transcribe batches of preprocessed audio segments using
         faster_whisper.generate_segment_batched.
 
@@ -130,10 +131,10 @@ class FasterWhisperInferenceRunner(InferenceRunner):
             if len(input_batch) == 0:
                 continue
 
-            if isinstance(input_batch[0], MemoryPreprocessedSegment):
+            if isinstance(input_batch[0], MemoryProcessedSegment):
                 tensors = [inp.tensor.detach().cpu().numpy() for inp in input_batch]
             elif (
-                isinstance(input_batch[0], FSPreprocessedSegment)
+                isinstance(input_batch[0], FSProcessedSegment)
                 and input_batch[0].path is not None
             ):
                 tensors = [

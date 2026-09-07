@@ -1,5 +1,5 @@
-from caul_core import ASRModel
-from caul_core import Preprocessor
+from caul_core import ASRModel, Preprocessor
+
 from .asr_preprocessor import ASRPreprocessorMixin
 
 

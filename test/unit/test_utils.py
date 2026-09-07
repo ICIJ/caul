@@ -4,7 +4,7 @@ from unittest.mock import call, patch
 import pytest
 import torch
 from caul.utils import cache_hf_model, to_filesystem
-from caul_core import MemoryPreprocessedSegment, SegmentMetadata
+from caul_core import MemoryProcessedSegment, SegmentMetadata
 
 _HF_HUB_DOWNLOAD_PATH = "huggingface_hub.hf_hub_download"
 _GET_TOKEN_PATH = "huggingface_hub.get_token"
@@ -54,20 +54,20 @@ class TestCacheHfModel:
 
 def test_to_filesystem_should_raise_for_missing_output_dir() -> None:
     # Given
-    pp_out = MemoryPreprocessedSegment(
+    pp_out = MemoryProcessedSegment(
         metadata=SegmentMetadata(duration_s=1), tensor=torch.zeros([1])
     )
     batches = [pp_out]
 
     # When/Then
-    expected = "output_dir was not provided for MemoryPreprocessedSegment input"
+    expected = "output_dir was not provided for MemoryProcessedSegment input"
     with pytest.raises(ValueError, match=expected):
         list(to_filesystem(batches, output_dir=None))
 
 
 def test_to_filesystem_should_handle_in_memory_tensor(tmpdir: Path) -> None:
     # Given
-    pp_out = MemoryPreprocessedSegment(
+    pp_out = MemoryProcessedSegment(
         metadata=SegmentMetadata(duration_s=1), tensor=torch.zeros([1])
     )
     batches = [pp_out]

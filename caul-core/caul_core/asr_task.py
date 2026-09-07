@@ -3,19 +3,21 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from contextlib import AbstractContextManager
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, TypeAlias
+from typing import TYPE_CHECKING, TypeAlias
 
-from icij_common.registrable import RegistrableFromConfig
+from icij_common.registrable import FromConfig, RegistrableFromConfig
+from overrides import final
 
+from .config import BaseBatcherConfig
 from .constants import TorchDevice
-from .objects import ASRResult, AudioSegment, PreprocessorOutput
+from .objects import ASRResult, Error, ProcessedAudioSegment
 
 if TYPE_CHECKING:
     import numpy as np
     import torch
 
 
-class ASRTask(AbstractContextManager, ABC):
+class ASRTask[I, O](AbstractContextManager, ABC):
     """Generic ASR task"""
 
     # pylint: disable=R0903
@@ -23,10 +25,17 @@ class ASRTask(AbstractContextManager, ABC):
         self._device = device
 
     @abstractmethod
-    def process(
-        self, inputs: Iterable[Any], *args, **kwargs
-    ) -> Iterable[PreprocessorOutput]:
+    def process(self, inputs: Iterable[I], *args, **kwargs) -> Iterable[O | Error]:
         """Generic processing task"""
+
+    @final
+    def process_results(
+        self, inputs: Iterable[I], *args, skip_errors: bool = False, **kwargs
+    ) -> Iterable[O]:
+        for r in self.process(inputs, *args, **kwargs):
+            if not skip_errors and isinstance(r, Error):
+                raise RuntimeError(f"error: {r}")
+            yield r
 
     def __enter__(self):
         return self
@@ -44,6 +53,7 @@ class ASRTask(AbstractContextManager, ABC):
 
 InputItem: TypeAlias = "np.ndarray | torch.Tensor | str | Path"
 ASRInput: TypeAlias = "Iterable[InputItem] | InputItem"
+SampleRate = Iterable[int] | int
 
 
 class Preprocessor(ASRTask, RegistrableFromConfig):
@@ -51,10 +61,10 @@ class Preprocessor(ASRTask, RegistrableFromConfig):
     def process(
         self,
         inputs: ASRInput,
-        input_sample_rates: Iterable[int] | int | None = None,
+        sample_rates: SampleRate | None = None,
         output_dir: Path | None = None,
         **kwargs,
-    ) -> Iterable[list[PreprocessorOutput]]:
+    ) -> Iterable[tuple[ProcessedAudioSegment, ...] | Error]:
         """Generic processing task"""
 
 
@@ -76,8 +86,8 @@ class InferenceRunner(ASRTask, RegistrableFromConfig):
 
     @abstractmethod
     def process(
-        self, inputs: Iterable[list[AudioSegment]], *args, **kwargs
-    ) -> Iterable[ASRResult]: ...
+        self, inputs: Iterable[tuple[ProcessedAudioSegment, ...]], *args, **kwargs
+    ) -> Iterable[ASRResult | Error]: ...
 
     @property
     def _torch_device(self) -> "torch.device":
@@ -97,4 +107,34 @@ class InferenceRunner(ASRTask, RegistrableFromConfig):
 class Postprocessor(ASRTask, RegistrableFromConfig):
     def process(
         self, inputs: Iterable[ASRResult], *args, **kwargs
-    ) -> Iterable[ASRResult]: ...
+    ) -> Iterable[ASRResult | Error]: ...
+
+
+class Batcher[I, C](RegistrableFromConfig):
+    def __init__(self, items: Iterable[I | Error], config: C):
+        self._items = iter(items)
+        self._errors = []
+        self._config = config
+
+    @abstractmethod
+    def results(self) -> Iterable[tuple[I, ...]]: ...
+
+    @final
+    @property
+    def errors(self) -> list[Error]:
+        try:
+            next(self._items)
+            msg = (
+                f"{Batcher.results.__name__} must be fully consumed to collect"
+                f" and get all errors"
+            )
+            raise RuntimeError(msg)
+        except StopIteration:
+            pass
+        return self._errors
+
+    @classmethod
+    def _from_config(
+        cls, config: BaseBatcherConfig, *, items: Iterable[I | Error]
+    ) -> FromConfig:
+        return cls(config=config, items=items)

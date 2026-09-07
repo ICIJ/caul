@@ -4,7 +4,6 @@ from caul_core import TorchDevice
 
 
 class TrtInferenceMixin:
-
     def __init__(self):
         self._encoder = None
         self._decoder = None
@@ -14,7 +13,7 @@ class TrtInferenceMixin:
 
         self._encoder = None
         self._decoder = None
-        if self._device == torch.device(TorchDevice.GPU):
+        if hasattr(self, "_device") and self._device == torch.device(TorchDevice.GPU):
             torch.cuda.empty_cache()
         gc.collect()
 

@@ -1,19 +1,19 @@
 from .inference import (
+    FasterWhisperInferenceRunner,
+    FireRedASR2InferenceRunner,
     ParakeetInferenceRunner,
     ParakeetTrtInferenceRunner,
     WhisperTrtInferenceRunner,
-    FasterWhisperInferenceRunner,
-    FireRedASR2InferenceRunner,
 )
 from .postprocessing import (
-    ParakeetPostprocessor,
     FasterWhisperPostprocessor,
     FireRedASR2Postprocessor,
+    ParakeetPostprocessor,
     WhisperTrtPostprocessor,
 )
 from .preprocessing import (
-    ParakeetPreprocessor,
     FasterWhisperPreprocessor,
     FireRedASR2Preprocessor,
+    ParakeetPreprocessor,
     WhisperTrtPreprocessor,
 )

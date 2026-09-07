@@ -9,8 +9,8 @@ from caul_core import (
     DEFAULT_SAMPLE_RATE,
     ASRResult,
     FasterWhisperInferenceRunnerConfig,
-    FSPreprocessedSegment,
-    MemoryPreprocessedSegment,
+    FSProcessedSegment,
+    MemoryProcessedSegment,
     SegmentIndex,
     SegmentMetadata,
 )
@@ -113,7 +113,7 @@ def _fs_backed(
     path = root / name
     audio = torch.zeros(1, int(duration_s * 16000))
     AudioEncoder(audio, sample_rate=DEFAULT_SAMPLE_RATE).to_file(path)
-    return FSPreprocessedSegment(
+    return FSProcessedSegment(
         path=path, metadata=SegmentMetadata(duration_s=duration_s, index=index)
     )
 
@@ -121,7 +121,7 @@ def _fs_backed(
 def _memory_backed(index: SegmentIndex | None = None, duration_s=2.0):
     if index is None:
         index = SegmentIndex()
-    return MemoryPreprocessedSegment(
+    return MemoryProcessedSegment(
         metadata=SegmentMetadata(duration_s=duration_s, index=index),
         tensor=torch.zeros(int(duration_s * 16000)),
     )

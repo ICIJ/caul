@@ -1,13 +1,12 @@
 import pytest
-
 from caul.tasks import (
     FasterWhisperInferenceRunner,
+    FireRedASR2InferenceRunner,
+    FireRedASR2Postprocessor,
+    FireRedASR2Preprocessor,
     ParakeetInferenceRunner,
     ParakeetPostprocessor,
     ParakeetPreprocessor,
-    FireRedASR2Preprocessor,
-    FireRedASR2InferenceRunner,
-    FireRedASR2Postprocessor,
 )
 from caul_core import (
     ASRPipeline,
