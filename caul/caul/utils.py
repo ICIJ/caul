@@ -1,8 +1,8 @@
 import logging
 import tempfile
 from functools import lru_cache
-from pathlib import Path
-from typing import TYPE_CHECKING
+from pathlib import Path, PurePosixPath
+from typing import TYPE_CHECKING, Iterable
 
 from caul_core import PreprocessorOutput, TorchDevice
 from .filesystem import save_tensor
@@ -142,6 +142,29 @@ def cache_hf_repo(
         force_download=False,
         token=get_token(),
     )
+
+
+def cache_hf_model(
+    model_family: str,
+    models: Iterable[str],
+    model_ext: str,
+    library_name: str | None = None,
+    cache_dir: Path | None = None,
+) -> None:
+    from huggingface_hub.constants import (
+        HF_HUB_CACHE,
+    )  # pylint: disable=import-outside-toplevel
+
+    if cache_dir is not None and str(cache_dir) != HF_HUB_CACHE:
+        msg = f"{model_family} models must be loaded from {HF_HUB_CACHE}, "
+        raise ValueError(msg)
+
+    for m in models:
+        logger.info("caching %s model %s", model_family, m)
+        filename = PurePosixPath(m).name + model_ext
+        cache_hf_model_file(
+            repo_id=m, filename=filename, library_name=library_name, cache_dir=cache_dir
+        )
 
 
 @lru_cache(maxsize=None)

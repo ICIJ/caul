@@ -13,7 +13,7 @@ from caul_core import (
     ParakeetInferenceRunnerConfig,
     InferenceRunner,
 )
-from ...utils import cache_hf_model_file
+from ...utils import cache_hf_model
 
 logger = logging.getLogger(__name__)
 
@@ -87,23 +87,13 @@ class ParakeetInferenceRunner(InferenceRunner):
 
     @classmethod
     def cache_models(cls, cache_dir: Path | None = None) -> None:
-        from huggingface_hub.constants import (
-            HF_HUB_CACHE,
-        )  # pylint: disable=import-outside-toplevel
-
-        if cache_dir is not None and str(cache_dir) != HF_HUB_CACHE:
-            msg = (
-                f"parakeet model are sadly only loaded from the HF cache hub"
-                f" ({HF_HUB_CACHE}), can't load them from elsewhere"
-            )
-            raise ValueError(msg)
-
-        for m in cls._models:
-            logger.info("caching parakeet model %s", m)
-            filenaname = PurePosixPath(m).name + ".nemo"
-            cache_hf_model_file(
-                repo_id=m, filename=filenaname, library_name="nemo", cache_dir=cache_dir
-            )
+        cache_hf_model(
+            model_family=ASRModel.PARAKEET,
+            models=cls._models,
+            model_ext=".nemo",
+            library_name="nemo",
+            cache_dir=cache_dir,
+        )
 
     def _transcribe(
         self, audio_inputs: Iterable["torch.Tensor"], **kwargs
