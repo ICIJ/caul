@@ -2,6 +2,7 @@ import logging
 from pathlib import Path
 
 from caul_core import ASRModel
+from . import ParakeetTrtInferenceRunner
 
 from .tasks import (
     FasterWhisperInferenceRunner,
@@ -28,6 +29,7 @@ def cache_models(asr_model: ASRModel | None, cache_dir: Path) -> None:
         case ASRModel.PARAKEET_TRT:
             cache_fns = [
                 ASRPreprocessorMixin.cache_models,
+                ParakeetTrtInferenceRunner.cache_models,
             ]
         case ASRModel.FASTER_WHISPER:
             cache_fns = [
