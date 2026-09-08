@@ -1,25 +1,23 @@
 import math
 from collections import namedtuple
+from pathlib import Path
 
 import pytest
 import torch
+from caul.tasks.inference.faster_whisper import FasterWhisperInferenceRunner
+from caul_core import (
+    DEFAULT_SAMPLE_RATE,
+    ASRResult,
+    FasterWhisperInferenceRunnerConfig,
+    FSPreprocessedSegment,
+    MemoryPreprocessedSegment,
+    SegmentIndex,
+    SegmentMetadata,
+)
 from faster_whisper import BatchedInferencePipeline
 from huggingface_hub.constants import HF_HUB_CACHE
 from numpy import ndarray
 from torchcodec.encoders import AudioEncoder
-
-from caul_core import FasterWhisperInferenceRunnerConfig
-from caul_core import DEFAULT_SAMPLE_RATE
-from caul_core import (
-    ASRResult,
-    InputMetadata,
-    PreprocessedInput,
-    PreprocessedInputWithTensor,
-)
-from caul.tasks.inference.faster_whisper import (
-    FasterWhisperInferenceRunner,
-)
-from caul.model_cache import cache_faster_whisper_models
 
 EN_TEXT_A = "hello"
 EN_TEXT_B = "world"
@@ -107,38 +105,44 @@ class MockFasterWhisperInferenceRunner(FasterWhisperInferenceRunner):
         return self
 
 
-def _file_backed(tmp_path, name="audio.wav", input_ordering=0, duration_s=2.0):
-    path = tmp_path / name
+def _fs_backed(
+    root: Path, name="audio.wav", index: SegmentIndex | None = None, duration_s=2.0
+):
+    if index is None:
+        index = SegmentIndex()
+    path = root / name
     audio = torch.zeros(1, int(duration_s * 16000))
     AudioEncoder(audio, sample_rate=DEFAULT_SAMPLE_RATE).to_file(path)
-    return PreprocessedInput(
-        metadata=InputMetadata(
-            duration_s=duration_s,
-            input_ordering=input_ordering,
-            preprocessed_file_path=path,
-        )
+    return FSPreprocessedSegment(
+        path=path, metadata=SegmentMetadata(duration_s=duration_s, index=index)
     )
 
 
-def _tensor_backed(input_ordering=0, duration_s=2.0):
-    return PreprocessedInputWithTensor(
-        metadata=InputMetadata(duration_s=duration_s, input_ordering=input_ordering),
+def _memory_backed(index: SegmentIndex | None = None, duration_s=2.0):
+    if index is None:
+        index = SegmentIndex()
+    return MemoryPreprocessedSegment(
+        metadata=SegmentMetadata(duration_s=duration_s, index=index),
         tensor=torch.zeros(int(duration_s * 16000)),
     )
 
 
 class TestASRResultFromFasterWhisper:
     def test__multiple_segments_build_transcription(self):
-        result = ASRResult.from_faster_whisper_result(MOCK_SEGMENTS, input_ordering=0)
+        result = ASRResult.from_faster_whisper_result(
+            MOCK_SEGMENTS, index=SegmentIndex()
+        )
 
-        assert result.input_ordering == 0
+        assert result.index == SegmentIndex()
         assert result.transcription == [
             (SEG_START_A, SEG_END_A, EN_TEXT_A),
             (SEG_START_B, SEG_END_B, EN_TEXT_B),
         ]
 
     def test__score_is_duration_weighted_avg_logprob(self):
-        result = ASRResult.from_faster_whisper_result(MOCK_SEGMENTS, input_ordering=0)
+        result = ASRResult.from_faster_whisper_result(
+            MOCK_SEGMENTS, index=SegmentIndex()
+        )
 
         dur_a = SEG_END_A - SEG_START_A
         dur_b = SEG_END_B - SEG_START_B
@@ -147,13 +151,15 @@ class TestASRResultFromFasterWhisper:
 
     def test__single_segment(self):
         seg = _MockSegment(1.0, 4.0, "only", -0.1)
-        result = ASRResult.from_faster_whisper_result([seg], input_ordering=2)
+        result = ASRResult.from_faster_whisper_result(
+            [seg], index=SegmentIndex(audio=2)
+        )
 
         assert result.transcription == [(1.0, 4.0, "only")]
         assert result.score == pytest.approx(math.exp(-0.1), abs=1e-9)
 
     def test__empty_segments_give_empty_transcription_and_unit_score(self):
-        result = ASRResult.from_faster_whisper_result([], input_ordering=0)
+        result = ASRResult.from_faster_whisper_result([], index=SegmentIndex())
 
         assert result.transcription == []
         assert result.score == -1.0
@@ -165,8 +171,8 @@ class TestFasterWhisperInferenceRunner:
 
     def test__yields_one_result_per_input_in_batch(self, tmp_path):
         inputs = [
-            _file_backed(tmp_path, "a.wav", input_ordering=0),
-            _file_backed(tmp_path, "b.wav", input_ordering=1),
+            _fs_backed(tmp_path, "a.wav", index=SegmentIndex(audio=0)),
+            _fs_backed(tmp_path, "b.wav", index=SegmentIndex(audio=1)),
         ]
         with self._runner:
             results = list(self._runner.process([inputs]))
@@ -174,17 +180,18 @@ class TestFasterWhisperInferenceRunner:
         assert len(results) == 2
         assert all(isinstance(r, ASRResult) for r in results)
 
-    def test__preserves_input_ordering(self, tmp_path):
+    def test__preserves_index(self, tmp_path):
         inputs = [
-            _file_backed(tmp_path, f"{i}.wav", input_ordering=i) for i in range(3)
+            _fs_backed(tmp_path, f"{i}.wav", index=SegmentIndex(audio=i))
+            for i in range(3)
         ]
         with self._runner:
             results = list(self._runner.process([inputs]))
-
-        assert [r.input_ordering for r in results] == [0, 1, 2]
+        expected = [SegmentIndex(audio=i) for i in range(3)]
+        assert [r.index for r in results] == expected
 
     def test__results_contain_transcription(self, tmp_path):
-        inp = _file_backed(tmp_path, input_ordering=0)
+        inp = _fs_backed(tmp_path, index=SegmentIndex(audio=0))
         with self._runner:
             results = list(self._runner.process([[inp]]))
 
@@ -199,8 +206,8 @@ class TestFasterWhisperInferenceRunner:
         assert results == []
 
     def test__multiple_batches_each_yield_results(self, tmp_path):
-        batch_a = [_file_backed(tmp_path, "a.wav", input_ordering=0)]
-        batch_b = [_file_backed(tmp_path, "b.wav", input_ordering=1)]
+        batch_a = [_fs_backed(tmp_path, "a.wav", index=SegmentIndex(audio=0))]
+        batch_b = [_fs_backed(tmp_path, "b.wav", index=SegmentIndex(audio=1))]
         with self._runner:
             results = list(self._runner.process([batch_a, batch_b]))
 

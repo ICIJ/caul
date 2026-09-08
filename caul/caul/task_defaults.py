@@ -1,8 +1,7 @@
+from collections.abc import Iterable
 from itertools import groupby
-from typing import Iterable
 
-from caul_core import DEFAULT_BATCH_SIZE
-from caul_core import ASRResult, PreprocessorOutput
+from caul_core import DEFAULT_BATCH_SIZE, ASRResult, PreprocessorOutput, SegmentIndex
 
 
 def generic_batching_fn(
@@ -32,14 +31,32 @@ def generic_unbatching_fn(batched_results: Iterable[ASRResult]) -> Iterable[ASRR
     :return: list[ParakeetModelHandlerResult]
     """
     seen: set[int] = set()
-    results_grouped_by_index = groupby(batched_results, key=lambda r: r.input_ordering)
-    for input_ordering, group_results in results_grouped_by_index:
+    by_audio = groupby(batched_results, key=lambda r: r.index.audio)
+    for audio_index, seg_results in by_audio:
+        seg_results = list(seg_results)
+        if audio_index in seen:
+            msg = (
+                f"expected contiguous segments, already processed segments from "
+                f"audio of index {audio_index}"
+            )
+            raise ValueError(msg)
         # Drop segments with no recognized speech
-        group_results = [r for r in group_results if r.transcription]
-        group_results = sorted(group_results, key=lambda r: r.transcription[0])
-        if input_ordering in seen:
-            raise ValueError("expected contiguous batches !")
-        seen.add(input_ordering)
-        base = ASRResult(input_ordering=input_ordering, transcription=[], score=1.0)
-        merged_results = sum(group_results, base)
+        expected_indices = list(range(len(seg_results)))
+        segment_indices = [r.index.segment for r in seg_results]
+        if expected_indices != segment_indices:
+            msg = (
+                f"received audio segment results for audio {audio_index}"
+                f" out of order: {segment_indices}"
+            )
+            raise ValueError(msg)
+        seg_results = [r for r in seg_results if r.transcription]
+        seg_results = sorted(seg_results, key=lambda r: r.transcription[0])
+
+        seen.add(audio_index)
+        base = ASRResult(
+            index=SegmentIndex(audio=audio_index, segment=0),
+            transcription=[],
+            score=1.0,
+        )
+        merged_results = sum(seg_results, base)
         yield merged_results

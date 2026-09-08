@@ -119,15 +119,15 @@ class TestASRPreprocessorChunking:
         indices = sorted(int(f.stem.rsplit("-", 1)[-1]) for f in output_dir.iterdir())
         assert indices == list(range(len(results)))
 
-    def test__all_segments_share_input_ordering(self, long_wav: Path):
-        """All segments produced from one file have the same input_ordering"""
+    def test__all_segments_share_index(self, long_wav: Path):
+        """All segments produced from one file have the same index"""
         results = list(_chunking_preprocessor().preprocess_inputs([long_wav]))
-        assert all(r.metadata.input_ordering == 0 for r in results)
+        assert all(r.metadata.index.audio == 0 for r in results)
 
     def test__two_large_files_have_distinct_orderings(self, long_wav: Path):
-        """Two chunked files produce segments with input_ordering 0 and 1"""
+        """Two chunked files produce segments with index 0 and 1"""
         results = list(_chunking_preprocessor().preprocess_inputs([long_wav, long_wav]))
-        assert {r.metadata.input_ordering for r in results} == {0, 1}
+        assert {r.metadata.index.audio for r in results} == {0, 1}
 
     def test__decode_failure_yields_error_record_instead_of_raising(self, monkeypatch):
         """A ValueError during decoding (as, for instance, when there is no audio stream
@@ -146,8 +146,6 @@ class TestASRPreprocessorChunking:
         )
 
         assert len(results) == 1
-        assert results[0].metadata.input_ordering == 0
-        assert results[0].metadata.preprocessed_file_path is None
-        error = results[0].metadata.error
-        assert isinstance(error, Error)
-        assert error.title == "UnreadableAudio"
+        assert isinstance(results[0], Error)
+        error = results[0]
+        assert error.title == "UnprocessableAudio"

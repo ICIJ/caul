@@ -13,7 +13,12 @@ if TYPE_CHECKING:
 
 class SegmentationFunction(Protocol):
     def __call__(
-        self, audio_tensor: "torch.Tensor", *args, sample_rate: int, **kwargs
+        self,
+        audio_tensor: "torch.Tensor",
+        *args,
+        sample_rate: int,
+        max_segment_len_s: float,
+        **kwargs,
     ) -> list[TensorSegment]: ...
 
 

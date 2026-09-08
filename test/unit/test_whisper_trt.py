@@ -1,6 +1,6 @@
 import math
 import sys
-from typing import Callable
+from collections.abc import Callable
 from unittest.mock import MagicMock, patch
 
 import torch
@@ -19,18 +19,19 @@ for _mod in [
 sys.modules["tensorrt_llm._utils"].trt_dtype_to_torch = lambda _: torch.float32
 sys.modules["tensorrt_llm._utils"].torch_dtype_to_trt = MagicMock()
 
-from caul_core import (
-    WHISPER_TRT_HOP_LENGTH,
-    WHISPER_TRT_N_FFT,
-    WHISPER_TRT_N_MELS,
-    WHISPER_TRT_ENCODER_DOWNSAMPLING_FACTOR,
-    DEFAULT_SAMPLE_RATE,
-    WHISPER_TRT_MAX_MEL_PADDING_LEN,
-)
 from caul.tasks.inference.whisper_trt import WhisperTrtInferenceRunner
 from caul.tasks.preprocessing.whisper_trt import WhisperTrtPreprocessor
-from caul_core import InputMetadata, PreprocessedInputWithTensor
-
+from caul_core import (
+    DEFAULT_SAMPLE_RATE,
+    WHISPER_TRT_ENCODER_DOWNSAMPLING_FACTOR,
+    WHISPER_TRT_HOP_LENGTH,
+    WHISPER_TRT_MAX_MEL_PADDING_LEN,
+    WHISPER_TRT_N_FFT,
+    WHISPER_TRT_N_MELS,
+    MemoryPreprocessedSegment,
+    SegmentIndex,
+    SegmentMetadata,
+)
 
 _BATCH_SIZE = 2
 _PROMPT_IDS = [50258, 50259, 50360, 50363]  # fake prompt token ids
@@ -90,10 +91,10 @@ def _make_runner(
 
 def _make_batch(
     batch_size: int = _BATCH_SIZE, t: int = 100
-) -> list[PreprocessedInputWithTensor]:
+) -> list[MemoryPreprocessedSegment]:
     return [
-        PreprocessedInputWithTensor(
-            metadata=InputMetadata(input_ordering=i, duration_s=1.0),
+        MemoryPreprocessedSegment(
+            metadata=SegmentMetadata(index=SegmentIndex(audio=i), duration_s=1.0),
             tensor=torch.zeros(1, WHISPER_TRT_N_MELS, t),
         )
         for i in range(batch_size)
@@ -112,9 +113,7 @@ class TestWhisperTrtPreprocessor:
     def test__output_shape_has_correct_mel_dim(self):
         preprocessor = self._preprocessor
         with preprocessor:
-            out = preprocessor._preprocess_segment(
-                torch.zeros(DEFAULT_SAMPLE_RATE)
-            )
+            out = preprocessor._preprocess_segment(torch.zeros(DEFAULT_SAMPLE_RATE))
         assert out.ndim == 3
         assert out.shape[1] == WHISPER_TRT_N_MELS
 
@@ -134,9 +133,7 @@ class TestWhisperTrtPreprocessor:
 
     def test__normalized_values_in_bounded_range(self):
         """After (log10 + 4) / 4, values for real audio stay within bounded range"""
-        out = self._preprocessor._preprocess_segment(
-            torch.randn(DEFAULT_SAMPLE_RATE)
-        )
+        out = self._preprocessor._preprocess_segment(torch.randn(DEFAULT_SAMPLE_RATE))
         assert out.min() >= -2.0
         assert out.max() <= 3.0
 
@@ -207,12 +204,12 @@ class TestInferenceRunnerRunEncoder:
         inputs_a = torch.zeros(1, WHISPER_TRT_N_MELS, t_a)
         inputs_b = torch.zeros(1, WHISPER_TRT_N_MELS, t_b)
         batch = [
-            PreprocessedInputWithTensor(
-                metadata=InputMetadata(input_ordering=0, duration_s=1.0),
+            MemoryPreprocessedSegment(
+                metadata=SegmentMetadata(index=SegmentIndex(audio=0), duration_s=1.0),
                 tensor=inputs_a,
             ),
-            PreprocessedInputWithTensor(
-                metadata=InputMetadata(input_ordering=1, duration_s=1.0),
+            MemoryPreprocessedSegment(
+                metadata=SegmentMetadata(index=SegmentIndex(audio=1), duration_s=1.0),
                 tensor=inputs_b,
             ),
         ]
@@ -325,9 +322,9 @@ class TestInferenceRunnerProcess:
         results = list(self._inference_runner().process([_make_batch(_BATCH_SIZE)]))
         assert len(results) == _BATCH_SIZE
 
-    def test__input_ordering_preserved_in_results(self):
+    def test__index_preserved_in_results(self):
         results = list(self._inference_runner().process([_make_batch(_BATCH_SIZE)]))
-        assert [r.input_ordering for r in results] == list(range(_BATCH_SIZE))
+        assert [r.index.audio for r in results] == list(range(_BATCH_SIZE))
 
     def test__transcription_entries_are_start_end_text_tuples(self):
         results = list(self._inference_runner().process([_make_batch(_BATCH_SIZE)]))

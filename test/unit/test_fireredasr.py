@@ -1,19 +1,14 @@
 import pytest
 import torch
+from caul.tasks import FireRedASR2InferenceRunner, FireRedASR2Preprocessor
+from caul_core import (
+    FIREREDASR2_INFERENCE_MAX_FRAMES,
+    ASRResult,
+    FireRedASR2InferenceRunnerConfig,
+    SegmentIndex,
+)
 from fireredasr2s.fireredasr2 import FireRedAsr2
 from huggingface_hub.constants import HF_HUB_CACHE
-
-from caul_core import FIREREDASR2_INFERENCE_MAX_FRAMES
-from caul_core import (
-    ASRResult,
-    PreprocessedInput,
-    PreprocessedInputWithTensor,
-    InputMetadata,
-)
-from caul_core import FireRedASR2InferenceRunnerConfig
-from caul.tasks import FireRedASR2InferenceRunner, FireRedASR2Preprocessor
-from caul.model_cache import cache_fireredasr2_models
-
 
 ZH_TEXT = "你好世界"
 ZH_CONFIDENCE = 0.97
@@ -51,9 +46,9 @@ class MockFireRedASR2InferenceRunner(FireRedASR2InferenceRunner):
 class TestASRResultFromFireRedASR2:
     def test__result_with_timestamps(self):
         result = _make_result("utt0")
-        asr = ASRResult.from_fireredasr2_result(result, input_ordering=0)
+        asr = ASRResult.from_fireredasr2_result(result, index=SegmentIndex(audio=0))
 
-        assert asr.input_ordering == 0
+        assert asr.index == SegmentIndex(audio=0)
         assert len(asr.transcription) == 1
         start, end, text = asr.transcription[0]
         assert start == pytest.approx(ZH_TIMESTAMP[0][1])
@@ -63,7 +58,7 @@ class TestASRResultFromFireRedASR2:
 
     def test__result_without_timestamps(self):
         result = {"uttid": "utt0", "text": ZH_TEXT, "confidence": 0.9, "dur_s": 3.5}
-        asr = ASRResult.from_fireredasr2_result(result, input_ordering=1)
+        asr = ASRResult.from_fireredasr2_result(result, index=SegmentIndex(audio=1))
 
         assert len(asr.transcription) == 1
         start, end, text = asr.transcription[0]
@@ -73,12 +68,12 @@ class TestASRResultFromFireRedASR2:
 
     def test__result_empty_text(self):
         result = {"uttid": "utt0", "text": "", "confidence": 0.5, "dur_s": 1.0}
-        asr = ASRResult.from_fireredasr2_result(result, input_ordering=0)
+        asr = ASRResult.from_fireredasr2_result(result, index=SegmentIndex(audio=0))
         assert asr.transcription == []
 
     def test__result_whitespace_only_text(self):
         result = {"uttid": "utt0", "text": "   ", "confidence": 0.5, "dur_s": 1.0}
-        asr = ASRResult.from_fireredasr2_result(result, input_ordering=0)
+        asr = ASRResult.from_fireredasr2_result(result, index=SegmentIndex(audio=0))
         assert asr.transcription == []
 
 
@@ -107,39 +102,13 @@ class TestFireRedASR2InferenceRunner:
 
         assert len(results) == 2
         assert all(isinstance(r, ASRResult) for r in results)
-        assert {r.input_ordering for r in results} == {0, 1}
+        assert [r.index.audio for r in results] == [0, 1]
 
     def test__skips_empty_batches(self):
         """Empty batches should not cause errors and should be silently skipped"""
         with self._inference_runner:
             results = list(self._inference_runner.process([[], []]))
         assert results == []
-
-    def test__processes_input_without_output_dir_with_tmp_dirs_enabled(self):
-        """We should still process inputs without file paths if temporary dir creation is enabled"""
-        mock_config = FireRedASR2InferenceRunnerConfig(tmp_dir_fallback=True)
-        inference_runner = MockFireRedASR2InferenceRunner(config=mock_config)
-        batches = [
-            [
-                PreprocessedInputWithTensor(
-                    metadata=InputMetadata(duration_s=1), tensor=torch.zeros([1])
-                )
-            ]
-        ]
-
-        with inference_runner:
-            results = list(inference_runner.process(batches))
-
-        assert len(results) == 1
-
-    def test__does_not_process_input_without_output_dir_with_tmp_dirs_disabled(self):
-        """We shouldn't process any input without a file path if an output_dir isn't specified and temporary dir creation is disabled"""
-        batches = [[PreprocessedInput(metadata=InputMetadata(duration_s=1))]]
-
-        with self._inference_runner:
-            results = list(self._inference_runner.process(batches))
-
-        assert len(results) == 0
 
     @pytest.mark.no_ci
     def test__cache_to_dir_and_load_from_it(self) -> None:

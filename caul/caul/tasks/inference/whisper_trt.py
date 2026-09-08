@@ -1,7 +1,9 @@
 import base64
 import math
+from collections import OrderedDict
+from collections.abc import Callable, Iterable
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, Iterable, OrderedDict
+from typing import TYPE_CHECKING
 
 from caul_core import (
     WHISPER_TRT_ENCODER_INPUT_FEATURES,
@@ -17,8 +19,8 @@ from caul_core import (
     WHISPER_TRT_WORLD_SIZE,
     ASRModel,
     ASRResult,
+    AudioSegment,
     InferenceRunner,
-    PreprocessorOutput,
     TorchDevice,
     TrtLlmDecoderConfig,
     TrtLlmEncoderConfig,
@@ -218,19 +220,9 @@ class WhisperTrtInferenceRunner(InferenceRunner, TrtInferenceMixin):
         return self
 
     def process(  # pylint: disable=too-many-locals
-        self,
-        inputs: Iterable[list[PreprocessorOutput]],
-        *args,
-        **kwargs,
+        self, inputs: Iterable[list[AudioSegment]], *args, **kwargs
     ) -> Iterable[ASRResult]:
         import torch  # pylint: disable=import-outside-toplevel
-        from caul_core import (
-            PreprocessedInput,
-            PreprocessedInputWithTensor,
-        )  # pylint: disable=import-outside-toplevel
-
-        if isinstance(inputs, (PreprocessedInput, PreprocessedInputWithTensor)):
-            inputs = [inputs]
 
         for input_batch in inputs:
             if not input_batch or not hasattr(input_batch[0], "tensor"):
@@ -281,12 +273,8 @@ class WhisperTrtInferenceRunner(InferenceRunner, TrtInferenceMixin):
             ):
                 transcription = self._decode_model_output(decoder_out[0])
 
-                input_ordering_idx = input_batch[
-                    decoder_out_idx
-                ].metadata.input_ordering
-                yield ASRResult(
-                    transcription=transcription, input_ordering=input_ordering_idx
-                )
+                input_ordering_idx = input_batch[decoder_out_idx].metadata.index
+                yield ASRResult(transcription=transcription, index=input_ordering_idx)
 
     def _run_encoder(
         self,

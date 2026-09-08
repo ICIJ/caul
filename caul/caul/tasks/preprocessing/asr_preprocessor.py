@@ -11,18 +11,21 @@ from caul_core import (
     DEFAULT_LARGE_FILE_THRESHOLD_BYTES,
     DEFAULT_MAX_FRAMES,
     DEFAULT_SAMPLE_RATE,
+    ASRInput,
+    AudioMetadata,
     BasePreprocessorConfig,
-    InputMetadata,
-    PreprocessedInput,
-    PreprocessedInputWithTensor,
+    Error,
+    FSPreprocessedSegment,
+    InputItem,
+    MemoryPreprocessedSegment,
     Preprocessor,
     PreprocessorOutput,
+    SegmentIndex,
+    SegmentMetadata,
 )
-from caul_core.asr_task import PreprocessorInput
-from caul_core.objects import Error
 from torch import Tensor
 
-from caul.exception import UnreadableAudio
+from caul.exception import UnprocessableAudio, UnreadableAudio
 from caul.filesystem import save_tensor
 from caul.segmentation import segment_by_silence
 from caul.segmentation.methods import SegmentationFunction
@@ -73,7 +76,7 @@ class ASRPreprocessorMixin(Preprocessor):
 
     def process(
         self,
-        inputs: "Iterable[np.ndarray | torch.Tensor | str] | np.ndarray | torch.Tensor | str",
+        inputs: ASRInput,
         input_sample_rates: Iterable[int] | int | None = None,
         output_dir: Path | None = None,
         **kwargs,
@@ -88,18 +91,18 @@ class ASRPreprocessorMixin(Preprocessor):
         preprocessed_inputs = self.preprocess_inputs(
             inputs, input_sample_rates, output_dir=output_dir
         )
-        for batch in self._batch_fn(preprocessed_inputs, self._batch_size):
+        for batch in self._batch_fn(preprocessed_inputs, batch_size=self._batch_size):
             for start in range(0, len(batch), self._batch_size):
                 yield batch[start : start + self._batch_size]
 
     def preprocess_inputs(  # pylint: disable=too-many-locals
         self,
-        inputs: PreprocessorInput,
+        inputs: ASRInput,
         input_sample_rates: Iterable[int] | int | None = None,
         output_dir: str | Path | None = None,
     ) -> Iterable[PreprocessorOutput]:
         """Accepts audio inputs as a list of file paths, np.ndarray, or torch.Tensor, converting to
-        torch.Tensor, normalizing, segmenting inputs longer than segment_max and batching segments
+        torch.Tensor, normalizing, segmenting inputs longer than seg_max and batching segments
 
         :param inputs: List of np.ndarray or torch.Tensor or str, or a singleton of same types
         :param input_sample_rates: sample rate(s) of audio inputs
@@ -115,55 +118,58 @@ class ASRPreprocessorMixin(Preprocessor):
             inputs_and_sample_rates = zip(inputs, input_sample_rates, strict=False)
         else:
             inputs_and_sample_rates = zip(inputs, input_sample_rates, strict=True)
-
-        audio_path, audio_format = None, None
-        for input_idx, (audio_input, sample_rate) in enumerate(inputs_and_sample_rates):
-            if isinstance(audio_input, str):
-                audio_input = Path(audio_input)
+        seg_meta = None
+        for audio_idx, (audio_input, sample_rate) in enumerate(inputs_and_sample_rates):
+            audio_meta = self._audio_meta_from_input(audio_idx, audio_input)
             try:
-                audio, sample_rate, audio_path, audio_format = self._load_audio(
-                    audio_input, sample_rate
-                )
-                segments = self._segment_audio(audio, sample_rate)
-                for seg_idx, (audio_segment, segment_duration) in enumerate(segments):
-                    audio_segment = self._preprocess_segment(audio_segment)
-                    segment_path = None
-                    if output_dir is not None:
-                        segment_path = _persist_segment(
-                            audio_segment, seg_idx, audio_path, output_dir=output_dir
-                        ).relative_to(output_dir)
-                    metadata = InputMetadata(
-                        input_ordering=input_idx,
-                        duration_s=segment_duration,
-                        input_format=audio_format,
-                        input_file_path=audio_path,
-                        preprocessed_file_path=segment_path,
+                audio, sample_rate = self._load_audio(audio_input, sample_rate)
+                segs = self._segment_audio(audio, sample_rate)
+                for seg_idx, (audio_seg, seg_duration) in enumerate(segs):
+                    seg_idx = SegmentIndex(audio=audio_idx, segment=seg_idx)
+                    seg_meta = SegmentMetadata(
+                        index=seg_idx,
+                        audio_format=audio_meta.audio_format,
+                        audio_path=audio_meta.audio_path,
+                        duration_s=seg_duration,
                     )
-                    if metadata.preprocessed_file_path is None:
-                        yield PreprocessedInputWithTensor(
-                            metadata=metadata, tensor=audio_segment
+                    audio_seg = self._preprocess_segment(audio_seg)
+                    if output_dir is not None:
+                        seg_path = _persist_seg(
+                            audio_seg,
+                            seg_idx.segment,
+                            audio_meta.audio_path,
+                            output_dir=output_dir,
+                        ).relative_to(output_dir)
+                        res = FSPreprocessedSegment(
+                            metadata=seg_meta.now(), path=seg_path
                         )
                     else:
-                        yield PreprocessedInput(metadata=metadata)
-                    seg_idx += 1
+                        res = MemoryPreprocessedSegment(
+                            metadata=seg_meta.now(), tensor=audio_seg
+                        )
+                    yield res
             # Catch expected audio processing errors, let the other stop the processing
             # (implem bug or unexpected errors which should be dealt with)
-            except self._reported_errors as e:
-                if audio_format is not None:
-                    # We just call logger.exception which will log the full trace
-                    logger.exception(
-                        "error while preprocessing audio %s. Skipping !", audio_format
-                    )
-                    yield PreprocessedInput(
-                        metadata=InputMetadata(
-                            input_ordering=input_idx,
-                            duration_s=0.0,
-                            input_format=audio_format,
-                            input_file_path=audio_path,
-                            preprocessed_file_path=None,
-                            error=Error.from_exception(e),
-                        )
-                    )
+            except self._reported_errors as cause:
+                meta = seg_meta or audio_meta
+                exc = UnprocessableAudio(meta)
+                msg = f"error while preprocessing segment {seg_meta}. Skipping !"
+                _log_exc_with_full_trace(exc, cause, msg)
+                error = Error.from_exception(exc)
+                yield error
+
+    def _audio_meta_from_input(
+        self, audio_idx: int, audio_input: InputItem
+    ) -> AudioMetadata:
+        audio_format, audio_path = None, None
+        if isinstance(audio_input, str):
+            audio_input = Path(audio_input)
+        if isinstance(audio_input, Path):
+            audio_path = audio_input
+            audio_format = audio_input.suffix.removeprefix(".") or None
+        return AudioMetadata(
+            index=audio_idx, audio_format=audio_format, audio_path=audio_path
+        )
 
     def _segment_audio(
         self, audio_chunks: Iterable[Tensor], sample_rate: int
@@ -173,22 +179,19 @@ class ASRPreprocessorMixin(Preprocessor):
             if n_frames <= self._max_frames:
                 yield (chunk, n_frames / sample_rate)
                 continue
-            max_segment_len_s = self._max_frames / sample_rate
+            max_seg_len_s = self._max_frames / sample_rate
             for s in self._segmentation_fn(
-                chunk, sample_rate=sample_rate, max_segment_len_s=max_segment_len_s
+                chunk, sample_rate=sample_rate, max_segment_len_s=max_seg_len_s
             ):
                 yield (s.tensor, s.duration)
 
     def _load_audio(
         self, audio_input: "np.ndarray | torch.Tensor | Path", sample_rate: int | None
-    ) -> tuple[Iterable[Tensor], int, Path | None, str | None]:
+    ) -> tuple[Iterable[Tensor], int]:
         import numpy as np
 
-        audio_path = None
-        audio_format = None
-        if isinstance(audio_input, Path):
+        if isinstance(audio_input, (Path, str)):
             audio_path = Path(audio_input)
-            audio_format = audio_path.suffix.removeprefix(".") or None
             sample_rate = self._sample_rate
             audio_chunks = self._load_file_as_chunks(audio_path, sample_rate)
         else:
@@ -202,7 +205,7 @@ class ASRPreprocessorMixin(Preprocessor):
             elif len(audio_input.shape) > 1:
                 audio_input = audio_input.squeeze(0)
             audio_chunks = iter([audio_input])
-        return audio_chunks, sample_rate, audio_path, audio_format
+        return audio_chunks, sample_rate
 
     def _preprocess_segment(self, audio_tensor: "torch.Tensor") -> "torch.Tensor":
         """Stub for subclasses that have specific audio preprocessing logic"""
@@ -282,16 +285,16 @@ class ASRPreprocessorMixin(Preprocessor):
         return audio_tensor
 
 
-def _persist_segment(
-    audio_segment: Tensor, index: int, audio_path: Path | None, *, output_dir: Path
+def _persist_seg(
+    audio_seg: Tensor, index: int, audio_path: Path | None, *, output_dir: Path
 ) -> Path:
     original_file = (
         _displayable_prefix(audio_path) if audio_path is not None else uuid.uuid4().hex
     )
-    segment_name = f"{original_file}-{index}.wav"
-    segment_path = output_dir / segment_name
-    save_tensor(audio_segment, segment_path)
-    return segment_path
+    seg_name = f"{original_file}-{index}.wav"
+    seg_path = output_dir / seg_name
+    save_tensor(audio_seg, seg_path)
+    return seg_path
 
 
 def _resample_audio(
@@ -324,3 +327,12 @@ def load_audio(
 
     samples = AudioDecoder(path, num_channels=num_channels, sample_rate=sample_rate)
     return samples.get_all_samples().data.squeeze()
+
+
+def _log_exc_with_full_trace(exc: Exception, cause: Exception, msg: str):
+    try:
+        raise exc from cause
+    except Exception:
+        # we reraise to log with a context trace containing the
+        # original error trace
+        logger.exception(msg)

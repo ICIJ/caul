@@ -1,20 +1,22 @@
 from pathlib import Path
 
 import pytest
-from huggingface_hub.constants import HF_HUB_CACHE
-
-from caul_core import TorchDevice, ASRResult, DEFAULT_SAMPLE_RATE, ASRPipeline
-
 import torch
-
 from caul.tasks import (
     ParakeetInferenceRunner,
     ParakeetPostprocessor,
     ParakeetPreprocessor,
 )
-from caul_core import ParakeetInferenceRunnerConfig
-from caul.model_cache import cache_parakeet_models
-from caul.tasks.preprocessing.parakeet import _parakeet_batching_fn
+from caul.tasks.preprocessing.parakeet import parakeet_batching_fn
+from caul_core import (
+    DEFAULT_SAMPLE_RATE,
+    ASRPipeline,
+    ASRResult,
+    ParakeetInferenceRunnerConfig,
+    SegmentIndex,
+    TorchDevice,
+)
+from huggingface_hub.constants import HF_HUB_CACHE
 
 
 def test__parakeet_preprocess_inputs_to_fs(tmpdir):
@@ -27,7 +29,7 @@ def test__parakeet_preprocess_inputs_to_fs(tmpdir):
     # Then
     assert len(result) == 1
     result = result[0]
-    save_path = output_dir / result.metadata.preprocessed_file_path
+    save_path = output_dir / result.path
     assert save_path.exists()
 
 
@@ -39,32 +41,49 @@ def test__parakeet_batching_unbatching():
 
     audio = [torch.zeros([samples_per_min * i]) for i in [12, 11, 5, 4, 7, 10, 30]]
 
-    result = _parakeet_batching_fn(preprocessor.preprocess_inputs(audio))
+    result = parakeet_batching_fn(preprocessor.preprocess_inputs(audio))
 
-    assert [
-        [(r.metadata.input_ordering, r.tensor.shape[-1] / samples_per_min) for r in re]
-        for re in result
-    ] == [
-        [(0, 12.0)],
-        [(1, 11.0), (2, 5.0), (3, 4.0)],
-        [(4, 7.0), (5, 10.0)],
-        [(6, 20.0)],
-        [(6, 10.0)],
+    expected = [
+        [(SegmentIndex(audio=0, segment=0), 12.0)],
+        [
+            (SegmentIndex(audio=1, segment=0), 11.0),
+            (SegmentIndex(audio=2, segment=0), 5.0),
+            (SegmentIndex(audio=3, segment=0), 4.0),
+        ],
+        [
+            (SegmentIndex(audio=4, segment=0), 7.0),
+            (SegmentIndex(audio=5, segment=0), 10.0),
+        ],
+        [(SegmentIndex(audio=6, segment=0), 20.0)],
+        [(SegmentIndex(audio=6, segment=1), 10.0)],
     ]
+    batches = [
+        [(r.metadata.index, r.tensor.shape[-1] / samples_per_min) for r in re]
+        for re in result
+    ]
+    assert batches == expected
 
 
 def test__parakeet_unbatching_should_raise_for_unordered_inputs():
     # Given
     postprocessor = ParakeetPostprocessor()
     results = [
-        ASRResult(input_ordering=2, transcription=[(1, 2, "two one")], score=2.1),
-        ASRResult(input_ordering=0, transcription=[(0, 1, "zero")], score=0.0),
-        ASRResult(input_ordering=2, transcription=[(2, 3, "two two")], score=2.2),
-        ASRResult(input_ordering=1, transcription=[(0, 1, "one")], score=1.0),
+        ASRResult(
+            index=SegmentIndex(audio=2), transcription=[(1, 2, "two one")], score=2.1
+        ),
+        ASRResult(
+            index=SegmentIndex(audio=0), transcription=[(0, 1, "zero")], score=0.0
+        ),
+        ASRResult(
+            index=SegmentIndex(audio=2), transcription=[(2, 3, "two two")], score=2.2
+        ),
+        ASRResult(
+            index=SegmentIndex(audio=1), transcription=[(0, 1, "one")], score=1.0
+        ),
     ]
 
     # When/Then
-    expected_msg = "expected contiguous batches !"
+    expected_msg = "expected contiguous segments"
     with pytest.raises(ValueError, match=expected_msg):
         list(postprocessor.process(results))
 
@@ -74,10 +93,22 @@ def test__parakeet_unbatching():
     postprocessor = ParakeetPostprocessor()
 
     results = [
-        ASRResult(input_ordering=1, transcription=[(0, 1, "one")], score=1.0),
-        ASRResult(input_ordering=0, transcription=[(0, 1, "zero")], score=0.0),
-        ASRResult(input_ordering=2, transcription=[(2, 3, "two two")], score=2.2),
-        ASRResult(input_ordering=2, transcription=[(1, 2, "two one")], score=2.1),
+        ASRResult(
+            index=SegmentIndex(audio=1), transcription=[(0, 1, "one")], score=1.0
+        ),
+        ASRResult(
+            index=SegmentIndex(audio=0), transcription=[(0, 1, "zero")], score=0.0
+        ),
+        ASRResult(
+            index=SegmentIndex(audio=2, segment=0),
+            transcription=[(2, 3, "two two")],
+            score=2.2,
+        ),
+        ASRResult(
+            index=SegmentIndex(audio=2, segment=1),
+            transcription=[(1, 2, "two one")],
+            score=2.1,
+        ),
     ]
 
     postprocessed_result = list(postprocessor.process(results))
@@ -86,7 +117,7 @@ def test__parakeet_unbatching():
         results[0],
         results[1],
         ASRResult(
-            input_ordering=2,
+            index=SegmentIndex(audio=2),
             transcription=[(1, 2, "two one"), (2, 3, "two two")],
             score=2.15,
         ),
