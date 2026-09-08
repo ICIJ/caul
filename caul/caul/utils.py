@@ -1,10 +1,14 @@
 import logging
-import tempfile
-from functools import lru_cache
+from functools import cache
 from pathlib import Path, PurePosixPath
 from typing import TYPE_CHECKING, Iterable
 
-from caul_core import PreprocessorOutput, TorchDevice
+from caul_core import (
+    FSPreprocessedSegment,
+    MemoryPreprocessedSegment,
+    TorchDevice,
+)
+
 from .filesystem import save_tensor
 
 logger = logging.getLogger(__name__)
@@ -34,68 +38,29 @@ def fuzzy_match(key: str, candidates: set[str]) -> set[str]:
     return fuzzy_matches
 
 
-def prepare_file_input_batch(
-    input_batch: list[PreprocessorOutput],
-    output_dir: str | Path = None,
-    tmp_dir_fallback: bool = False,
-) -> tuple[list[str], list[str], dict[str, int], tempfile.TemporaryDirectory | None]:
-    """Collect input ids and file paths and write tensors to a temp directory when
-    no path is available.
-
-    :param input_batch: batch of PreprocessorOutput files
-    :return: tuple of batch input ids, wav paths, map from id to input ordering,
-    temporary dir (if applicable) where tensor paths are kept
-    """
-    from torch import Tensor
-
-    tmp_dir = None
-    if output_dir is None and tmp_dir_fallback:
-        tmp_dir = tempfile.TemporaryDirectory()
-        output_dir = tmp_dir.name
-
-    if output_dir is not None and not isinstance(output_dir, Path):
-        output_dir = Path(output_dir)
-
-    inp_ids: list[str] = []
-    wav_paths: list[str] = []
-    inp_id_ordering_map: dict[str, int] = {}
-
+def to_filesystem(
+    input_batch: Iterable[FSPreprocessedSegment | MemoryPreprocessedSegment],
+    output_dir: Path | None,
+) -> Iterable[tuple[FSPreprocessedSegment | MemoryPreprocessedSegment], Path]:
     for inp in input_batch:
         inp_id = inp.metadata.uuid
 
-        if inp.metadata.preprocessed_file_path is None and output_dir is None:
-            logger.warning(
-                "Input %s has no preprocessed file path, no output dir is specified, "
-                "and temporary dir creation is disabled. Skipping.",
-                inp_id,
-            )
-            continue
-
-        if (
-            inp.metadata.preprocessed_file_path is None
-            and not hasattr(inp, "tensor")
-            and (
-                inp.tensor is None or not isinstance(inp.tensor, (Tensor, list[Tensor]))
-            )
-        ):
-            logger.warning(
-                "Input %s does not have a preprocessed file path or a valid tensor"
-                "to save to disk. Skipping",
-                inp_id,
-            )
-            continue
-
-        inp_ids.append(inp_id)
-        inp_id_ordering_map[inp_id] = inp.metadata.input_ordering
-
-        if inp.metadata.preprocessed_file_path is not None:
-            wav_paths.append(str(inp.metadata.preprocessed_file_path))
-        elif output_dir is not None:
-            wav_path = output_dir / f"{inp_id}.wav"
-            save_tensor(inp.tensor, wav_path)
-            wav_paths.append(str(wav_path))
-
-    return inp_ids, wav_paths, inp_id_ordering_map, tmp_dir
+        match inp:
+            case FSPreprocessedSegment():
+                wav_path = inp.path
+            case MemoryPreprocessedSegment():
+                if output_dir is None:
+                    msg = (
+                        f"output_dir was not provided for "
+                        f"{MemoryPreprocessedSegment.__name__} input"
+                    )
+                    raise ValueError(msg)
+                filename = f"{inp.metadata.index.audio}-{inp.metadata.index.segment}-{inp_id}.wav"
+                wav_path = output_dir / filename
+                save_tensor(inp.tensor, wav_path)
+            case _:
+                raise TypeError(f"unexpected segment type: {inp}")
+        yield inp, wav_path
 
 
 def cache_hf_model_file(
@@ -107,8 +72,8 @@ def cache_hf_model_file(
     cache_dir: Path | None = None,
 ) -> None:
     from huggingface_hub import (
-        hf_hub_download,
         get_token,
+        hf_hub_download,
     )  # pylint: disable=import-outside-toplevel
 
     hf_hub_download(
@@ -130,8 +95,8 @@ def cache_hf_repo(
     cache_dir: Path | None = None,
 ) -> None:
     from huggingface_hub import (
-        snapshot_download,
         get_token,
+        snapshot_download,
     )  # pylint: disable=import-outside-toplevel
 
     snapshot_download(
@@ -167,7 +132,7 @@ def cache_hf_model(
         )
 
 
-@lru_cache(maxsize=None)
+@cache
 def load_mel_filters(
     n_mels: int,
     mel_filters_path: Path | str = None,

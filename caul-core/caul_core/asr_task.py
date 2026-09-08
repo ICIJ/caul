@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, TypeAlias
 from icij_common.registrable import RegistrableFromConfig
 
 from .constants import TorchDevice
-from .objects import ASRResult, PreprocessorOutput
+from .objects import ASRResult, AudioSegment, PreprocessorOutput
 
 if TYPE_CHECKING:
     import numpy as np
@@ -42,15 +42,15 @@ class ASRTask(AbstractContextManager, ABC):
         self._device = device
 
 
-PreprocessInputItem: TypeAlias = "np.ndarray | torch.Tensor | str | Path"
-PreprocessorInput: TypeAlias = "Iterable[PreprocessInputItem] | PreprocessInputItem"
+InputItem: TypeAlias = "np.ndarray | torch.Tensor | str | Path"
+ASRInput: TypeAlias = "Iterable[InputItem] | InputItem"
 
 
 class Preprocessor(ASRTask, RegistrableFromConfig):
     @abstractmethod
     def process(
         self,
-        inputs: PreprocessorInput,
+        inputs: ASRInput,
         input_sample_rates: Iterable[int] | int | None = None,
         output_dir: Path | None = None,
         **kwargs,
@@ -76,7 +76,7 @@ class InferenceRunner(ASRTask, RegistrableFromConfig):
 
     @abstractmethod
     def process(
-        self, inputs: Iterable[list[PreprocessorOutput]], *args, **kwargs
+        self, inputs: Iterable[list[AudioSegment]], *args, **kwargs
     ) -> Iterable[ASRResult]: ...
 
     @property

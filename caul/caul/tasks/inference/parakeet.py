@@ -1,17 +1,17 @@
 import logging
-from typing import Iterable, TYPE_CHECKING
-
-from icij_common.registrable import FromConfig
+from collections.abc import Iterable
+from typing import TYPE_CHECKING
 
 from caul_core import (
     PARAKEET_MODEL_REF,
-    TorchDevice,
     ASRModel,
     ASRResult,
-    PreprocessorOutput,
-    ParakeetInferenceRunnerConfig,
+    AudioSegment,
     InferenceRunner,
+    ParakeetInferenceRunnerConfig,
+    TorchDevice,
 )
+from icij_common.registrable import FromConfig
 
 logger = logging.getLogger(__name__)
 
@@ -96,27 +96,20 @@ class ParakeetInferenceRunner(InferenceRunner):
         )
 
     def process(  # pylint: disable=too-many-locals
-        self,
-        inputs: Iterable[list[PreprocessorOutput]],
-        *args,
-        **kwargs,
+        self, inputs: list[AudioSegment], *args, **kwargs
     ) -> Iterable[ASRResult]:
         """Transcribe a batch of audio tensors or file names of max duration <= 20 minutes
 
         :param inputs: List of np.ndarray or torch.Tensor or str, or singleton of same types
         :return: List of results
         """
-
-        if isinstance(inputs, PreprocessorOutput):
-            inputs = [inputs]
-
         for input_batch in inputs:
             if not input_batch:
                 continue
             if hasattr(input_batch[0], "tensor"):
                 audios = [i.tensor.to(self._torch_device) for i in input_batch]
             else:
-                audios = [str(i.metadata.preprocessed_file_path) for i in input_batch]
+                audios = [str(i.metadata.path) for i in input_batch]
 
             hypotheses = self._transcribe(audios)
             # Get timestamped segments if available, otherwise default to whole text
@@ -126,8 +119,8 @@ class ParakeetInferenceRunner(InferenceRunner):
                 if isinstance(best_hyp, (list, tuple)):
                     best_hyp = hyps[0]
 
-                input_ordering_idx = input_batch[idx].metadata.input_ordering
+                input_ordering_idx = input_batch[idx].metadata.index
                 model_result = ASRResult.from_parakeet_hypothesis(
-                    best_hyp, input_ordering=input_ordering_idx
+                    best_hyp, index=input_ordering_idx
                 )
                 yield model_result

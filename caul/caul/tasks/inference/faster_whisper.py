@@ -1,20 +1,19 @@
 import logging
+from collections.abc import Iterable
+from typing import TYPE_CHECKING
 
-from typing import Iterable, TYPE_CHECKING
-
-from icij_common.registrable import FromConfig
-
-from caul_core import DEFAULT_SAMPLE_RATE
 from caul_core import (
-    TorchDevice,
+    DEFAULT_SAMPLE_RATE,
     ASRModel,
     ASRResult,
-    PreprocessorOutput,
-    PreprocessedInput,
-    PreprocessedInputWithTensor,
+    AudioSegment,
     FasterWhisperInferenceRunnerConfig,
+    FSPreprocessedSegment,
     InferenceRunner,
+    MemoryPreprocessedSegment,
+    TorchDevice,
 )
+from icij_common.registrable import FromConfig
 
 if TYPE_CHECKING:
     from faster_whisper.transcribe import TranscriptionOptions
@@ -101,7 +100,7 @@ class FasterWhisperInferenceRunner(InferenceRunner):
 
     def process(  # pylint: disable=too-many-locals
         self,
-        inputs: Iterable[list[PreprocessorOutput]],
+        inputs: Iterable[list[AudioSegment]],
         *,
         languages: list[str] | None = None,
         **kwargs,
@@ -131,18 +130,14 @@ class FasterWhisperInferenceRunner(InferenceRunner):
             if len(input_batch) == 0:
                 continue
 
-            if isinstance(input_batch[0], PreprocessedInputWithTensor):
+            if isinstance(input_batch[0], MemoryPreprocessedSegment):
                 tensors = [inp.tensor.detach().cpu().numpy() for inp in input_batch]
             elif (
-                isinstance(input_batch[0], PreprocessedInput)
-                and input_batch[0].metadata.preprocessed_file_path is not None
+                isinstance(input_batch[0], FSPreprocessedSegment)
+                and input_batch[0].path is not None
             ):
                 tensors = [
-                    AudioDecoder(inp.metadata.preprocessed_file_path)
-                    .get_all_samples()
-                    .data[0]
-                    .squeeze(0)
-                    .numpy()
+                    AudioDecoder(inp.path).get_all_samples().data[0].squeeze(0).numpy()
                     for inp in input_batch
                 ]
             else:
@@ -206,5 +201,5 @@ class FasterWhisperInferenceRunner(InferenceRunner):
                     for seg_idx, out in enumerate(output)
                 ]
                 yield ASRResult.from_faster_whisper_result(
-                    segments, input_ordering=inp.metadata.input_ordering
+                    segments, index=inp.metadata.index
                 )

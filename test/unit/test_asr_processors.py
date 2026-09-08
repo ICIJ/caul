@@ -2,11 +2,9 @@ from pathlib import Path
 
 import pytest
 import torch
-
-from caul_core import FIREREDASR2_INFERENCE_MAX_FRAMES
-from caul_core import ASRResult
 from caul.tasks.postprocessing.asr_postprocessor import PostprocessorMixin
 from caul.tasks.preprocessing.asr_preprocessor import ASRPreprocessorMixin
+from caul_core import FIREREDASR2_INFERENCE_MAX_FRAMES, ASRResult, SegmentIndex
 
 
 class TestASRPreprocessor:
@@ -20,7 +18,7 @@ class TestASRPreprocessor:
         result = list(self._preprocessor.preprocess_inputs(audio))
 
         assert len(result) == 1
-        assert result[0].metadata.input_ordering == 0
+        assert result[0].metadata.index == SegmentIndex(audio=0, segment=0)
 
     def test__long_audio_gets_segmented(self):
         """Audio longer than 60 seconds must be split into multiple segments"""
@@ -30,11 +28,11 @@ class TestASRPreprocessor:
         result = list(self._preprocessor.preprocess_inputs(audio))
 
         assert len(result) > 1
-        for seg in result:
-            assert seg.metadata.input_ordering == 0
+        for i, seg in enumerate(result):
+            assert seg.metadata.index == SegmentIndex(audio=0, segment=i)
 
     def test__multiple_inputs_ordering(self):
-        """input_ordering must match the original list index"""
+        """index must match the original list index"""
         audio = [
             torch.zeros(FIREREDASR2_INFERENCE_MAX_FRAMES * 5),
             torch.zeros(FIREREDASR2_INFERENCE_MAX_FRAMES * 3),
@@ -42,8 +40,11 @@ class TestASRPreprocessor:
 
         result = list(self._preprocessor.preprocess_inputs(audio))
 
-        orderings = [r.metadata.input_ordering for r in result]
-        assert orderings == [0, 1]
+        orderings = [r.metadata.index for r in result]
+        assert orderings == [
+            SegmentIndex(audio=0, segment=0),
+            SegmentIndex(audio=1, segment=0),
+        ]
 
     def test__write_wavs_to_fs(self, tmpdir):
         """When output_dir is provided, wav files are written to disk"""
@@ -55,7 +56,7 @@ class TestASRPreprocessor:
         )
 
         assert len(result) == 1
-        saved = output_dir / result[0].metadata.preprocessed_file_path
+        saved = output_dir / result[0].path
         assert saved.exists()
 
 
@@ -64,35 +65,61 @@ class TestASRPostprocessor:
         self._postprocessor = PostprocessorMixin()
 
     def test__merges_segments(self):
-        """Segments belonging to the same input_ordering are merged in time order"""
+        """Segments belonging to the same index are merged in time order"""
         results = [
-            ASRResult(input_ordering=0, transcription=[(0.0, 1.0, "你好")], score=0.9),
-            ASRResult(input_ordering=0, transcription=[(1.0, 2.0, "世界")], score=0.8),
+            ASRResult(
+                index=SegmentIndex(audio=0, segment=0),
+                transcription=[(0.0, 1.0, "你好")],
+                score=0.9,
+            ),
+            ASRResult(
+                index=SegmentIndex(audio=0, segment=1),
+                transcription=[(1.0, 2.0, "世界")],
+                score=0.8,
+            ),
         ]
 
         merged = list(self._postprocessor.process(results))
 
         assert len(merged) == 1
-        assert merged[0].input_ordering == 0
+        assert merged[0].index == SegmentIndex(audio=0, segment=0)
         assert merged[0].transcription == [(0.0, 1.0, "你好"), (1.0, 2.0, "世界")]
 
     def test__multiple_inputs(self):
-        """Each unique input_ordering yields exactly one merged result"""
+        """Each unique index yields exactly one merged result"""
         results = [
-            ASRResult(input_ordering=0, transcription=[(0.0, 1.0, "你好")], score=0.9),
-            ASRResult(input_ordering=1, transcription=[(0.0, 2.0, "世界")], score=0.8),
+            ASRResult(
+                index=SegmentIndex(audio=0, segment=0),
+                transcription=[(0.0, 1.0, "你好")],
+                score=0.9,
+            ),
+            ASRResult(
+                index=SegmentIndex(audio=1, segment=0),
+                transcription=[(0.0, 2.0, "世界")],
+                score=0.8,
+            ),
         ]
 
         merged = list(self._postprocessor.process(results))
 
         assert len(merged) == 2
-        assert {r.input_ordering for r in merged} == {0, 1}
+        expected_idx = [
+            SegmentIndex(audio=0, segment=0),
+            SegmentIndex(audio=1, segment=0),
+        ]
+        assert [r.index for r in merged] == expected_idx
 
     def test__drops_empty_transcription_segments(self):
         """Segments with empty transcriptions must be dropped before merging"""
         results = [
-            ASRResult(input_ordering=0, transcription=[], score=1.0),  # silent segment
-            ASRResult(input_ordering=0, transcription=[(0.5, 1.5, "你好")], score=0.9),
+            ASRResult(
+                index=SegmentIndex(audio=0, segment=0), transcription=[], score=1.0
+            ),  # silent segment
+            ASRResult(
+                index=SegmentIndex(audio=0, segment=1),
+                transcription=[(0.5, 1.5, "你好")],
+                score=0.9,
+            ),
         ]
 
         merged = list(self._postprocessor.process(results))
@@ -100,22 +127,59 @@ class TestASRPostprocessor:
         assert len(merged) == 1
         assert merged[0].transcription == [(0.5, 1.5, "你好")]
 
-    def test__raises_for_non_contiguous(self):
+    def test__raises_for_already_processed_audio(self):
         """Non-contiguous ordering (interleaved groups) should raise ValueError"""
         results = [
-            ASRResult(input_ordering=0, transcription=[(0.0, 1.0, "a")], score=1.0),
-            ASRResult(input_ordering=1, transcription=[(0.0, 1.0, "b")], score=1.0),
-            ASRResult(input_ordering=0, transcription=[(1.0, 2.0, "c")], score=1.0),
+            ASRResult(
+                index=SegmentIndex(audio=0, segment=0),
+                transcription=[(0.0, 1.0, "a")],
+                score=1.0,
+            ),
+            ASRResult(
+                index=SegmentIndex(audio=1, segment=0),
+                transcription=[(0.0, 1.0, "b")],
+                score=1.0,
+            ),
+            ASRResult(
+                index=SegmentIndex(audio=0, segment=1),
+                transcription=[(1.0, 2.0, "a again")],
+                score=1.0,
+            ),
         ]
 
-        with pytest.raises(ValueError, match="expected contiguous batches"):
+        expected = "expected contiguous segments, already processed segments from audio"
+        with pytest.raises(ValueError, match=expected):
+            list(self._postprocessor.process(results))
+
+    def test__raises_for_unordered_segments_audio(self):
+        """Non-contiguous ordering (interleaved groups) should raise ValueError"""
+        results = [
+            ASRResult(
+                index=SegmentIndex(audio=0, segment=1),
+                transcription=[(0.0, 1.0, "b")],
+                score=1.0,
+            ),
+            ASRResult(
+                index=SegmentIndex(audio=0, segment=0),
+                transcription=[(0.0, 1.0, "a")],
+                score=1.0,
+            ),
+        ]
+
+        with pytest.raises(
+            ValueError, match="received audio segment results for audio 0 out of order"
+        ):
             list(self._postprocessor.process(results))
 
     def test__inputs_all_silent(self):
         """An input whose segments are silent should yield an empty transcription"""
         results = [
-            ASRResult(input_ordering=0, transcription=[], score=1.0),
-            ASRResult(input_ordering=0, transcription=[], score=1.0),
+            ASRResult(
+                index=SegmentIndex(audio=0, segment=0), transcription=[], score=1.0
+            ),
+            ASRResult(
+                index=SegmentIndex(audio=0, segment=1), transcription=[], score=1.0
+            ),
         ]
 
         merged = list(self._postprocessor.process(results))

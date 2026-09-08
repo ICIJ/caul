@@ -1,7 +1,8 @@
 import logging
-from functools import lru_cache
+from collections.abc import Iterable
+from functools import cache
 from pathlib import Path
-from typing import TYPE_CHECKING, Iterable
+from typing import TYPE_CHECKING
 
 from caul_core import (
     ASRModel,
@@ -22,7 +23,7 @@ if TYPE_CHECKING:
     import torch
 
 
-@lru_cache(maxsize=None)
+@cache
 def _decoder_joint_connector():
     from nemo.core.connectors.save_restore_connector import (
         SaveRestoreConnector,

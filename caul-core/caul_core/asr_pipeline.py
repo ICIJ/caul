@@ -11,7 +11,7 @@ from icij_common.pydantic_utils import safe_copy
 from .asr_task import ASRTask, InferenceRunner, Postprocessor, Preprocessor
 from .config import ASRPipelineConfig
 from .constants import TorchDevice
-from .objects import ASRResult
+from .objects import ASRResult, Error
 
 if TYPE_CHECKING:
     import numpy as np
@@ -68,6 +68,7 @@ class ASRPipeline(ABC):
         """Generic sequential processing method for ASR model handlers"""
         output = inputs
         for task in self._tasks:
+            output = (o for o in output if not isinstance(o, Error))
             output = task.process(
                 output, output_dir=tensor_output_dir, languages=languages
             )

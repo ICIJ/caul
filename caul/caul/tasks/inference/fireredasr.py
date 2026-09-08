@@ -1,23 +1,24 @@
 import logging
+from collections.abc import Iterable
 from contextlib import nullcontext
 from pathlib import Path
-from typing import Iterable, TYPE_CHECKING
-
-
-from icij_common.registrable import FromConfig
+from tempfile import TemporaryDirectory
+from typing import TYPE_CHECKING
 
 from caul_core import (
-    TorchDevice,
-    ASRResult,
-    PreprocessorOutput,
-    ASRModel,
     FIREREDASR2_MODEL_HUB_PREFIX,
+    ASRModel,
+    ASRResult,
+    AudioSegment,
     FireRedASR2InferenceRunnerConfig,
-    FireRedASR2ModelTag,
     FireRedASR2ModelRef,
+    FireRedASR2ModelTag,
     InferenceRunner,
+    TorchDevice,
 )
-from caul.utils import prepare_file_input_batch
+from icij_common.registrable import FromConfig
+
+from caul.utils import to_filesystem
 
 logger = logging.getLogger(__name__)
 
@@ -45,11 +46,11 @@ def fireredasr2_from_pretrained(
         FireRedAsr2,
         FireRedAsr2Config,
     )  # pylint: disable=import-outside-toplevel
-    from huggingface_hub.constants import (
-        HF_HUB_CACHE,
-    )  # pylint: disable=import-outside-toplevel
     from huggingface_hub import (
         snapshot_download,
+    )  # pylint: disable=import-outside-toplevel
+    from huggingface_hub.constants import (
+        HF_HUB_CACHE,
     )  # pylint: disable=import-outside-toplevel
 
     if cache_dir is None:
@@ -133,7 +134,7 @@ class FireRedASR2InferenceRunner(InferenceRunner):
 
     def process(
         self,
-        inputs: Iterable[list[PreprocessorOutput]],
+        inputs: Iterable[list[AudioSegment]],
         *,
         output_dir: str | Path = None,
         **kwargs,
@@ -145,22 +146,26 @@ class FireRedASR2InferenceRunner(InferenceRunner):
         not provided
         :return: ASRResult per segment, in batch order
         """
-        for input_batch in inputs:
-            if len(input_batch) == 0:
-                continue
-            inp_ids, wav_paths, inp_id_ordering_map, tmp_dir = prepare_file_input_batch(
-                input_batch, output_dir, self._config.tmp_dir_fallback
-            )
-
-            with tmp_dir if tmp_dir is not None else nullcontext():
-                results = self._model.transcribe(inp_ids, wav_paths)
-
-            for result in results:
-                # FireRedASR2 uses uttid to refer to a unique identifier for each
-                # item in a batch; technically results should be returned in the
-                # order given by uttids, but we use a map to the original index
-                # just to be safe.
-                input_ordering = inp_id_ordering_map[result["uttid"]]
-                yield ASRResult.from_fireredasr2_result(
-                    result, input_ordering=input_ordering
-                )
+        if isinstance(output_dir, str):
+            output_dir = Path(output_dir)
+        tmp_dir_ctx = nullcontext()
+        if output_dir is None and self._config.tmp_dir_fallback:
+            tmp_dir_ctx = TemporaryDirectory()
+            output_dir = Path(tmp_dir_ctx.name)
+        with tmp_dir_ctx:
+            for input_batch in inputs:
+                if len(input_batch) == 0:
+                    continue
+                batch_inputs, batch_paths = zip(*to_filesystem(input_batch, output_dir))
+                batch_paths = [str(p) for p in batch_paths]
+                batch_inputs = list(batch_inputs)
+                inp_ids = [i.metadata.uuid for i in batch_inputs]
+                results = self._model.transcribe(inp_ids, batch_paths)
+                for input, result in zip(batch_inputs, results, strict=True):
+                    # FireRedASR2 uses uttid to refer to a unique identifier for each
+                    # item in a batch; technically results should be returned in the
+                    # order given by uttids, but we use a map to the original index
+                    # just to be safe.
+                    yield ASRResult.from_fireredasr2_result(
+                        result, index=input.metadata.index
+                    )

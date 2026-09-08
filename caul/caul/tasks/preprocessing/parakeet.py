@@ -1,4 +1,5 @@
-from typing import Callable, Iterable, Self
+from collections.abc import Callable, Iterable
+from typing import Self
 
 from caul_core import (
     DEFAULT_LARGE_FILE_THRESHOLD_BYTES,
@@ -6,24 +7,24 @@ from caul_core import (
     PARAKEET_INFERENCE_MAX_DURATION_S,
     PARAKEET_INFERENCE_MAX_FRAMES,
     ASRModel,
+    FSPreprocessedSegment,
     ParakeetPreprocessorConfig,
-    PreprocessedInput,
     Preprocessor,
 )
 
 from .asr_preprocessor import ASRPreprocessorMixin
 
 
-def _parakeet_batching_fn(
-    preprocessed_inputs: Iterable[PreprocessedInput], *args, **kwargs
-) -> Iterable[list[PreprocessedInput]]:
+def parakeet_batching_fn(
+    preprocessed_inputs: Iterable[FSPreprocessedSegment], **_
+) -> Iterable[list[FSPreprocessedSegment]]:
     """Batch audio tensors by duration, 20 minutes max per batch, preserving input ordering
     and streaming batches as they fill up rather than buffering every input in memory.
 
     :param preprocessed_inputs: iterable of PreprocessedInput
     :return: iterable of list[PreprocessedInput]
     """
-    current_batch: list[PreprocessedInput] = []
+    current_batch: list[FSPreprocessedSegment] = []
     current_batch_duration_s = 0.0
 
     for preprocessed_input in preprocessed_inputs:
@@ -47,7 +48,7 @@ def _parakeet_batching_fn(
 class ParakeetPreprocessor(ASRPreprocessorMixin):
     def __init__(
         self,
-        batching_fn: Callable = _parakeet_batching_fn,
+        batching_fn: Callable = parakeet_batching_fn,
         max_frames: int = PARAKEET_INFERENCE_MAX_FRAMES,
         sample_rate: int = DEFAULT_SAMPLE_RATE,
         large_file_threshold_bytes: int = DEFAULT_LARGE_FILE_THRESHOLD_BYTES,

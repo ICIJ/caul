@@ -8,7 +8,12 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Self
 
 import langcodes
-from icij_common.pydantic_utils import icij_config, merge_configs, no_enum_values_config
+from icij_common.pydantic_utils import (
+    icij_config,
+    merge_configs,
+    no_enum_values_config,
+    safe_copy,
+)
 from pydantic import BaseModel as _BaseModel
 from pydantic import Field, GetCoreSchemaHandler, TypeAdapter
 from pydantic_core import core_schema
@@ -125,10 +130,15 @@ class ASRModel(StrEnum):
                 raise NotImplementedError(msg)
 
 
+class SegmentIndex(BaseModel):
+    audio: int = 0
+    segment: int = 0
+
+
 class ASRResult(BaseModel):
     """Base result class for ASR models"""
 
-    input_ordering: int = -1
+    index: SegmentIndex = Field(default_factory=SegmentIndex)
     transcription: list[tuple] = Field(default_factory=list)
     score: float = 1.0
 
@@ -197,8 +207,8 @@ class ASRResult(BaseModel):
             msg = f"expected {ASRResult.__class__.__class__} but found: {type(other)}"
             raise TypeError(msg)
 
-        if other.input_ordering != self.input_ordering:
-            raise ValueError("can't merge transcriptions from different inputs")
+        if other.index.audio != self.index.audio:
+            raise ValueError("can't merge transcriptions from different audios")
 
         transcription = self.transcription + other.transcription
         # We have to weight by total segment len
@@ -207,9 +217,7 @@ class ASRResult(BaseModel):
         if total_duration:
             score = self.score * self.duration + other.score * other.duration
             score /= total_duration
-        return ASRResult(
-            input_ordering=self.input_ordering, transcription=transcription, score=score
-        )
+        return ASRResult(index=self.index, transcription=transcription, score=score)
 
 
 def _utc_now() -> datetime.datetime:
@@ -235,29 +243,36 @@ class Error(BaseModel):
         return error
 
 
-class InputMetadata(BaseModel):
-    """Preprocessed input metadata"""
+class AudioMetadata(BaseModel):
+    index: int
+    audio_format: str | None = None
+    audio_path: Path | None = None
 
-    duration_s: float
-    input_ordering: int = -1
-    preprocessed_at: datetime.datetime = Field(default_factory=_utc_now)
+
+class SegmentMetadata(BaseModel):
     uuid: str = Field(default_factory=_uuid)
-    input_format: str | None = None
-    input_file_path: Path | None = None
-    preprocessed_file_path: Path | None = None
-    error: Error | None = None
+    index: SegmentIndex = Field(default_factory=SegmentIndex)
+    audio_format: str | None = None
+    audio_path: Path | None = None
+    duration_s: float
+    preprocessed_at: datetime.datetime = Field(default_factory=_utc_now)
+
+    def now(self) -> "SegmentMetadata":
+        update = {"preprocessed_at": datetime.datetime.now(datetime.UTC)}
+        return safe_copy(self, update=update)
 
 
-class PreprocessedInput(BaseModel):
-    metadata: InputMetadata
+class FSPreprocessedSegment(BaseModel):
+    metadata: SegmentMetadata
+    path: Path
 
 
 @dataclass(frozen=True)
-class PreprocessedInputWithTensor:
+class MemoryPreprocessedSegment:
     # Avoid importing torch when importing objects
+    metadata: SegmentMetadata
+    tensor: "torch.Tensor"
 
-    metadata: InputMetadata
-    tensor: "torch.Tensor | list | None" = None
 
-
-PreprocessorOutput = PreprocessedInput | PreprocessedInputWithTensor
+AudioSegment = FSPreprocessedSegment | MemoryPreprocessedSegment
+PreprocessorOutput = AudioSegment | Error
