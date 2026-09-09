@@ -1,10 +1,9 @@
 import logging
 from functools import lru_cache
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 from typing import TYPE_CHECKING, Iterable
 
 from caul_core import (
-    PARAKEET_MODEL_REF,
     ASRModel,
     InferenceRunner,
     ParakeetTrtInferenceRunnerConfig,
@@ -13,11 +12,9 @@ from caul_core import (
 from icij_common.registrable import FromConfig
 from torchaudio.models import Hypothesis
 
-from caul_core.constants import PARAKEET_TRT_MODEL_REF
 from ...trt.handler import TrtInferenceHandler
 from ..inference.parakeet import ParakeetInferenceRunner
 from .trt_inference import TrtInferenceMixin
-from ...utils import cache_hf_model
 
 logger = logging.getLogger(__name__)
 
@@ -68,8 +65,6 @@ class ParakeetTrtInferenceRunner(ParakeetInferenceRunner, TrtInferenceMixin):
     Note that batch_size must match the shape profile used to convert to TRT.
     """
 
-    _models = [PARAKEET_TRT_MODEL_REF]
-
     def __init__(
         self,
         model_path: Path | str,
@@ -98,15 +93,6 @@ class ParakeetTrtInferenceRunner(ParakeetInferenceRunner, TrtInferenceMixin):
             engine_path=config.engine_path,
             return_timestamps=config.return_timestamps,
             **extras,
-        )
-
-    @classmethod
-    def cache_models(cls, cache_dir: Path | None = None) -> None:
-        cache_hf_model(
-            model_family=ASRModel.PARAKEET_TRT,
-            models=cls._models,
-            model_ext=".engine",
-            cache_dir=cache_dir,
         )
 
     def __enter__(self):

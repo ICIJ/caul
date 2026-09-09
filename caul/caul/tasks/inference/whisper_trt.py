@@ -194,10 +194,6 @@ class WhisperTrtInferenceRunner(InferenceRunner, TrtInferenceMixin):
         )[0]
 
     @classmethod
-    def cache_models(cls, cache_dir: Path | None = None) -> None:
-        return None
-
-    @classmethod
     def _from_config(
         cls,
         config: WhisperTrtInferenceRunnerConfig,

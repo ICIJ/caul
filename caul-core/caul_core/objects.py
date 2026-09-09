@@ -107,6 +107,7 @@ class ASRModel(StrEnum):
     FASTER_WHISPER = "faster_whisper"
     FIREREDASR2_AED = "fireredasr2_aed"
     WHISPER_TRT = "whisper_trt"
+    PREPROCESSING = "preprocessing"
 
     def supported_languages(self) -> set[ASRLanguage]:
         match self:
@@ -116,6 +117,8 @@ class ASRModel(StrEnum):
                 return set()
             case ASRModel.FIREREDASR2_AED:
                 return _VALIDATED_FIREREDASR2_LANGUAGES
+            case ASRModel.PREPROCESSING:
+                return set()
             case _:
                 msg = f"model {self} should expose supported languages"
                 raise NotImplementedError(msg)

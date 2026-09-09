@@ -1,5 +1,4 @@
 import logging
-from pathlib import Path, PurePosixPath
 from typing import Iterable, TYPE_CHECKING
 
 from icij_common.registrable import FromConfig
@@ -13,7 +12,6 @@ from caul_core import (
     ParakeetInferenceRunnerConfig,
     InferenceRunner,
 )
-from ...utils import cache_hf_model
 
 logger = logging.getLogger(__name__)
 
@@ -27,8 +25,6 @@ class ParakeetInferenceRunner(InferenceRunner):
     audio (batched or unbatched) in a single pass. Assumes that audio inputs (wav files or tensors)
     are single-channel with a sample rate of 16000—this last is very important for segmenting.
     """
-
-    _models = [PARAKEET_MODEL_REF]
 
     def __init__(
         self,
@@ -84,16 +80,6 @@ class ParakeetInferenceRunner(InferenceRunner):
             self.model_name, map_location=self._torch_device
         ).eval()
         return self
-
-    @classmethod
-    def cache_models(cls, cache_dir: Path | None = None) -> None:
-        cache_hf_model(
-            model_family=ASRModel.PARAKEET,
-            models=cls._models,
-            model_ext=".nemo",
-            library_name="nemo",
-            cache_dir=cache_dir,
-        )
 
     def _transcribe(
         self, audio_inputs: Iterable["torch.Tensor"], **kwargs

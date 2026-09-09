@@ -13,6 +13,7 @@ from caul.tasks import (
     ParakeetPreprocessor,
 )
 from caul_core import ParakeetInferenceRunnerConfig
+from caul.model_cache import cache_parakeet_models
 from caul.tasks.preprocessing.parakeet import _parakeet_batching_fn
 
 
@@ -118,7 +119,7 @@ def test_parakeet_should_cache_to_dir_and_load_from_it() -> None:
     # Let's use the local cache to avoid downloading for ages
     cache_dir = HF_HUB_CACHE
     # When
-    ParakeetInferenceRunner.cache_models(cache_dir)
+    cache_parakeet_models(cache_dir)
     runner = ParakeetInferenceRunner.from_config(ParakeetInferenceRunnerConfig())
     with runner:
         # Then

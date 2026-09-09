@@ -52,10 +52,6 @@ class Preprocessor(ASRTask, RegistrableFromConfig):
     ) -> Iterable[list[PreprocessorOutput]]:
         """Generic processing task"""
 
-    @classmethod
-    @abstractmethod
-    def cache_models(cls, cache_dir: Path | None = None) -> None: ...
-
 
 class InferenceRunner(ASRTask, RegistrableFromConfig):
     """Abstract for ASR inference"""
@@ -77,10 +73,6 @@ class InferenceRunner(ASRTask, RegistrableFromConfig):
     def process(
         self, inputs: Iterable[list[PreprocessorOutput]], *args, **kwargs
     ) -> Iterable[ASRResult]: ...
-
-    @classmethod
-    @abstractmethod
-    def cache_models(cls, cache_dir: Path | None = None) -> None: ...
 
     @property
     def _torch_device(self) -> "torch.device":
