@@ -5,7 +5,7 @@ from typing import Annotated
 import typer
 
 from caul_core import ASRModel
-from caul.asr_pipeline import cache_models
+from caul.model_cache import cache_models
 from .utils import AsyncTyper
 
 _START_WORKER_HELP = "start a datashare worker"

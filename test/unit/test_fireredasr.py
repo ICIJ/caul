@@ -12,6 +12,7 @@ from caul_core import (
 )
 from caul_core import FireRedASR2InferenceRunnerConfig
 from caul.tasks import FireRedASR2InferenceRunner, FireRedASR2Preprocessor
+from caul.model_cache import cache_fireredasr2_models
 
 
 ZH_TEXT = "你好世界"
@@ -146,7 +147,7 @@ class TestFireRedASR2InferenceRunner:
         # Let's use the local cache to avoid downloading for ages
         cache_dir = HF_HUB_CACHE
         # When
-        FireRedASR2InferenceRunner.cache_models(cache_dir)
+        cache_fireredasr2_models(cache_dir)
         runner = FireRedASR2InferenceRunner.from_config(
             FireRedASR2InferenceRunnerConfig()
         )

@@ -17,7 +17,7 @@ from caul_core import (
     FireRedASR2ModelRef,
     InferenceRunner,
 )
-from caul.utils import cache_hf_repo, prepare_file_input_batch
+from caul.utils import prepare_file_input_batch
 
 logger = logging.getLogger(__name__)
 
@@ -130,16 +130,6 @@ class FireRedASR2InferenceRunner(InferenceRunner):
         use_gpu = self._device is TorchDevice.GPU
         self._model = inference_config_to_fire_red_asr_model(self._config, use_gpu)
         return self
-
-    @classmethod
-    def cache_models(cls, cache_dir: Path | None = None) -> None:
-        for tag in FireRedASR2ModelTag:
-            logger.info("caching model FireredASR tag %s", tag)
-            repo_id = (
-                f"{FIREREDASR2_MODEL_HUB_PREFIX}{FireRedASR2ModelRef.ASR2}"
-                f"-{tag.upper()}"
-            )
-            cache_hf_repo(repo_id, cache_dir=cache_dir)
 
     def process(
         self,

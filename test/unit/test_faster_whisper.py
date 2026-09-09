@@ -19,6 +19,7 @@ from caul_core import (
 from caul.tasks.inference.faster_whisper import (
     FasterWhisperInferenceRunner,
 )
+from caul.model_cache import cache_faster_whisper_models
 
 EN_TEXT_A = "hello"
 EN_TEXT_B = "world"
@@ -211,7 +212,7 @@ class TestFasterWhisperInferenceRunner:
         # Let's use the local cache to avoid downloading for ages
         cache_dir = HF_HUB_CACHE
         # When
-        FasterWhisperInferenceRunner.cache_models(cache_dir)
+        cache_faster_whisper_models(cache_dir)
         runner = FasterWhisperInferenceRunner.from_config(
             FasterWhisperInferenceRunnerConfig()
         )

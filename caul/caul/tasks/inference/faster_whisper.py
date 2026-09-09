@@ -1,6 +1,5 @@
 import logging
 
-from pathlib import Path
 from typing import Iterable, TYPE_CHECKING
 
 from icij_common.registrable import FromConfig
@@ -13,7 +12,6 @@ from caul_core import (
     PreprocessorOutput,
     PreprocessedInput,
     PreprocessedInputWithTensor,
-    FasterWhisperModel,
     FasterWhisperInferenceRunnerConfig,
     InferenceRunner,
 )
@@ -100,14 +98,6 @@ class FasterWhisperInferenceRunner(InferenceRunner):
             )
         )
         return self
-
-    @classmethod
-    def cache_models(cls, cache_dir: Path | None = None) -> None:
-        for model_id in FasterWhisperModel:
-            logger.info("caching faster whisper model size %s", model_id)
-            # We replace the faster whisper download_model utils to avoid importing
-            # the whole faster whisper stack just for download
-            _download_fasterwhisper_model(model_id, cache_dir=cache_dir)
 
     def process(  # pylint: disable=too-many-locals
         self,
@@ -218,27 +208,3 @@ class FasterWhisperInferenceRunner(InferenceRunner):
                 yield ASRResult.from_faster_whisper_result(
                     segments, input_ordering=inp.metadata.input_ordering
                 )
-
-
-def _download_fasterwhisper_model(model: FasterWhisperModel, cache_dir: Path | None):
-    from huggingface_hub import (
-        get_token,
-        snapshot_download,
-    )  # pylint: disable=import-outside-toplevel
-
-    allow_patterns = [
-        "config.json",
-        "preprocessor_config.json",
-        "model.bin",
-        "tokenizer.json",
-        "vocabulary.*",
-    ]
-
-    kwargs = {"allow_patterns": allow_patterns}
-
-    if cache_dir is not None:
-        kwargs["cache_dir"] = str(cache_dir)
-
-    kwargs["token"] = get_token()
-
-    return snapshot_download(model.to_repo_id, **kwargs)
