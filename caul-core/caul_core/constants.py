@@ -275,7 +275,7 @@ FASTER_WHISPER_LARGE_V3_TURBO_SUPPRESSED_TOKENS = [
 ]
 
 # Parakeet TRT
-PARAKEET_TRT_MODEL_REF = "https://huggingface.co/ICIJ/parakeet-v3-trt"
+PARAKEET_TRT_MODEL_REF = "ICIJ/parakeet-v3-trt"
 
 # FireRedASR2s
 

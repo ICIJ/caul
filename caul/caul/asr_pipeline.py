@@ -2,12 +2,12 @@ import logging
 from pathlib import Path
 
 from caul_core import ASRModel
-from . import ParakeetTrtInferenceRunner
 
 from .tasks import (
     FasterWhisperInferenceRunner,
     FireRedASR2InferenceRunner,
     ParakeetInferenceRunner,
+    ParakeetTrtInferenceRunner,
 )
 from .tasks.preprocessing.asr_preprocessor import ASRPreprocessorMixin
 
