@@ -43,11 +43,11 @@ faster-whisper = [
 ]
 parakeet-trt = [
     # TensorRT only builds on linux or windown
-    "tensorrt-lean~=11.0",
+    "tensorrt-lean~=11.0; platform_system == 'Linux' or platform_system == 'Windows'",
 ]
 whisper-trt = [
     # TensorRT only builds on linux or windown
-    "tensorrt_llm~=1.2",
+    "tensorrt_llm~=1.2; platform_system == 'Linux' or platform_system == 'Windows'",
 ]
 
 [tool.uv]
@@ -106,7 +106,7 @@ name = "tensorrt-cu13-bindings"
 
 [[tool.uv.dependency-metadata]]
 name = "tensorrt-cu13-libs"
-requires-dist = ["nvidia-cuda-runtime-cu12"]
+requires-dist = ["nvidia-cuda-runtime-cu13"]
 
 # Common CUDA runtime dependency
 [[tool.uv.dependency-metadata]]
