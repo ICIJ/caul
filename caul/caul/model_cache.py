@@ -9,9 +9,8 @@ from caul_core import (
     FireRedASR2ModelRef,
     FireRedASR2ModelTag,
     FasterWhisperModel,
+    PARAKEET_TRT_MODEL_REF,
 )
-from caul_core.constants import PARAKEET_TRT_MODEL_REF
-
 from .utils import cache_hf_model, cache_hf_repo
 
 logger = logging.getLogger(__name__)
