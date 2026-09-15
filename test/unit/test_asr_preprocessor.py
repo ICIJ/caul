@@ -149,7 +149,7 @@ class TestASRPreprocessorChunking:
         assert len(results) == 1
         assert isinstance(results[0], Error)
         error = results[0]
-        assert error.title == "UnprocessableAudio"
+        assert error.title == "UnreadableAudio"
 
 
 def test_batcher_should_raise_when_consuming_uncollected_errors():

@@ -1,7 +1,5 @@
 from pathlib import Path
 
-from caul_core import AudioMetadata, SegmentMetadata
-
 
 class MissingModelSpecificationException(Exception):
     """Raise if referencing a missing model"""
@@ -26,10 +24,4 @@ class MissingTokenizerException(Exception):
 class UnreadableAudio(Exception):
     def __init__(self, path: Path):
         msg = f"failed to read audio file at {path}"
-        super().__init__(msg)
-
-
-class UnprocessableAudio(Exception):
-    def __init__(self, metadata: SegmentMetadata | AudioMetadata):
-        msg = f"failed to process audio segment {metadata}"
         super().__init__(msg)

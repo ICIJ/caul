@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pytest
 import torch
+from caul.model_cache import cache_parakeet_models
 from caul.tasks import (
     ParakeetInferenceRunner,
     ParakeetPostprocessor,

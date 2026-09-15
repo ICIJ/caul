@@ -1,5 +1,6 @@
 import pytest
 import torch
+from caul.model_cache import cache_fireredasr2_models
 from caul.tasks import FireRedASR2InferenceRunner, FireRedASR2Preprocessor
 from caul_core import (
     FIREREDASR2_INFERENCE_MAX_FRAMES,

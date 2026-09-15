@@ -31,7 +31,7 @@ from torch import Tensor
 
 from caul.segmentation.methods import SegmentationFunction
 
-from ...exception import UnprocessableAudio, UnreadableAudio
+from ...exception import UnreadableAudio
 from ...segmentation import segment_by_silence
 from ...utils import save_tensor
 from .batcher import Batcher
@@ -160,10 +160,9 @@ class ASRPreprocessorMixin(Preprocessor):
             # (implem bug or unexpected errors which should be dealt with)
             except self._reported_errors as cause:
                 meta = seg_meta or audio_meta
-                exc = UnprocessableAudio(meta)
                 msg = f"error while preprocessing segment {seg_meta}. Skipping !"
-                _log_exc_with_full_trace(exc, cause, msg)
-                error = Error.from_exception(exc)
+                logger.exception(msg)
+                error = Error.from_exception(cause, meta)
                 yield error
 
     def _audio_meta_from_input(
@@ -335,12 +334,3 @@ def load_audio(
 
     samples = AudioDecoder(path, num_channels=num_channels, sample_rate=sample_rate)
     return samples.get_all_samples().data.squeeze()
-
-
-def _log_exc_with_full_trace(exc: Exception, cause: Exception, msg: str):
-    try:
-        raise exc from cause
-    except Exception:
-        # we reraise to log with a context trace containing the
-        # original error trace
-        logger.exception(msg)
