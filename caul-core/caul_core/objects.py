@@ -233,21 +233,6 @@ def _uuid() -> str:
     return uuid.uuid4().hex
 
 
-class Error(BaseModel):
-    title: str
-    detail: str
-
-    @classmethod
-    def from_exception(cls, exception: BaseException) -> "Error":
-        title = exception.__class__.__name__
-        trace_lines = traceback.format_exception(
-            None, value=exception, tb=exception.__traceback__
-        )
-        detail = f"{exception}\n{''.join(trace_lines)}"
-        error = Error(title=title, detail=detail)
-        return error
-
-
 class AudioMetadata(BaseModel):
     index: int
     audio_format: str | None = None
@@ -265,6 +250,24 @@ class SegmentMetadata(BaseModel):
     def now(self) -> "SegmentMetadata":
         update = {"preprocessed_at": datetime.datetime.now(datetime.UTC)}
         return safe_copy(self, update=update)
+
+
+class Error(BaseModel):
+    title: str
+    detail: str
+    metadata: SegmentMetadata | AudioMetadata
+
+    @classmethod
+    def from_exception(
+        cls, exception: BaseException, metadata: SegmentMetadata | AudioMetadata
+    ) -> "Error":
+        title = exception.__class__.__name__
+        trace_lines = traceback.format_exception(
+            None, value=exception, tb=exception.__traceback__
+        )
+        detail = f"{exception}\n{''.join(trace_lines)}"
+        error = Error(title=title, detail=detail, metadata=metadata)
+        return error
 
 
 class FSProcessedSegment(BaseModel):

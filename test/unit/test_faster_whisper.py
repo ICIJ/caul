@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 import torch
+from caul.model_cache import cache_faster_whisper_models
 from caul.tasks.inference.faster_whisper import FasterWhisperInferenceRunner
 from caul_core import (
     DEFAULT_SAMPLE_RATE,
