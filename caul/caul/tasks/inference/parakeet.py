@@ -110,7 +110,7 @@ class ParakeetInferenceRunner(InferenceRunner):
             if hasattr(input_batch[0], "tensor"):
                 audios = [i.tensor.to(self._torch_device) for i in input_batch]
             else:
-                audios = [str(i.metadata.path) for i in input_batch]
+                audios = [str(i.path) for i in input_batch]
 
             hypotheses = self._transcribe(audios)
             # Get timestamped segments if available, otherwise default to whole text
