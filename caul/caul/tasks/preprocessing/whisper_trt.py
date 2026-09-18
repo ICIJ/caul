@@ -62,7 +62,7 @@ class WhisperTrtPreprocessor(ASRPreprocessorMixin):
                 config.n_mels, config.mel_filters_dir
             ),
             dtype=config.dtype,
-            batch_size=config.batch_size,
+            batcher=config.batcher,
             max_frames=config.max_frames,
         )
 

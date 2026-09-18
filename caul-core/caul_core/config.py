@@ -284,7 +284,6 @@ class WhisperTrtPreprocessorConfig(BasePreprocessorConfig):
     n_mels: int = WHISPER_TRT_N_MELS
     mel_filters_dir: str | None = None
     dtype: str = WHISPER_TRT_DTYPE
-    batch_size: int = DEFAULT_BATCH_SIZE
     max_frames: int = WHISPER_TRT_MAX_FRAMES
 
 
