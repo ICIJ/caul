@@ -19,14 +19,13 @@ from caul_core import (
     ConstantSizeBatcherConfig,
     Error,
     FSProcessedSegment,
-    InputItem,
     MemoryProcessedSegment,
     Preprocessor,
     ProcessedAudioSegment,
     SegmentIndex,
     SegmentMetadata,
 )
-from caul_core.asr_task import SampleRate
+from caul_core.asr_task import Audio, SampleRate
 from torch import Tensor
 
 from caul.segmentation.methods import SegmentationFunction
@@ -129,12 +128,14 @@ class ASRPreprocessorMixin(Preprocessor):
             inputs_and_sample_rates = zip(inputs, input_sample_rates, strict=True)
         seg_meta = None
         for audio_idx, (audio_input, sample_rate) in enumerate(inputs_and_sample_rates):
-            audio_meta = self._audio_meta_from_input(audio_idx, audio_input)
+            audio_input, audio_meta = self._audio_meta_from_input(
+                audio_idx, audio_input
+            )
             try:
                 audio, sample_rate = self._load_audio(audio_input, sample_rate)
                 segs = self._segment_audio(audio, sample_rate)
                 for seg_idx, (audio_seg, seg_duration) in enumerate(segs):
-                    seg_idx = SegmentIndex(audio=audio_idx, segment=seg_idx)
+                    seg_idx = SegmentIndex(audio=audio_meta.index, segment=seg_idx)
                     seg_meta = SegmentMetadata(
                         index=seg_idx,
                         audio_format=audio_meta.audio_format,
@@ -165,17 +166,21 @@ class ASRPreprocessorMixin(Preprocessor):
                 yield error
 
     def _audio_meta_from_input(
-        self, audio_idx: int, audio_input: InputItem
-    ) -> AudioMetadata:
+        self, audio_idx: int, audio_input: ASRInput
+    ) -> tuple[Audio, AudioMetadata]:
+        audio_id = audio_idx
+        if isinstance(audio_input, tuple):
+            audio_id, audio_input = audio_input
         audio_format, audio_path = None, None
         if isinstance(audio_input, str):
             audio_input = Path(audio_input)
         if isinstance(audio_input, Path):
             audio_path = audio_input
             audio_format = audio_input.suffix.removeprefix(".") or None
-        return AudioMetadata(
-            index=audio_idx, audio_format=audio_format, audio_path=audio_path
+        audio_meta = AudioMetadata(
+            index=audio_id, audio_format=audio_format, audio_path=audio_path
         )
+        return audio_input, audio_meta
 
     def _segment_audio(
         self, audio_chunks: Iterable[Tensor], sample_rate: int

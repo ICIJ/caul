@@ -129,7 +129,7 @@ class TestASRPreprocessorChunking:
         results = list(_chunking_preprocessor().preprocess_inputs([long_wav, long_wav]))
         assert {r.metadata.index.audio for r in results} == {0, 1}
 
-    def test__decode_failure_yields_error_record_instead_of_raising(self, monkeypatch):
+    def test__should_index_by_provided_id(self, monkeypatch):
         """A ValueError during decoding (as, for instance, when there is no audio stream
         is kept as an error record to preserve input ordering"""
         import torchcodec.decoders
@@ -149,3 +149,8 @@ class TestASRPreprocessorChunking:
         assert isinstance(results[0], Error)
         error = results[0]
         assert error.title == "UnreadableAudio"
+
+    def test__decode_failure_yields_error_record_instead_of_raising(self, long_wav):
+        inputs = [("some_id", long_wav)]
+        results = list(_chunking_preprocessor().preprocess_inputs(inputs))
+        assert all(r.metadata.index.audio == "some_id" for r in results)

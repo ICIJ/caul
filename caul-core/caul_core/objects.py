@@ -136,7 +136,7 @@ class BatcherType(StrEnum):
 
 
 class SegmentIndex(BaseModel):
-    audio: int = 0
+    audio: int | str = 0
     segment: int = 0
 
 
@@ -234,7 +234,7 @@ def _uuid() -> str:
 
 
 class AudioMetadata(BaseModel):
-    index: int
+    index: int | str
     audio_format: str | None = None
     audio_path: Path | None = None
 
