@@ -51,8 +51,11 @@ class ASRTask[I, O](AbstractContextManager, ABC):
         self._device = device
 
 
-InputItem: TypeAlias = "np.ndarray | torch.Tensor | str | Path"
-ASRInput: TypeAlias = "Iterable[InputItem] | InputItem"
+Audio: TypeAlias = "np.ndarray | torch.Tensor | str | Path"
+InputItem = Audio  # for backward comp
+AudioID: TypeAlias = str
+IdentifiedAudio: TypeAlias = tuple[AudioID, Audio]
+ASRInput: TypeAlias = "Iterable[Audio | IdentifiedAudio]"
 SampleRate = Iterable[int] | int
 
 

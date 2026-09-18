@@ -3,7 +3,7 @@ from .asr_task import (
     ASRInput,
     Batcher,
     InferenceRunner,
-    InputItem,
+    Audio,
     Postprocessor,
     Preprocessor,
 )
@@ -130,7 +130,7 @@ __all__ = [
     "FireRedASR2ModelTag",
     "InferenceRunner",
     "InferenceRunnerConfig",
-    "InputItem",
+    "Audio",
     "MaxDurationBatcherConfig",
     "MemoryProcessedSegment",
     "ParakeetInferenceRunnerConfig",
