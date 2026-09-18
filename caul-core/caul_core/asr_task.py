@@ -110,28 +110,13 @@ class Postprocessor(ASRTask, RegistrableFromConfig):
     ) -> Iterable[ASRResult | Error]: ...
 
 
-class Batcher[I, C](RegistrableFromConfig):
+class Batcher[I, O, C](RegistrableFromConfig):
     def __init__(self, items: Iterable[I | Error], config: C):
-        self._items = iter(items)
-        self._errors = []
+        self._items = items
         self._config = config
 
     @abstractmethod
-    def results(self) -> Iterable[tuple[I, ...]]: ...
-
-    @final
-    @property
-    def errors(self) -> list[Error]:
-        try:
-            next(self._items)
-            msg = (
-                f"{Batcher.results.__name__} must be fully consumed to collect"
-                f" and get all errors"
-            )
-            raise RuntimeError(msg)
-        except StopIteration:
-            pass
-        return self._errors
+    def batch(self) -> Iterable[tuple[O, ...] | Error]: ...
 
     @classmethod
     def _from_config(

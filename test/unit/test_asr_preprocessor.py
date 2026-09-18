@@ -6,7 +6,6 @@ from pathlib import Path
 import pytest
 import torch
 from caul.tasks.preprocessing.asr_preprocessor import ASRPreprocessorMixin, load_audio
-from caul.tasks.preprocessing.batcher import ConstantSizeBatcher
 from caul_core import DEFAULT_SAMPLE_RATE, Error
 from torchcodec.encoders import AudioEncoder
 
@@ -150,13 +149,3 @@ class TestASRPreprocessorChunking:
         assert isinstance(results[0], Error)
         error = results[0]
         assert error.title == "UnreadableAudio"
-
-
-def test_batcher_should_raise_when_consuming_uncollected_errors():
-    # Given
-    items = range(10)
-    batcher = ConstantSizeBatcher(items)
-    # When/Then
-    expected = "must be fully consumed to collect and get all errors"
-    with pytest.raises(RuntimeError, match=expected):
-        _ = batcher.errors

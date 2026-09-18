@@ -15,19 +15,18 @@ from caul_core import (
 class ConstantSizeBatcher(Batcher):
     def __init__(
         self,
-        items: Iterable[ProcessedAudioSegment],
+        items: Iterable[ProcessedAudioSegment | Error],
         config: ConstantSizeBatcherConfig | None = None,
     ):
         if config is None:
             config = ConstantSizeBatcherConfig()
         super().__init__(items, config)
 
-    def results(self) -> Iterable[tuple[ProcessedAudioSegment, ...]]:
-        errors = []
+    def batch(self) -> Iterable[tuple[ProcessedAudioSegment, ...] | Error]:
         batch: list[ProcessedAudioSegment] = []
         for item in self._items:
             if isinstance(item, Error):
-                errors.append(item)
+                yield item
                 continue
             item = cast(ProcessedAudioSegment, item)
             batch.append(item)
@@ -49,13 +48,13 @@ class MaxDurationBatcher(Batcher):
             config = MaxDurationBatcherConfig()
         super().__init__(items, config)
 
-    def results(self) -> Iterable[tuple[ProcessedAudioSegment, ...]]:
+    def batch(self) -> Iterable[tuple[ProcessedAudioSegment, ...] | Error]:
         current_batch: list[ProcessedAudioSegment] = []
         current_batch_duration_s = 0.0
 
         for item in self._items:
             if isinstance(item, Error):
-                self._errors.append(item)
+                yield item
                 continue
             input_duration_s = item.metadata.duration_s
             if (

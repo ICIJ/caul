@@ -101,8 +101,7 @@ class ASRPreprocessorMixin(Preprocessor):
         # only successful segments and collect failures. Order is not maintained
         # between successful results and errors which is fine as long order is
         # maintained for results which processed downstream
-        yield from batcher.results()
-        yield from batcher.errors
+        yield from batcher.batch()
 
     @final
     def preprocess_inputs(  # pylint: disable=too-many-locals

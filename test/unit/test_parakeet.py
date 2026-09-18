@@ -42,7 +42,7 @@ def test__parakeet_batching_unbatching():
 
     audio = [torch.zeros([samples_per_min * i]) for i in [12, 11, 5, 4, 7, 10, 30]]
 
-    result = MaxDurationBatcher(preprocessor.preprocess_inputs(audio)).results()
+    result = MaxDurationBatcher(preprocessor.preprocess_inputs(audio)).batch()
 
     expected = [
         [(SegmentIndex(audio=0, segment=0), 12.0)],
