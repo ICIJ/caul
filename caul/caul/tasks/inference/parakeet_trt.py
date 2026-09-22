@@ -33,19 +33,19 @@ def _decoder_joint_connector():
     class DecoderJointConnector(SaveRestoreConnector):
         @staticmethod
         def _load_state_dict_from_disk(
-            model_weights: dict, device: TorchDevice
+            model_weights: dict, map_location: TorchDevice = "cpu"
         ) -> dict:
             """Maps model weights into virtual address space
 
             :param model_weights: model weights
-            :param device: device to load weights to
+            :param map_location: device to load weights to
             :return: decoder + joint weights
             """
             import torch  # pylint: disable=import-outside-toplevel
 
             weight_pointers = torch.load(
                 model_weights,
-                map_location=device,
+                map_location=map_location,
                 mmap=True,
                 weights_only=True,
             )
