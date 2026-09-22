@@ -1,9 +1,11 @@
 from functools import lru_cache
 
+from caul.trt import import_trt
+
 
 @lru_cache(maxsize=None)
 def _dtypes_map():
-    import tensorrt as trt  # pylint: disable=import-outside-toplevel
+    trt = import_trt()
     import torch  # pylint: disable=import-outside-toplevel
 
     return {
@@ -31,7 +33,7 @@ class TrtInferenceHandler:
         self._context = None
 
     def infer(self, inputs: dict) -> tuple:
-        import tensorrt as trt  # pylint: disable=import-outside-toplevel
+        trt = import_trt()
         import torch  # pylint: disable=import-outside-toplevel
 
         trt_to_torch_dtypes = _dtypes_map()

@@ -13,6 +13,7 @@ from caul_core import (
 from icij_common.registrable import FromConfig
 from torchaudio.models import Hypothesis
 
+from ...trt import import_trt
 from ...trt.handler import TrtInferenceHandler
 from ..inference.parakeet import ParakeetInferenceRunner
 from .trt_inference import TrtInferenceMixin
@@ -98,7 +99,8 @@ class ParakeetTrtInferenceRunner(ParakeetInferenceRunner, TrtInferenceMixin):
 
     def __enter__(self):
         import nemo.collections.asr as nemo_asr  # pylint: disable=import-outside-toplevel
-        import tensorrt as trt  # pylint: disable=import-outside-toplevel
+
+        trt = import_trt()
 
         with open(self._engine_path, "rb") as f:
             self._encoder = trt.Runtime(
