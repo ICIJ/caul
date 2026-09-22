@@ -73,3 +73,34 @@ class TestParakeetTrtInferenceRunner:
             )
 
         assert result is expected
+
+    def test__requests_hypotheses_with_timestamps_from_decoder(self):
+        mock_inference_runner = _mock_inference_runner()
+        mock_trt_handler = _mock_trt_handler(_ENC_OUT, _ENC_OUT_LEN)
+
+        with patch(_INFERENCE_HANDLER_PATH, mock_trt_handler):
+            mock_inference_runner._transcribe(
+                _AUDIO_INPUT, trt_device=torch.device("cpu")
+            )
+
+        call_kwargs = mock_inference_runner._decoder.decoding.rnnt_decoder_predictions_tensor.call_args.kwargs
+        assert call_kwargs.get("return_hypotheses") is True
+
+    def test__builds_length_tensor_from_original_audio_not_padded_audio(self):
+        mock_inference_runner = _mock_inference_runner()
+        mock_trt_handler = _mock_trt_handler(_ENC_OUT, _ENC_OUT_LEN)
+        short_audio = torch.zeros(_SIGNAL_LEN // 2)
+        long_audio = torch.zeros(_SIGNAL_LEN)
+
+        with patch(_INFERENCE_HANDLER_PATH, mock_trt_handler):
+            mock_inference_runner._transcribe(
+                [short_audio, long_audio], trt_device=torch.device("cpu")
+            )
+
+        call_args = mock_trt_handler.return_value.infer.call_args[0][0]
+        input_signal = call_args["input_signal"]
+        input_signal_length = call_args["input_signal_length"]
+
+        assert input_signal.shape == (2, _SIGNAL_LEN)
+        assert input_signal_length.shape == (2,)
+        assert input_signal_length.tolist() == [_SIGNAL_LEN // 2, _SIGNAL_LEN]
