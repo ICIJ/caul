@@ -116,6 +116,12 @@ class ParakeetTrtInferenceRunner(ParakeetInferenceRunner, TrtInferenceMixin):
 
         return self
 
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        # ParakeetInferenceRunner and TrtInferenceMixin both define __exit__; MRO would
+        # otherwise resolve to InferenceRunner's, which never releases the TRT engine or
+        # the restored decoder.
+        return TrtInferenceMixin.__exit__(self, exc_type, exc_val, exc_tb)
+
     def _transcribe(
         self,
         audio_inputs: "torch.Tensor | Iterable[torch.Tensor]",
@@ -135,13 +141,13 @@ class ParakeetTrtInferenceRunner(ParakeetInferenceRunner, TrtInferenceMixin):
         if not isinstance(audio_inputs, Iterable):
             audio_inputs = [audio_inputs]
 
+        audio_inputs_len = torch.tensor(
+            [ai.shape[-1] for ai in audio_inputs], dtype=torch.int32
+        ).to(trt_device)
+
         # pad to len(max(t)), setting dim[0] to batch_size
         audio_inputs = torch.nn.utils.rnn.pad_sequence(
             audio_inputs, batch_first=True
-        ).to(trt_device)
-
-        audio_inputs_len = torch.tensor(
-            [torch.tensor([ai.shape[-1]]) for ai in audio_inputs]
         ).to(trt_device)
 
         with TrtInferenceHandler(self._encoder) as handler:
@@ -154,5 +160,5 @@ class ParakeetTrtInferenceRunner(ParakeetInferenceRunner, TrtInferenceMixin):
 
         with torch.no_grad():
             return self._decoder.decoding.rnnt_decoder_predictions_tensor(
-                enc_out, enc_len
+                enc_out, enc_len, return_hypotheses=True
             )
