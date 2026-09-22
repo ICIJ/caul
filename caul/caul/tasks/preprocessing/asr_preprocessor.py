@@ -13,6 +13,7 @@ from caul_core import (
     DEFAULT_MAX_FRAMES,
     DEFAULT_SAMPLE_RATE,
     ASRInput,
+    Audio,
     AudioMetadata,
     BaseBatcherConfig,
     BasePreprocessorConfig,
@@ -22,10 +23,10 @@ from caul_core import (
     MemoryProcessedSegment,
     Preprocessor,
     ProcessedAudioSegment,
+    SampleRate,
     SegmentIndex,
     SegmentMetadata,
 )
-from caul_core.asr_task import Audio, SampleRate
 from torch import Tensor
 
 from caul.segmentation.methods import SegmentationFunction
