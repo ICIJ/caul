@@ -16,6 +16,8 @@ from caul_core import (
 )
 from icij_common.registrable import FromConfig
 
+from ...utils import load_audio
+
 if TYPE_CHECKING:
     from faster_whisper.transcribe import TranscriptionOptions
 
@@ -123,7 +125,6 @@ class FasterWhisperInferenceRunner(InferenceRunner):
         from faster_whisper.transcribe import (  # pylint: disable=import-outside-toplevel
             Segment,
         )
-        from torchcodec.decoders import AudioDecoder
 
         options = inference_config_to_transcription_options(self._config)
 
@@ -137,10 +138,7 @@ class FasterWhisperInferenceRunner(InferenceRunner):
                 isinstance(input_batch[0], FSProcessedSegment)
                 and input_batch[0].path is not None
             ):
-                tensors = [
-                    AudioDecoder(inp.path).get_all_samples().data[0].squeeze(0).numpy()
-                    for inp in input_batch
-                ]
+                tensors = [load_audio(inp.path).numpy() for inp in input_batch]
             else:
                 continue
 

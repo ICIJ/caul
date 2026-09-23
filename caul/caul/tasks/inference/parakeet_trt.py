@@ -15,6 +15,7 @@ from torchaudio.models import Hypothesis
 
 from ...trt import import_trt
 from ...trt.handler import TrtInferenceHandler
+from ...utils import load_audio
 from ..inference.parakeet import ParakeetInferenceRunner
 from .trt_inference import TrtInferenceMixin
 
@@ -124,12 +125,12 @@ class ParakeetTrtInferenceRunner(ParakeetInferenceRunner, TrtInferenceMixin):
 
     def _transcribe(
         self,
-        audio_inputs: "torch.Tensor | Iterable[torch.Tensor]",
+        audio_inputs: "torch.Tensor | str | Path | Iterable[torch.Tensor | str | Path]",
         trt_device: TorchDevice = None,
     ) -> list[Hypothesis] | list[list[Hypothesis]]:
         """Transcribe audio tensors
 
-        :param audio_inputs: audio tensor inputs
+        :param audio_inputs: audio tensors or audio file paths
         :return: transcription results
         """
         import torch  # pylint: disable=import-outside-toplevel
@@ -138,8 +139,20 @@ class ParakeetTrtInferenceRunner(ParakeetInferenceRunner, TrtInferenceMixin):
         if trt_device is None:
             trt_device = torch.device("cuda")
 
-        if not isinstance(audio_inputs, Iterable):
+        if isinstance(audio_inputs, torch.Tensor):
+            # 1D is a single signal, 2D is a batch of signals
+            audio_inputs = (
+                [audio_inputs] if audio_inputs.dim() == 1 else list(audio_inputs)
+            )
+        elif isinstance(audio_inputs, (str, Path)) or not isinstance(
+            audio_inputs, Iterable
+        ):
             audio_inputs = [audio_inputs]
+
+        # NeMo's transcribe() accepts file paths; TRT needs tensors, so load them here
+        audio_inputs = [
+            load_audio(ai) if isinstance(ai, (str, Path)) else ai for ai in audio_inputs
+        ]
 
         audio_inputs_len = torch.tensor(
             [ai.shape[-1] for ai in audio_inputs], dtype=torch.int32

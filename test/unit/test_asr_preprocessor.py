@@ -5,7 +5,8 @@ from pathlib import Path
 
 import pytest
 import torch
-from caul.tasks.preprocessing.asr_preprocessor import ASRPreprocessorMixin, load_audio
+from caul.tasks.preprocessing.asr_preprocessor import ASRPreprocessorMixin
+from caul.utils import load_audio
 from caul_core import DEFAULT_SAMPLE_RATE, Error
 from torchcodec.encoders import AudioEncoder
 

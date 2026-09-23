@@ -65,7 +65,9 @@ class TestParakeetTrtInferenceRunner:
         mock_inference_runner = _mock_inference_runner()
         mock_trt_handler = _mock_trt_handler(_ENC_OUT, _ENC_OUT_LEN)
         expected = [MagicMock(), MagicMock()]
-        mock_inference_runner._decoder.decoding.rnnt_decoder_predictions_tensor.return_value = expected
+        mock_inference_runner._decoder.decoding.rnnt_decoder_predictions_tensor.return_value = (
+            expected
+        )
 
         with patch(_INFERENCE_HANDLER_PATH, mock_trt_handler):
             result = mock_inference_runner._transcribe(
@@ -83,7 +85,9 @@ class TestParakeetTrtInferenceRunner:
                 _AUDIO_INPUT, trt_device=torch.device("cpu")
             )
 
-        call_kwargs = mock_inference_runner._decoder.decoding.rnnt_decoder_predictions_tensor.call_args.kwargs
+        call_kwargs = (
+            mock_inference_runner._decoder.decoding.rnnt_decoder_predictions_tensor.call_args.kwargs
+        )
         assert call_kwargs.get("return_hypotheses") is True
 
     def test__builds_length_tensor_from_original_audio_not_padded_audio(self):
@@ -104,3 +108,29 @@ class TestParakeetTrtInferenceRunner:
         assert input_signal.shape == (2, _SIGNAL_LEN)
         assert input_signal_length.shape == (2,)
         assert input_signal_length.tolist() == [_SIGNAL_LEN // 2, _SIGNAL_LEN]
+
+    def test__loads_path_inputs_as_tensors(self):
+        mock_inference_runner = _mock_inference_runner()
+        mock_trt_handler = _mock_trt_handler(_ENC_OUT, _ENC_OUT_LEN)
+        loaded = [torch.zeros(_SIGNAL_LEN), torch.zeros(_SIGNAL_LEN // 2)]
+
+        with (
+            patch(_INFERENCE_HANDLER_PATH, mock_trt_handler),
+            patch(
+                "caul.tasks.inference.parakeet_trt.load_audio", side_effect=loaded
+            ) as mock_load,
+        ):
+            mock_inference_runner._transcribe(
+                ["/fake/a.wav", "/fake/b.wav"], trt_device=torch.device("cpu")
+            )
+
+        assert [c.args[0] for c in mock_load.call_args_list] == [
+            "/fake/a.wav",
+            "/fake/b.wav",
+        ]
+        call_args = mock_trt_handler.return_value.infer.call_args[0][0]
+        assert call_args["input_signal"].shape == (2, _SIGNAL_LEN)
+        assert call_args["input_signal_length"].tolist() == [
+            _SIGNAL_LEN,
+            _SIGNAL_LEN // 2,
+        ]
