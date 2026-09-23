@@ -33,7 +33,7 @@ from caul.segmentation.methods import SegmentationFunction
 
 from ...exception import UnreadableAudio
 from ...segmentation import segment_by_silence
-from ...utils import save_tensor
+from ...utils import audio_decoder, load_audio, save_tensor
 from .batcher import Batcher
 
 if TYPE_CHECKING:
@@ -233,12 +233,8 @@ class ASRPreprocessorMixin(Preprocessor):
         :param path: path to audio file
         :return: Iterable of tensor segments
         """
-        from torchcodec.decoders import (
-            AudioDecoder,
-        )  # pylint: disable=import-outside-toplevel
-
         try:
-            native_meta = AudioDecoder(path).metadata
+            native_meta = audio_decoder(path).metadata
         except ValueError as e:
             raise UnreadableAudio(path) from e
         num_frames = int(native_meta.duration_seconds * native_meta.sample_rate)
@@ -261,12 +257,8 @@ class ASRPreprocessorMixin(Preprocessor):
         :param total_duration_s: total duration of audio file in seconds
         :return: Iterable of tensor segments
         """
-        from torchcodec.decoders import (
-            AudioDecoder,
-        )  # pylint: disable=import-outside-toplevel
-
         chunk_duration_s = self._max_frames / self._sample_rate
-        decoder = AudioDecoder(path, num_channels=1, sample_rate=self._sample_rate)
+        decoder = audio_decoder(path, self._sample_rate, num_channels=1)
         start = 0.0
         while start < total_duration_s:
             end = min(start + chunk_duration_s, total_duration_s)
@@ -328,14 +320,3 @@ def _displayable_prefix(
     else:
         uid = uuid.uuid4().hex[:20]
     return f"{displayable_file_name}-{uid}"
-
-
-def load_audio(
-    path: str | Path, sample_rate: int = DEFAULT_SAMPLE_RATE, *, num_channels: int = 1
-) -> "torch.Tensor":
-    from torchcodec.decoders import (
-        AudioDecoder,
-    )  # pylint: disable=import-outside-toplevel
-
-    samples = AudioDecoder(path, num_channels=num_channels, sample_rate=sample_rate)
-    return samples.get_all_samples().data.squeeze()

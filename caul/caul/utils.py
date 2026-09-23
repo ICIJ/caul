@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     import torch
+    from torchcodec.decoders import AudioDecoder
 
 
 def save_tensor(audio: "torch.Tensor", path: Path) -> None:
@@ -35,6 +36,38 @@ def save_tensor(audio: "torch.Tensor", path: Path) -> None:
     encoder.to_file(
         path, sample_rate=DEFAULT_SAMPLE_RATE, num_channels=1, bit_rate=DEFAULT_BIT_RATE
     )
+
+
+def audio_decoder(
+    path: str | Path, sample_rate: int | None = None, *, num_channels: int | None = None
+) -> "AudioDecoder":
+    """Open an audio file for decoding; None keeps the file's native value
+
+    :param path: audio file path
+    :param sample_rate: output sample rate
+    :param num_channels: output channels
+    :return: audio decoder
+    """
+    from torchcodec.decoders import (  # pylint: disable=import-outside-toplevel
+        AudioDecoder,
+    )
+
+    return AudioDecoder(path, sample_rate=sample_rate, num_channels=num_channels)
+
+
+def load_audio(
+    path: str | Path, sample_rate: int = DEFAULT_SAMPLE_RATE, *, num_channels: int = 1
+) -> "torch.Tensor":
+    """Load an audio file as a tensor, resampled to sample_rate
+
+    :param path: audio file path
+    :param sample_rate: output sample rate
+    :param num_channels: output channels; mono returns a 1D tensor
+    :return: audio tensor
+    """
+    decoder = audio_decoder(path, sample_rate, num_channels=num_channels)
+    # Drop channel dim for mono
+    return decoder.get_all_samples().data.squeeze(0)
 
 
 def device_to_torch(device: TorchDevice) -> "torch.device":
