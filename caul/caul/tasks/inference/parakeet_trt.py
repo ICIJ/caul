@@ -13,6 +13,7 @@ from caul_core import (
 from icij_common.registrable import FromConfig
 from torchaudio.models import Hypothesis
 
+from ...exception import TrtEngineLoadError
 from ...trt import import_trt
 from ...trt.handler import TrtInferenceHandler
 from ...utils import load_audio
@@ -99,14 +100,19 @@ class ParakeetTrtInferenceRunner(ParakeetInferenceRunner, TrtInferenceMixin):
         )
 
     def __enter__(self):
-        import nemo.collections.asr as nemo_asr  # pylint: disable=import-outside-toplevel
-
         trt = import_trt()
 
+        runtime = trt.Runtime(trt.Logger(trt.Logger.ERROR))
+        # Version-compatible engines embed the lean runtime, which is host code that
+        # TensorRT refuses to deserialize unless allowed. Engines must therefore only
+        # come from trusted sources.
+        runtime.engine_host_code_allowed = True
         with open(self._engine_path, "rb") as f:
-            self._encoder = trt.Runtime(
-                trt.Logger(trt.Logger.ERROR)
-            ).deserialize_cuda_engine(f.read())
+            self._encoder = runtime.deserialize_cuda_engine(f.read())
+        if self._encoder is None:
+            raise TrtEngineLoadError(self._engine_path, trt.__version__)
+
+        import nemo.collections.asr as nemo_asr  # pylint: disable=import-outside-toplevel
 
         self._decoder = nemo_asr.models.ASRModel.restore_from(
             self._model_path,
