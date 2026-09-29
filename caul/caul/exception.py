@@ -25,3 +25,13 @@ class UnreadableAudio(Exception):
     def __init__(self, path: Path):
         msg = f"failed to read audio file at {path}"
         super().__init__(msg)
+
+
+class TrtEngineLoadError(Exception):
+    def __init__(self, path: Path | str, trt_version: str):
+        msg = (
+            f"failed to deserialize TensorRT engine at {path} with TensorRT runtime"
+            f" {trt_version}; the engine was likely built with a different TensorRT"
+            f" version and must be rebuilt (see TensorRT logs above for details)"
+        )
+        super().__init__(msg)

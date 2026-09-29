@@ -7,11 +7,6 @@ resolution-markers = [
     "python_full_version >= '3.12' and sys_platform == 'win32' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt'",
     "python_full_version >= '3.12' and sys_platform == 'emscripten' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt'",
     "(python_full_version >= '3.12' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt') or (python_full_version >= '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt')",
-    "python_full_version < '3.12' and sys_platform == 'darwin' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt'",
-    "python_full_version < '3.12' and platform_machine == 'aarch64' and sys_platform == 'linux' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt'",
-    "python_full_version < '3.12' and sys_platform == 'win32' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt'",
-    "python_full_version < '3.12' and sys_platform == 'emscripten' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt'",
-    "(python_full_version < '3.12' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt') or (python_full_version < '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt')",
     "python_full_version >= '3.12' and sys_platform == 'win32' and extra == 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version >= '3.12' and sys_platform == 'win32' and extra != 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version >= '3.12' and sys_platform == 'win32' and extra == 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
@@ -24,26 +19,10 @@ resolution-markers = [
     "python_full_version >= '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra != 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version >= '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra == 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version >= '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
-    "python_full_version < '3.12' and sys_platform == 'win32' and extra == 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
-    "python_full_version < '3.12' and sys_platform == 'win32' and extra != 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
-    "python_full_version < '3.12' and sys_platform == 'win32' and extra == 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
-    "python_full_version < '3.12' and sys_platform == 'win32' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
-    "python_full_version < '3.12' and sys_platform == 'emscripten' and extra == 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
-    "python_full_version < '3.12' and sys_platform == 'emscripten' and extra != 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
-    "python_full_version < '3.12' and sys_platform == 'emscripten' and extra == 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
-    "python_full_version < '3.12' and sys_platform == 'emscripten' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
-    "python_full_version < '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra == 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
-    "python_full_version < '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra != 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
-    "python_full_version < '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra == 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
-    "python_full_version < '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version >= '3.12' and sys_platform == 'darwin' and extra == 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version >= '3.12' and sys_platform == 'darwin' and extra != 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version >= '3.12' and sys_platform == 'darwin' and extra == 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version >= '3.12' and sys_platform == 'darwin' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
-    "python_full_version < '3.12' and sys_platform == 'darwin' and extra == 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
-    "python_full_version < '3.12' and sys_platform == 'darwin' and extra != 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
-    "python_full_version < '3.12' and sys_platform == 'darwin' and extra == 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
-    "python_full_version < '3.12' and sys_platform == 'darwin' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version >= '3.12' and sys_platform == 'win32' and extra == 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version >= '3.12' and sys_platform == 'win32' and extra != 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version >= '3.12' and sys_platform == 'win32' and extra == 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
@@ -56,6 +35,31 @@ resolution-markers = [
     "python_full_version >= '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra != 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version >= '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra == 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version >= '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
+    "python_full_version >= '3.12' and sys_platform == 'darwin' and extra == 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
+    "python_full_version >= '3.12' and sys_platform == 'darwin' and extra != 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
+    "python_full_version >= '3.12' and sys_platform == 'darwin' and extra == 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
+    "python_full_version >= '3.12' and sys_platform == 'darwin' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
+    "python_full_version < '3.12' and sys_platform == 'darwin' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt'",
+    "python_full_version < '3.12' and platform_machine == 'aarch64' and sys_platform == 'linux' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt'",
+    "python_full_version < '3.12' and sys_platform == 'win32' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt'",
+    "python_full_version < '3.12' and sys_platform == 'emscripten' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt'",
+    "(python_full_version < '3.12' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt') or (python_full_version < '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt')",
+    "python_full_version < '3.12' and sys_platform == 'win32' and extra == 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
+    "python_full_version < '3.12' and sys_platform == 'win32' and extra != 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
+    "python_full_version < '3.12' and sys_platform == 'win32' and extra == 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
+    "python_full_version < '3.12' and sys_platform == 'win32' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
+    "python_full_version < '3.12' and sys_platform == 'emscripten' and extra == 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
+    "python_full_version < '3.12' and sys_platform == 'emscripten' and extra != 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
+    "python_full_version < '3.12' and sys_platform == 'emscripten' and extra == 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
+    "python_full_version < '3.12' and sys_platform == 'emscripten' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
+    "python_full_version < '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra == 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
+    "python_full_version < '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra != 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
+    "python_full_version < '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra == 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
+    "python_full_version < '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
+    "python_full_version < '3.12' and sys_platform == 'darwin' and extra == 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
+    "python_full_version < '3.12' and sys_platform == 'darwin' and extra != 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
+    "python_full_version < '3.12' and sys_platform == 'darwin' and extra == 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
+    "python_full_version < '3.12' and sys_platform == 'darwin' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version < '3.12' and sys_platform == 'win32' and extra == 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version < '3.12' and sys_platform == 'win32' and extra != 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version < '3.12' and sys_platform == 'win32' and extra == 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
@@ -68,10 +72,6 @@ resolution-markers = [
     "python_full_version < '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra != 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version < '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra == 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version < '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
-    "python_full_version >= '3.12' and sys_platform == 'darwin' and extra == 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
-    "python_full_version >= '3.12' and sys_platform == 'darwin' and extra != 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
-    "python_full_version >= '3.12' and sys_platform == 'darwin' and extra == 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
-    "python_full_version >= '3.12' and sys_platform == 'darwin' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version < '3.12' and sys_platform == 'darwin' and extra == 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version < '3.12' and sys_platform == 'darwin' and extra != 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version < '3.12' and sys_platform == 'darwin' and extra == 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
@@ -586,7 +586,7 @@ requires-dist = [
     { name = "nemo-toolkit", extras = ["asr"], marker = "extra == 'nemo'", specifier = "~=3.0" },
     { name = "pyannote-audio", marker = "extra == 'pyannote'", specifier = "~=4.0" },
     { name = "pydantic-extra-types", extras = ["pycountry"], specifier = "~=2.11" },
-    { name = "tensorrt-lean", marker = "(sys_platform == 'linux' and extra == 'parakeet-trt') or (sys_platform == 'win32' and extra == 'parakeet-trt')", specifier = "~=11.0" },
+    { name = "tensorrt-lean", marker = "(sys_platform == 'linux' and extra == 'parakeet-trt') or (sys_platform == 'win32' and extra == 'parakeet-trt')", specifier = "==11.2.1.2" },
     { name = "tensorrt-llm", marker = "(sys_platform == 'linux' and extra == 'whisper-trt') or (sys_platform == 'win32' and extra == 'whisper-trt')", specifier = "~=1.2" },
     { name = "tiktoken", specifier = "~=0.13" },
     { name = "torch", marker = "extra == 'nemo'", specifier = "~=2.10", index = "https://download.pytorch.org/whl/cpu" },
@@ -612,12 +612,14 @@ name = "caul-core"
 source = { editable = "../caul-core" }
 dependencies = [
     { name = "icij-common" },
+    { name = "overrides" },
     { name = "pydantic-extra-types", extra = ["pycountry"] },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "icij-common", specifier = "~=0.8.1" },
+    { name = "overrides", specifier = "~=7.7.0" },
     { name = "pydantic-extra-types", extras = ["pycountry"], specifier = "~=2.11" },
 ]
 
@@ -1014,10 +1016,10 @@ resolution-markers = [
     "python_full_version >= '3.12' and sys_platform == 'win32'",
     "python_full_version >= '3.12' and sys_platform == 'emscripten'",
     "python_full_version >= '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version >= '3.12' and sys_platform == 'darwin'",
     "python_full_version < '3.12' and sys_platform == 'win32'",
     "python_full_version < '3.12' and sys_platform == 'emscripten'",
     "python_full_version < '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32'",
-    "python_full_version >= '3.12' and sys_platform == 'darwin'",
     "python_full_version < '3.12' and sys_platform == 'darwin'",
 ]
 dependencies = [
@@ -1325,10 +1327,10 @@ source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version >= '3.12' and sys_platform == 'darwin'",
     "python_full_version >= '3.12' and sys_platform == 'emscripten'",
-    "python_full_version < '3.12' and sys_platform == 'darwin'",
-    "python_full_version < '3.12' and sys_platform == 'emscripten'",
     "python_full_version >= '3.12' and sys_platform == 'win32'",
     "python_full_version >= '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version < '3.12' and sys_platform == 'darwin'",
+    "python_full_version < '3.12' and sys_platform == 'emscripten'",
     "python_full_version < '3.12' and sys_platform == 'win32'",
     "python_full_version < '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32'",
 ]
@@ -1934,10 +1936,10 @@ resolution-markers = [
     "python_full_version >= '3.12' and sys_platform == 'win32'",
     "python_full_version >= '3.12' and sys_platform == 'emscripten'",
     "python_full_version >= '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version >= '3.12' and sys_platform == 'darwin'",
     "python_full_version < '3.12' and sys_platform == 'win32'",
     "python_full_version < '3.12' and sys_platform == 'emscripten'",
     "python_full_version < '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32'",
-    "python_full_version >= '3.12' and sys_platform == 'darwin'",
     "python_full_version < '3.12' and sys_platform == 'darwin'",
 ]
 dependencies = [
@@ -1965,10 +1967,10 @@ resolution-markers = [
     "python_full_version >= '3.12' and sys_platform == 'win32'",
     "python_full_version >= '3.12' and sys_platform == 'emscripten'",
     "python_full_version >= '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version >= '3.12' and sys_platform == 'darwin'",
     "python_full_version < '3.12' and sys_platform == 'win32'",
     "python_full_version < '3.12' and sys_platform == 'emscripten'",
     "python_full_version < '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32'",
-    "python_full_version >= '3.12' and sys_platform == 'darwin'",
     "python_full_version < '3.12' and sys_platform == 'darwin'",
 ]
 dependencies = [
@@ -2618,10 +2620,10 @@ source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version >= '3.12' and sys_platform == 'darwin'",
     "python_full_version >= '3.12' and sys_platform == 'emscripten'",
-    "python_full_version < '3.12' and sys_platform == 'darwin'",
-    "python_full_version < '3.12' and sys_platform == 'emscripten'",
     "python_full_version >= '3.12' and sys_platform == 'win32'",
     "python_full_version >= '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version < '3.12' and sys_platform == 'darwin'",
+    "python_full_version < '3.12' and sys_platform == 'emscripten'",
     "python_full_version < '3.12' and sys_platform == 'win32'",
     "python_full_version < '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32'",
 ]
@@ -2812,10 +2814,10 @@ resolution-markers = [
     "python_full_version >= '3.12' and sys_platform == 'win32'",
     "python_full_version >= '3.12' and sys_platform == 'emscripten'",
     "python_full_version >= '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version >= '3.12' and sys_platform == 'darwin'",
     "python_full_version < '3.12' and sys_platform == 'win32'",
     "python_full_version < '3.12' and sys_platform == 'emscripten'",
     "python_full_version < '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32'",
-    "python_full_version >= '3.12' and sys_platform == 'darwin'",
     "python_full_version < '3.12' and sys_platform == 'darwin'",
 ]
 dependencies = [
@@ -3146,10 +3148,10 @@ resolution-markers = [
     "python_full_version >= '3.12' and sys_platform == 'win32'",
     "python_full_version >= '3.12' and sys_platform == 'emscripten'",
     "python_full_version >= '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version >= '3.12' and sys_platform == 'darwin'",
     "python_full_version < '3.12' and sys_platform == 'win32'",
     "python_full_version < '3.12' and sys_platform == 'emscripten'",
     "python_full_version < '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32'",
-    "python_full_version >= '3.12' and sys_platform == 'darwin'",
     "python_full_version < '3.12' and sys_platform == 'darwin'",
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/d0/63/68dbb6eb2de9cb10ee4c9c14a0148804425e13c4fb20d61cce69f53106da/packaging-24.2.tar.gz", hash = "sha256:c228a6dc5e932d346bc5739379109d49e8853dd8223571c7c5b55260edc0b97f", size = 163950, upload-time = "2024-11-08T09:47:47.202Z" }
@@ -3167,41 +3169,41 @@ resolution-markers = [
     "python_full_version >= '3.12' and sys_platform == 'win32' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt'",
     "python_full_version >= '3.12' and sys_platform == 'emscripten' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt'",
     "(python_full_version >= '3.12' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt') or (python_full_version >= '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt')",
-    "python_full_version < '3.12' and sys_platform == 'darwin' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt'",
-    "python_full_version < '3.12' and platform_machine == 'aarch64' and sys_platform == 'linux' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt'",
-    "python_full_version < '3.12' and sys_platform == 'win32' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt'",
-    "python_full_version < '3.12' and sys_platform == 'emscripten' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt'",
-    "(python_full_version < '3.12' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt') or (python_full_version < '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt')",
     "python_full_version >= '3.12' and sys_platform == 'win32' and extra == 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version >= '3.12' and sys_platform == 'win32' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version >= '3.12' and sys_platform == 'emscripten' and extra == 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version >= '3.12' and sys_platform == 'emscripten' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version >= '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra == 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version >= '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
-    "python_full_version < '3.12' and sys_platform == 'win32' and extra == 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
-    "python_full_version < '3.12' and sys_platform == 'win32' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
-    "python_full_version < '3.12' and sys_platform == 'emscripten' and extra == 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
-    "python_full_version < '3.12' and sys_platform == 'emscripten' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
-    "python_full_version < '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra == 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
-    "python_full_version < '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version >= '3.12' and sys_platform == 'darwin' and extra == 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version >= '3.12' and sys_platform == 'darwin' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
-    "python_full_version < '3.12' and sys_platform == 'darwin' and extra == 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
-    "python_full_version < '3.12' and sys_platform == 'darwin' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version >= '3.12' and sys_platform == 'win32' and extra == 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version >= '3.12' and sys_platform == 'win32' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version >= '3.12' and sys_platform == 'emscripten' and extra == 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version >= '3.12' and sys_platform == 'emscripten' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version >= '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra == 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version >= '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
+    "python_full_version >= '3.12' and sys_platform == 'darwin' and extra == 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
+    "python_full_version >= '3.12' and sys_platform == 'darwin' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
+    "python_full_version < '3.12' and sys_platform == 'darwin' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt'",
+    "python_full_version < '3.12' and platform_machine == 'aarch64' and sys_platform == 'linux' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt'",
+    "python_full_version < '3.12' and sys_platform == 'win32' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt'",
+    "python_full_version < '3.12' and sys_platform == 'emscripten' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt'",
+    "(python_full_version < '3.12' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt') or (python_full_version < '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt')",
+    "python_full_version < '3.12' and sys_platform == 'win32' and extra == 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
+    "python_full_version < '3.12' and sys_platform == 'win32' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
+    "python_full_version < '3.12' and sys_platform == 'emscripten' and extra == 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
+    "python_full_version < '3.12' and sys_platform == 'emscripten' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
+    "python_full_version < '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra == 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
+    "python_full_version < '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
+    "python_full_version < '3.12' and sys_platform == 'darwin' and extra == 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
+    "python_full_version < '3.12' and sys_platform == 'darwin' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version < '3.12' and sys_platform == 'win32' and extra == 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version < '3.12' and sys_platform == 'win32' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version < '3.12' and sys_platform == 'emscripten' and extra == 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version < '3.12' and sys_platform == 'emscripten' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version < '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra == 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version < '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
-    "python_full_version >= '3.12' and sys_platform == 'darwin' and extra == 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
-    "python_full_version >= '3.12' and sys_platform == 'darwin' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version < '3.12' and sys_platform == 'darwin' and extra == 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version < '3.12' and sys_platform == 'darwin' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
 ]
@@ -4399,10 +4401,10 @@ resolution-markers = [
     "python_full_version >= '3.12' and sys_platform == 'win32'",
     "python_full_version >= '3.12' and sys_platform == 'emscripten'",
     "python_full_version >= '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version >= '3.12' and sys_platform == 'darwin'",
     "python_full_version < '3.12' and sys_platform == 'win32'",
     "python_full_version < '3.12' and sys_platform == 'emscripten'",
     "python_full_version < '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32'",
-    "python_full_version >= '3.12' and sys_platform == 'darwin'",
     "python_full_version < '3.12' and sys_platform == 'darwin'",
 ]
 dependencies = [
@@ -4430,41 +4432,41 @@ resolution-markers = [
     "python_full_version >= '3.12' and sys_platform == 'win32' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt'",
     "python_full_version >= '3.12' and sys_platform == 'emscripten' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt'",
     "(python_full_version >= '3.12' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt') or (python_full_version >= '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt')",
-    "python_full_version < '3.12' and sys_platform == 'darwin' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt'",
-    "python_full_version < '3.12' and platform_machine == 'aarch64' and sys_platform == 'linux' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt'",
-    "python_full_version < '3.12' and sys_platform == 'win32' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt'",
-    "python_full_version < '3.12' and sys_platform == 'emscripten' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt'",
-    "(python_full_version < '3.12' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt') or (python_full_version < '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt')",
     "python_full_version >= '3.12' and sys_platform == 'win32' and extra != 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version >= '3.12' and sys_platform == 'win32' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version >= '3.12' and sys_platform == 'emscripten' and extra != 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version >= '3.12' and sys_platform == 'emscripten' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version >= '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra != 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version >= '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
-    "python_full_version < '3.12' and sys_platform == 'win32' and extra != 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
-    "python_full_version < '3.12' and sys_platform == 'win32' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
-    "python_full_version < '3.12' and sys_platform == 'emscripten' and extra != 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
-    "python_full_version < '3.12' and sys_platform == 'emscripten' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
-    "python_full_version < '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra != 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
-    "python_full_version < '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version >= '3.12' and sys_platform == 'darwin' and extra != 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version >= '3.12' and sys_platform == 'darwin' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
-    "python_full_version < '3.12' and sys_platform == 'darwin' and extra != 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
-    "python_full_version < '3.12' and sys_platform == 'darwin' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version >= '3.12' and sys_platform == 'win32' and extra != 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version >= '3.12' and sys_platform == 'win32' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version >= '3.12' and sys_platform == 'emscripten' and extra != 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version >= '3.12' and sys_platform == 'emscripten' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version >= '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra != 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version >= '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
+    "python_full_version >= '3.12' and sys_platform == 'darwin' and extra != 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
+    "python_full_version >= '3.12' and sys_platform == 'darwin' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
+    "python_full_version < '3.12' and sys_platform == 'darwin' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt'",
+    "python_full_version < '3.12' and platform_machine == 'aarch64' and sys_platform == 'linux' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt'",
+    "python_full_version < '3.12' and sys_platform == 'win32' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt'",
+    "python_full_version < '3.12' and sys_platform == 'emscripten' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt'",
+    "(python_full_version < '3.12' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt') or (python_full_version < '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt')",
+    "python_full_version < '3.12' and sys_platform == 'win32' and extra != 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
+    "python_full_version < '3.12' and sys_platform == 'win32' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
+    "python_full_version < '3.12' and sys_platform == 'emscripten' and extra != 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
+    "python_full_version < '3.12' and sys_platform == 'emscripten' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
+    "python_full_version < '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra != 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
+    "python_full_version < '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
+    "python_full_version < '3.12' and sys_platform == 'darwin' and extra != 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
+    "python_full_version < '3.12' and sys_platform == 'darwin' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra == 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version < '3.12' and sys_platform == 'win32' and extra != 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version < '3.12' and sys_platform == 'win32' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version < '3.12' and sys_platform == 'emscripten' and extra != 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version < '3.12' and sys_platform == 'emscripten' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version < '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra != 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version < '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
-    "python_full_version >= '3.12' and sys_platform == 'darwin' and extra != 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
-    "python_full_version >= '3.12' and sys_platform == 'darwin' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version < '3.12' and sys_platform == 'darwin' and extra != 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
     "python_full_version < '3.12' and sys_platform == 'darwin' and extra != 'extra-4-caul-fireredasr2' and extra != 'extra-4-caul-nemo' and extra != 'extra-4-caul-pyannote' and extra != 'extra-4-caul-whisper-trt'",
 ]
@@ -4660,44 +4662,44 @@ sdist = { url = "https://files.pythonhosted.org/packages/db/f5/babf00011cdb6bbed
 
 [[package]]
 name = "tensorrt-lean"
-version = "11.1.0.106"
+version = "11.2.1.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "tensorrt-lean-cu13", marker = "(sys_platform != 'darwin' and sys_platform != 'emscripten') or (sys_platform == 'darwin' and extra == 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-whisper-trt') or (sys_platform == 'darwin' and extra == 'extra-4-caul-nemo' and extra == 'extra-4-caul-whisper-trt') or (sys_platform == 'darwin' and extra == 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt') or (sys_platform == 'emscripten' and extra == 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-whisper-trt') or (sys_platform == 'emscripten' and extra == 'extra-4-caul-nemo' and extra == 'extra-4-caul-whisper-trt') or (sys_platform == 'emscripten' and extra == 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt')" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/55/2c/958cdf0ec1afb6d3ae8698eb14f804c959c1d95cac74a6499d43774878d3/tensorrt_lean-11.1.0.106.tar.gz", hash = "sha256:22ae69f0180f1fefbcb7e0465545f4e41cb9429002b04ff0f3bf7c49647614fd", size = 16681, upload-time = "2026-06-16T17:26:15.401Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/14/71/aebf24f3435b0268c5f5f28da192d9cbeae261bf618ff6a35add17c43626/tensorrt_lean-11.2.1.2.tar.gz", hash = "sha256:28717e198350bcf1f2a91082151efa014cb873a78f49c9056cc42964f0dbdbb4", size = 16653, upload-time = "2026-07-30T19:10:52.258Z" }
 
 [[package]]
 name = "tensorrt-lean-cu13"
-version = "11.1.0.106"
+version = "11.2.1.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "tensorrt-lean-cu13-bindings", marker = "(sys_platform != 'darwin' and sys_platform != 'emscripten') or (sys_platform == 'darwin' and extra == 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-whisper-trt') or (sys_platform == 'darwin' and extra == 'extra-4-caul-nemo' and extra == 'extra-4-caul-whisper-trt') or (sys_platform == 'darwin' and extra == 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt') or (sys_platform == 'emscripten' and extra == 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-whisper-trt') or (sys_platform == 'emscripten' and extra == 'extra-4-caul-nemo' and extra == 'extra-4-caul-whisper-trt') or (sys_platform == 'emscripten' and extra == 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt')" },
     { name = "tensorrt-lean-cu13-libs", marker = "(sys_platform != 'darwin' and sys_platform != 'emscripten') or (sys_platform == 'darwin' and extra == 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-whisper-trt') or (sys_platform == 'darwin' and extra == 'extra-4-caul-nemo' and extra == 'extra-4-caul-whisper-trt') or (sys_platform == 'darwin' and extra == 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt') or (sys_platform == 'emscripten' and extra == 'extra-4-caul-fireredasr2' and extra == 'extra-4-caul-whisper-trt') or (sys_platform == 'emscripten' and extra == 'extra-4-caul-nemo' and extra == 'extra-4-caul-whisper-trt') or (sys_platform == 'emscripten' and extra == 'extra-4-caul-pyannote' and extra == 'extra-4-caul-whisper-trt')" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/21/6e/ef1aef4901e1fb0653e7293472ddcc47a6f463a9f5f904b17c2e266a070d/tensorrt_lean_cu13-11.1.0.106.tar.gz", hash = "sha256:418927974e99cf0d5311d72337bdd700faff3a4447182830dd9ff9d610b45249", size = 18015, upload-time = "2026-06-16T17:28:36.363Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/70/43/f4e5b174686d865506ef981d34beb3c57349248216cae6c309081ef157f4/tensorrt_lean_cu13-11.2.1.2.tar.gz", hash = "sha256:344a772ddf05f1126aeee7e66977d8b1251628b93e9d0b748f1b3765465dfee3", size = 17985, upload-time = "2026-07-30T19:18:36.141Z" }
 
 [[package]]
 name = "tensorrt-lean-cu13-bindings"
-version = "11.1.0.106"
+version = "11.2.1.2"
 source = { registry = "https://pypi.org/simple" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/5a/a7/28e328400dcd30990cef2390648b1e8ba320cacb69eb9c3bac6ccb9d064f/tensorrt_lean_cu13_bindings-11.1.0.106-cp311-none-manylinux_2_28_x86_64.whl", hash = "sha256:84eebcca158a1f66baaffc0034a76b9a22ff63c9229e20a9f66778364196cf40", size = 798140, upload-time = "2026-06-16T17:32:14.23Z" },
-    { url = "https://files.pythonhosted.org/packages/b0/ad/bbad57ad7e5aff2e903c2322d8104804992e89d6ad5581bb2739aeb35af9/tensorrt_lean_cu13_bindings-11.1.0.106-cp311-none-manylinux_2_35_aarch64.whl", hash = "sha256:0b4c7bff3849def84b2f1f2e93f320b169a2ff8e8972637353aa21cf01a7b9a6", size = 774218, upload-time = "2026-06-16T17:32:32.073Z" },
-    { url = "https://files.pythonhosted.org/packages/a7/7c/1f1e9804703d879b7b9e082769982eb5a320790bd8351968f203fbcd236f/tensorrt_lean_cu13_bindings-11.1.0.106-cp311-none-win_amd64.whl", hash = "sha256:8975a283bae34535073c75f4caa8a6fd3461f1fdf09314292334b280157d0520", size = 641314, upload-time = "2026-06-16T17:32:55.75Z" },
-    { url = "https://files.pythonhosted.org/packages/9d/f8/9c89f1fc03c6308522ac6b321216eb6810a8bba4ec60f0e6ac33d3690c8b/tensorrt_lean_cu13_bindings-11.1.0.106-cp312-none-manylinux_2_28_x86_64.whl", hash = "sha256:8dbf9b16b6e1c9e9a9030dae41056319cd0218e5a2249c57f0e6abd73d21a0a5", size = 795416, upload-time = "2026-06-16T17:33:15.577Z" },
-    { url = "https://files.pythonhosted.org/packages/8f/22/cce1d605ac0b9ca70aba281f4c6fc81733040b4dd7bb4ccee50d6e206645/tensorrt_lean_cu13_bindings-11.1.0.106-cp312-none-manylinux_2_35_aarch64.whl", hash = "sha256:78453ad5fef05b68cdb55814dc77ef2b7aef7b616ff9ab91376272008c329e59", size = 772753, upload-time = "2026-06-16T17:33:39.579Z" },
-    { url = "https://files.pythonhosted.org/packages/3e/f1/106be397f87a782398a2816900cd2eb0da779c99ed8d4771ae4a125257a7/tensorrt_lean_cu13_bindings-11.1.0.106-cp312-none-win_amd64.whl", hash = "sha256:6609ede620c023de51920b234b75f3f1670fac3246ce4e82c885a83789298b9e", size = 645829, upload-time = "2026-06-16T17:33:58.845Z" },
+    { url = "https://files.pythonhosted.org/packages/8a/4b/5e7c66319407fa8504f03a21ba2f96bb6003cace359c4e594c1af72e3c78/tensorrt_lean_cu13_bindings-11.2.1.2-cp311-none-manylinux_2_28_x86_64.whl", hash = "sha256:a4cc628b2e095d826748938e3b2f64122555bdd8e5612af3eba07048dbc50c2a", size = 800224, upload-time = "2026-07-30T19:20:44.259Z" },
+    { url = "https://files.pythonhosted.org/packages/42/71/ec3339390fd39a87c91b4e5148644bd31135fff61759f1a91b2e3a855fb1/tensorrt_lean_cu13_bindings-11.2.1.2-cp311-none-manylinux_2_35_aarch64.whl", hash = "sha256:43b2911199efdfa6020a06dd3e291e5d0aa40bc559e2893118ddda597fd4ecf0", size = 777336, upload-time = "2026-07-30T19:21:05.625Z" },
+    { url = "https://files.pythonhosted.org/packages/c8/08/a98a9c9d51210940a88497ec04e8b2220914e98d087163fff12f2346e6c2/tensorrt_lean_cu13_bindings-11.2.1.2-cp311-none-win_amd64.whl", hash = "sha256:f68a03e1f5fe1dfd1d8bb317b7395376844eca59eaa5a11c5482350c6b7c9c92", size = 643875, upload-time = "2026-07-30T19:21:28.111Z" },
+    { url = "https://files.pythonhosted.org/packages/42/20/b7900bc28fca4b8905c3c80e851305e4bf187fe258bd325756d9f86da6f8/tensorrt_lean_cu13_bindings-11.2.1.2-cp312-none-manylinux_2_28_x86_64.whl", hash = "sha256:2814b8b6055d7011941277850104177420bf840116f548b6ace3a8071090719c", size = 799617, upload-time = "2026-07-30T19:21:49.834Z" },
+    { url = "https://files.pythonhosted.org/packages/59/2e/2817ff7f601e098078e64822421bbbcc7e0af6eef7f373ffd19fa7579ab4/tensorrt_lean_cu13_bindings-11.2.1.2-cp312-none-manylinux_2_35_aarch64.whl", hash = "sha256:f696adeb6f92f16913bde9edb09c108e34f94c41ca6e5a057bbb05e528c3b3b2", size = 775009, upload-time = "2026-07-30T19:22:12.716Z" },
+    { url = "https://files.pythonhosted.org/packages/f0/a1/e2665115d37fc41ba39a5eae914d48cb21b0590627ea9c6fc21288f086ac/tensorrt_lean_cu13_bindings-11.2.1.2-cp312-none-win_amd64.whl", hash = "sha256:80f627e5345ccae5974d98ae9f3e07419098fe4a59f63d25acd01762fd19f7db", size = 648856, upload-time = "2026-07-30T19:22:31.357Z" },
 ]
 
 [[package]]
 name = "tensorrt-lean-cu13-libs"
-version = "11.1.0.106"
+version = "11.2.1.2"
 source = { registry = "https://pypi.org/simple" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d4/f5/d178e60930a0fc36bafe7c7067d09b0e4e2809e5c3cac966cf3b493716cf/tensorrt_lean_cu13_libs-11.1.0.106-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:6a4968caea22d333c2eb4507d50f76257dc5ec78a27fb91a9ec600d9543e56bc", size = 44364630, upload-time = "2026-06-16T17:29:20.661Z" },
-    { url = "https://files.pythonhosted.org/packages/e5/56/b859423e7ef2a02a709ae51f4606809c7b22fed56051b2acc58b14e722b5/tensorrt_lean_cu13_libs-11.1.0.106-py3-none-manylinux_2_35_aarch64.whl", hash = "sha256:98955ddc55fadd2b4a4598bed3c7649d2637e1a3ce1737c98724c89392f4634f", size = 67103821, upload-time = "2026-06-16T17:29:50.575Z" },
-    { url = "https://files.pythonhosted.org/packages/b2/f9/23430f1ef5426462af6ec528443ff0d9004b864dd4faf0d6a326f6588e72/tensorrt_lean_cu13_libs-11.1.0.106-py3-none-win_amd64.whl", hash = "sha256:63997f4eed037dbc575a8802a6f8076f316f8b8515f42e56233ace534aa44c36", size = 14234229, upload-time = "2026-06-16T17:30:24.899Z" },
+    { url = "https://files.pythonhosted.org/packages/6b/3c/13052e28dd4cd79d10b39c785530c642377c7b5750dded086d4b66cb14c9/tensorrt_lean_cu13_libs-11.2.1.2-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:52641b1d5370af7035338aafdca81c0e493b7adffa82a5b45e016871b4df558e", size = 44427145, upload-time = "2026-07-30T19:19:05.503Z" },
+    { url = "https://files.pythonhosted.org/packages/95/9c/59fe914b0f869022a172c277de15a989f338d51c937553baced43a629d01/tensorrt_lean_cu13_libs-11.2.1.2-py3-none-manylinux_2_35_aarch64.whl", hash = "sha256:be627f4f0f062c5977a242f4413336c2438024da80ce09f5a1d0909b595a616f", size = 67248943, upload-time = "2026-07-30T19:19:29.748Z" },
+    { url = "https://files.pythonhosted.org/packages/11/15/dc71072c925800b132a2b68dea06af51442d28bde62e6ed8bd1ddf92160c/tensorrt_lean_cu13_libs-11.2.1.2-py3-none-win_amd64.whl", hash = "sha256:9ef2bbb572d5e0904b41324fc4a1b4e3850969156acfcae22d40b9df6f49593e", size = 14214445, upload-time = "2026-07-30T19:19:49.269Z" },
 ]
 
 [[package]]
@@ -5441,10 +5443,10 @@ resolution-markers = [
     "python_full_version >= '3.12' and sys_platform == 'win32'",
     "python_full_version >= '3.12' and sys_platform == 'emscripten'",
     "python_full_version >= '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version >= '3.12' and sys_platform == 'darwin'",
     "python_full_version < '3.12' and sys_platform == 'win32'",
     "python_full_version < '3.12' and sys_platform == 'emscripten'",
     "python_full_version < '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32'",
-    "python_full_version >= '3.12' and sys_platform == 'darwin'",
     "python_full_version < '3.12' and sys_platform == 'darwin'",
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/00/5e/d6e5258d69df8b4ed8c83b6664f2b47d30d2dec551a29ad72a6c69eafd31/xxhash-3.5.0.tar.gz", hash = "sha256:84f2caddf951c9cbf8dc2e22a89d4ccf5d86391ac6418fe81e3c67d0cf60b45f", size = 84241, upload-time = "2024-08-17T09:20:38.972Z" }

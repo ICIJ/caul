@@ -43,7 +43,7 @@ faster-whisper = [
 ]
 parakeet-trt = [
     # TensorRT only builds on linux or windown
-    "tensorrt-lean~=11.0; platform_system == 'Linux' or platform_system == 'Windows'",
+    "tensorrt-lean==11.2.1.2; platform_system == 'Linux' or platform_system == 'Windows'",
 ]
 whisper-trt = [
     # TensorRT only builds on linux or windown

@@ -1,7 +1,9 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, mock_open, patch
 
+import pytest
 import torch
 
+from caul.exception import TrtEngineLoadError
 from caul.tasks.inference.parakeet_trt import ParakeetTrtInferenceRunner
 from caul_core import PARAKEET_MODEL_REF
 
@@ -134,3 +136,19 @@ class TestParakeetTrtInferenceRunner:
             _SIGNAL_LEN,
             _SIGNAL_LEN // 2,
         ]
+
+    def test__raises_when_engine_fails_to_deserialize(self):
+        runner = ParakeetTrtInferenceRunner(PARAKEET_MODEL_REF, _ENGINE_PATH)
+        mock_trt = MagicMock(__version__="11.2.1.2")
+        mock_trt.Runtime.return_value.deserialize_cuda_engine.return_value = None
+
+        with (
+            patch(
+                "caul.tasks.inference.parakeet_trt.import_trt", return_value=mock_trt
+            ),
+            patch("builtins.open", mock_open(read_data=b"engine")),
+            pytest.raises(TrtEngineLoadError, match=r"encoder\.trt.*11\.2\.1\.2"),
+        ):
+            runner.__enter__()
+
+        assert runner._decoder is None
