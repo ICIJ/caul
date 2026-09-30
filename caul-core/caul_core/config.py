@@ -145,7 +145,6 @@ class ConstantSizeBatcherConfig(BaseBatcherConfig):
 class MaxDurationBatcherConfig(ConstantSizeBatcherConfig):
     type: ClassVar[str] = Field(default=BatcherType.MAX_DURATION)
 
-    # Hard upper limit on items per batch; disabled when <= 0
     batch_size: int = 0
     max_duration_s: float = PARAKEET_INFERENCE_MAX_DURATION_S
 
