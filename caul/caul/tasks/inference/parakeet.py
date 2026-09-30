@@ -31,12 +31,10 @@ class ParakeetInferenceRunner(InferenceRunner):
         self,
         model_name: str = PARAKEET_MODEL_REF,
         device: TorchDevice = TorchDevice.CPU,
-        return_timestamps: bool = True,
         batch_size: int = 4,
     ):
         super().__init__(device)
         self.model_name = model_name
-        self._return_timestamps = return_timestamps
         self._model = None
         self.__transcribe_config = None
         self._batch_size = batch_size
@@ -47,7 +45,6 @@ class ParakeetInferenceRunner(InferenceRunner):
     ) -> FromConfig:
         return cls(
             model_name=config.model_name,
-            return_timestamps=config.return_timestamps,
             **extras,
         )
 
@@ -63,7 +60,7 @@ class ParakeetInferenceRunner(InferenceRunner):
             self.__transcribe_config = TranscribeConfig(
                 use_lhotse=False,
                 batch_size=self._batch_size,
-                timestamps=self._return_timestamps,
+                timestamps=True,
                 return_hypotheses=True,
                 # Bug in Nemo's AudioToBPEDataset—by default TranscribeConfig spawns 2
                 # DataLoader workers, but AudioToBPEDataset defines a class TokenizerWrapper
@@ -92,7 +89,7 @@ class ParakeetInferenceRunner(InferenceRunner):
         """
         return self._model.transcribe(
             audio_inputs,
-            timestamps=self._return_timestamps,
+            timestamps=True,
             override_config=self._transcribe_config,
         )
 
@@ -113,7 +110,6 @@ class ParakeetInferenceRunner(InferenceRunner):
                 audios = [str(i.path) for i in input_batch]
 
             hypotheses = self._transcribe(audios)
-            # Get timestamped segments if available, otherwise default to whole text
             for idx, hyps in enumerate(hypotheses):
                 best_hyp = hyps
 

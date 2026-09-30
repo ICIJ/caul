@@ -2,6 +2,7 @@ from unittest.mock import MagicMock, mock_open, patch
 
 import pytest
 import torch
+from omegaconf import OmegaConf
 
 from caul.exception import TrtEngineLoadError
 from caul.tasks.inference.parakeet_trt import ParakeetTrtInferenceRunner
@@ -9,6 +10,9 @@ from caul_core import PARAKEET_MODEL_REF
 
 _ENGINE_PATH = "/fake/encoder.trt"
 _INFERENCE_HANDLER_PATH = "caul.tasks.inference.parakeet_trt.TrtInferenceHandler"
+_PROCESS_TIMESTAMPS_PATH = (
+    "nemo.collections.asr.parts.utils.timestamp_utils.process_timestamp_outputs"
+)
 _BATCH_SIZE = 2
 _SIGNAL_LEN = 16000
 _AUDIO_INPUT = torch.zeros(_BATCH_SIZE, _SIGNAL_LEN)
@@ -36,7 +40,10 @@ class TestParakeetTrtInferenceRunner:
         mock_inference_runner = _mock_inference_runner()
         mock_trt_handler = _mock_trt_handler(_ENC_OUT, _ENC_OUT_LEN)
 
-        with patch(_INFERENCE_HANDLER_PATH, mock_trt_handler):
+        with (
+            patch(_INFERENCE_HANDLER_PATH, mock_trt_handler),
+            patch(_PROCESS_TIMESTAMPS_PATH),
+        ):
             mock_inference_runner._transcribe(
                 _AUDIO_INPUT, trt_device=torch.device("cpu")
             )
@@ -50,7 +57,10 @@ class TestParakeetTrtInferenceRunner:
         mock_inference_runner = _mock_inference_runner()
         mock_trt_handler = _mock_trt_handler(_ENC_OUT, _ENC_OUT_LEN)
 
-        with patch(_INFERENCE_HANDLER_PATH, mock_trt_handler):
+        with (
+            patch(_INFERENCE_HANDLER_PATH, mock_trt_handler),
+            patch(_PROCESS_TIMESTAMPS_PATH),
+        ):
             mock_inference_runner._transcribe(
                 _AUDIO_INPUT, trt_device=torch.device("cpu")
             )
@@ -71,18 +81,45 @@ class TestParakeetTrtInferenceRunner:
             expected
         )
 
-        with patch(_INFERENCE_HANDLER_PATH, mock_trt_handler):
+        with (
+            patch(_INFERENCE_HANDLER_PATH, mock_trt_handler),
+            patch(_PROCESS_TIMESTAMPS_PATH, side_effect=lambda hyps, *_: hyps),
+        ):
             result = mock_inference_runner._transcribe(
                 _AUDIO_INPUT, trt_device=torch.device("cpu")
             )
 
         assert result is expected
 
+    def test__converts_decoder_timestamps_to_seconds(self):
+        mock_inference_runner = _mock_inference_runner()
+        mock_trt_handler = _mock_trt_handler(_ENC_OUT, _ENC_OUT_LEN)
+        decoder = mock_inference_runner._decoder
+        decoder.encoder.subsampling_factor = 8
+        decoder.cfg.preprocessor.window_stride = 0.01
+        hypotheses = [MagicMock(), MagicMock()]
+        decoder.decoding.rnnt_decoder_predictions_tensor.return_value = hypotheses
+        processed = [MagicMock(), MagicMock()]
+
+        with (
+            patch(_INFERENCE_HANDLER_PATH, mock_trt_handler),
+            patch(_PROCESS_TIMESTAMPS_PATH, return_value=processed) as mock_process,
+        ):
+            result = mock_inference_runner._transcribe(
+                _AUDIO_INPUT, trt_device=torch.device("cpu")
+            )
+
+        mock_process.assert_called_once_with(hypotheses, 8, 0.01)
+        assert result is processed
+
     def test__requests_hypotheses_with_timestamps_from_decoder(self):
         mock_inference_runner = _mock_inference_runner()
         mock_trt_handler = _mock_trt_handler(_ENC_OUT, _ENC_OUT_LEN)
 
-        with patch(_INFERENCE_HANDLER_PATH, mock_trt_handler):
+        with (
+            patch(_INFERENCE_HANDLER_PATH, mock_trt_handler),
+            patch(_PROCESS_TIMESTAMPS_PATH),
+        ):
             mock_inference_runner._transcribe(
                 _AUDIO_INPUT, trt_device=torch.device("cpu")
             )
@@ -98,7 +135,10 @@ class TestParakeetTrtInferenceRunner:
         short_audio = torch.zeros(_SIGNAL_LEN // 2)
         long_audio = torch.zeros(_SIGNAL_LEN)
 
-        with patch(_INFERENCE_HANDLER_PATH, mock_trt_handler):
+        with (
+            patch(_INFERENCE_HANDLER_PATH, mock_trt_handler),
+            patch(_PROCESS_TIMESTAMPS_PATH),
+        ):
             mock_inference_runner._transcribe(
                 [short_audio, long_audio], trt_device=torch.device("cpu")
             )
@@ -118,6 +158,7 @@ class TestParakeetTrtInferenceRunner:
 
         with (
             patch(_INFERENCE_HANDLER_PATH, mock_trt_handler),
+            patch(_PROCESS_TIMESTAMPS_PATH),
             patch(
                 "caul.tasks.inference.parakeet_trt.load_audio", side_effect=loaded
             ) as mock_load,
@@ -153,12 +194,33 @@ class TestParakeetTrtInferenceRunner:
 
         assert runner._decoder is None
 
+    def test__restores_decoder_with_compute_timestamps(self):
+        runner = ParakeetTrtInferenceRunner(PARAKEET_MODEL_REF, _ENGINE_PATH)
+        config = OmegaConf.create({"decoding": {"strategy": "greedy_batch"}})
+        OmegaConf.set_struct(config, True)
+        mock_restore = MagicMock(side_effect=[config, MagicMock()])
+
+        with (
+            patch("caul.tasks.inference.parakeet_trt.import_trt"),
+            patch("builtins.open", mock_open(read_data=b"engine")),
+            patch("nemo.collections.asr.models.ASRModel.restore_from", mock_restore),
+        ):
+            runner.__enter__()
+
+        config_call, model_call = mock_restore.call_args_list
+        assert config_call.kwargs["return_config"] is True
+        override = model_call.kwargs["override_config_path"]
+        assert override.decoding.compute_timestamps is True
+
     def test__pads_short_batches_to_engine_minimum(self):
         mock_inference_runner = _mock_inference_runner()
         mock_trt_handler = _mock_trt_handler(_ENC_OUT, _ENC_OUT_LEN)
         short_audio = [torch.ones(1600), torch.ones(8000)]
 
-        with patch(_INFERENCE_HANDLER_PATH, mock_trt_handler):
+        with (
+            patch(_INFERENCE_HANDLER_PATH, mock_trt_handler),
+            patch(_PROCESS_TIMESTAMPS_PATH),
+        ):
             mock_inference_runner._transcribe(
                 short_audio, trt_device=torch.device("cpu")
             )

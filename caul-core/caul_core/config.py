@@ -193,14 +193,12 @@ class ParakeetPreprocessorConfig(BasePreprocessorConfig):
 class ParakeetInferenceRunnerConfig(BaseInferenceRunnerConfig):
     model: ClassVar[str] = Field(frozen=True, default=ASRModel.PARAKEET)
     model_name: str = PARAKEET_MODEL_REF
-    return_timestamps: bool = True
 
 
 class ParakeetTrtInferenceRunnerConfig(BaseInferenceRunnerConfig):
     model_path: Path | str = None
     engine_path: Path | str = None
     model: ClassVar[str] = Field(frozen=True, default=ASRModel.PARAKEET_TRT)
-    return_timestamps: bool = True
 
 
 class ParakeetPostprocessorConfig(BasePostprocessorConfig):
