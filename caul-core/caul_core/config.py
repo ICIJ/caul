@@ -142,15 +142,19 @@ class ConstantSizeBatcherConfig(BaseBatcherConfig):
     batch_size: int = DEFAULT_BATCH_SIZE
 
 
-class MaxDurationBatcherConfig(BaseBatcherConfig):
+class MaxDurationBatcherConfig(ConstantSizeBatcherConfig):
     type: ClassVar[str] = Field(default=BatcherType.MAX_DURATION)
 
+    batch_size: int = 0
     max_duration_s: float = PARAKEET_INFERENCE_MAX_DURATION_S
 
 
 BatcherConfig = tagged_union(
-    BaseBatcherConfig.__subclasses__(), lambda t: t.type.default.value
+    [ConstantSizeBatcherConfig, MaxDurationBatcherConfig],
+    lambda t: t.type.default.value,
 )
+
+batcher_discriminator = make_enum_discriminator("type", BatcherType)
 
 
 class BasePreprocessorConfig(_BaseConfig):
@@ -161,7 +165,10 @@ class BasePreprocessorConfig(_BaseConfig):
     sample_rate: int = DEFAULT_SAMPLE_RATE
     large_file_threshold_bytes: int = DEFAULT_LARGE_FILE_THRESHOLD_BYTES
 
-    batcher: BatcherConfig = Field(default_factory=ConstantSizeBatcherConfig)
+    batcher: BatcherConfig = Field(
+        default_factory=ConstantSizeBatcherConfig,
+        discriminator=Discriminator(batcher_discriminator),
+    )
 
 
 class BaseInferenceRunnerConfig(_BaseConfig):

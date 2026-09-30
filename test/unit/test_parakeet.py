@@ -13,7 +13,11 @@ from caul_core import (
     DEFAULT_SAMPLE_RATE,
     ASRPipeline,
     ASRResult,
+    ConstantSizeBatcherConfig,
+    MaxDurationBatcherConfig,
     ParakeetInferenceRunnerConfig,
+    ParakeetPreprocessorConfig,
+    Preprocessor,
     SegmentIndex,
     TorchDevice,
 )
@@ -32,6 +36,30 @@ def test__parakeet_preprocess_inputs_to_fs(tmpdir):
     result = result[0]
     save_path = output_dir / result.path
     assert save_path.exists()
+
+
+def test__parakeet_preprocessor_from_config_uses_configured_batcher():
+    # Given
+    config = ParakeetPreprocessorConfig(batcher=ConstantSizeBatcherConfig(batch_size=8))
+    preprocessor = Preprocessor.from_config(config)
+    audio = [torch.zeros([DEFAULT_SAMPLE_RATE]) for _ in range(20)]
+    # When
+    batches = list(preprocessor.process(audio))
+    # Then
+    assert [len(b) for b in batches] == [8, 8, 4]
+
+
+def test__max_duration_batcher_caps_batch_size():
+    # Given
+    preprocessor = ParakeetPreprocessor()
+    audio = [torch.zeros([DEFAULT_SAMPLE_RATE]) for _ in range(5)]
+    config = MaxDurationBatcherConfig(batch_size=2)
+    # When
+    batches = list(
+        MaxDurationBatcher(preprocessor.preprocess_inputs(audio), config).batch()
+    )
+    # Then
+    assert [len(b) for b in batches] == [2, 2, 1]
 
 
 def test__parakeet_batching_unbatching():

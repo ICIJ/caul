@@ -57,10 +57,10 @@ class MaxDurationBatcher(Batcher):
                 yield item
                 continue
             input_duration_s = item.metadata.duration_s
-            if (
-                current_batch
-                and current_batch_duration_s + input_duration_s
+            if current_batch and (
+                current_batch_duration_s + input_duration_s
                 > self._config.max_duration_s
+                or 0 < self._config.batch_size <= len(current_batch)
             ):
                 yield tuple(current_batch)
                 current_batch = []
