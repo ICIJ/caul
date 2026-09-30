@@ -1,5 +1,6 @@
 from functools import lru_cache
 
+from caul.exception import TrtInputShapeError
 from caul.trt import import_trt
 
 
@@ -41,8 +42,19 @@ class TrtInferenceHandler:
         device = torch.device("cuda")
 
         for tensor_name, tensor in inputs.items():
-            inputs[tensor_name] = tensor.contiguous().to(device)
-            self._context.set_input_shape(tensor_name, tuple(inputs[tensor_name].shape))
+            in_dtype = trt_to_torch_dtypes[self._engine.get_tensor_dtype(tensor_name)]
+            inputs[tensor_name] = tensor.contiguous().to(device=device, dtype=in_dtype)
+            shape = tuple(inputs[tensor_name].shape)
+            # TRT rejects shapes outside an optimization profile by returning False,
+            # leaving dynamic output dims unresolved
+            if not self._context.set_input_shape(tensor_name, shape):
+                raise TrtInputShapeError(
+                    tensor_name,
+                    shape,
+                    self._engine.get_tensor_profile_shape(
+                        tensor_name, self._context.active_optimization_profile
+                    ),
+                )
 
         outputs = {}
         for i in range(self._engine.num_io_tensors):

@@ -35,3 +35,14 @@ class TrtEngineLoadError(Exception):
             f" version and must be rebuilt (see TensorRT logs above for details)"
         )
         super().__init__(msg)
+
+
+class TrtInputShapeError(Exception):
+    def __init__(self, tensor_name: str, shape: tuple, profile: tuple):
+        min_shape, opt_shape, max_shape = (tuple(s) for s in profile)
+        msg = (
+            f"input {tensor_name!r} has shape {tuple(shape)}, outside TRT"
+            f" engine's optimization profile (min={min_shape}, opt={opt_shape},"
+            f" max={max_shape})."
+        )
+        super().__init__(msg)
