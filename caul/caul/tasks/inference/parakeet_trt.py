@@ -22,6 +22,8 @@ from .trt_inference import TrtInferenceMixin
 
 logger = logging.getLogger(__name__)
 
+_MIN_ENGINE_SAMPLES = 16_000
+
 if TYPE_CHECKING:
     import torch
 
@@ -103,9 +105,6 @@ class ParakeetTrtInferenceRunner(ParakeetInferenceRunner, TrtInferenceMixin):
         trt = import_trt()
 
         runtime = trt.Runtime(trt.Logger(trt.Logger.ERROR))
-        # Version-compatible engines embed the lean runtime, which is host code that
-        # TensorRT refuses to deserialize unless allowed. Engines must therefore only
-        # come from trusted sources.
         runtime.engine_host_code_allowed = True
         with open(self._engine_path, "rb") as f:
             self._encoder = runtime.deserialize_cuda_engine(f.read())
@@ -124,9 +123,6 @@ class ParakeetTrtInferenceRunner(ParakeetInferenceRunner, TrtInferenceMixin):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        # ParakeetInferenceRunner and TrtInferenceMixin both define __exit__; MRO would
-        # otherwise resolve to InferenceRunner's, which never releases the TRT engine or
-        # the restored decoder.
         return TrtInferenceMixin.__exit__(self, exc_type, exc_val, exc_tb)
 
     def _transcribe(
@@ -155,19 +151,23 @@ class ParakeetTrtInferenceRunner(ParakeetInferenceRunner, TrtInferenceMixin):
         ):
             audio_inputs = [audio_inputs]
 
-        # NeMo's transcribe() accepts file paths; TRT needs tensors, so load them here
         audio_inputs = [
             load_audio(ai) if isinstance(ai, (str, Path)) else ai for ai in audio_inputs
         ]
 
         audio_inputs_len = torch.tensor(
-            [ai.shape[-1] for ai in audio_inputs], dtype=torch.int32
+            [ai.shape[-1] for ai in audio_inputs], dtype=torch.int64
         ).to(trt_device)
 
         # pad to len(max(t)), setting dim[0] to batch_size
         audio_inputs = torch.nn.utils.rnn.pad_sequence(
             audio_inputs, batch_first=True
         ).to(trt_device)
+        # zero-pad short batches up to profile minimum
+        if audio_inputs.shape[-1] < _MIN_ENGINE_SAMPLES:
+            audio_inputs = torch.nn.functional.pad(
+                audio_inputs, (0, _MIN_ENGINE_SAMPLES - audio_inputs.shape[-1])
+            )
 
         with TrtInferenceHandler(self._encoder) as handler:
             enc_out, enc_len = handler.infer(

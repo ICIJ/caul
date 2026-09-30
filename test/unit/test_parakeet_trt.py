@@ -152,3 +152,19 @@ class TestParakeetTrtInferenceRunner:
             runner.__enter__()
 
         assert runner._decoder is None
+
+    def test__pads_short_batches_to_engine_minimum(self):
+        mock_inference_runner = _mock_inference_runner()
+        mock_trt_handler = _mock_trt_handler(_ENC_OUT, _ENC_OUT_LEN)
+        short_audio = [torch.ones(1600), torch.ones(8000)]
+
+        with patch(_INFERENCE_HANDLER_PATH, mock_trt_handler):
+            mock_inference_runner._transcribe(
+                short_audio, trt_device=torch.device("cpu")
+            )
+
+        call_args = mock_trt_handler.return_value.infer.call_args[0][0]
+        input_signal = call_args["input_signal"]
+        assert input_signal.shape == (2, 16000)
+        assert input_signal[:, 8000:].abs().sum() == 0
+        assert call_args["input_signal_length"].tolist() == [1600, 8000]
