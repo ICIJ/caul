@@ -11,7 +11,6 @@ from caul_core import (
     TorchDevice,
 )
 from icij_common.registrable import FromConfig
-from torchaudio.models import Hypothesis
 
 from ...exception import TrtEngineLoadError
 from ...trt import import_trt
@@ -26,6 +25,7 @@ _MIN_ENGINE_SAMPLES = 16_000
 
 if TYPE_CHECKING:
     import torch
+    from nemo.collections.asr.parts.utils.rnnt_utils import Hypothesis
 
 
 @cache
@@ -76,13 +76,11 @@ class ParakeetTrtInferenceRunner(ParakeetInferenceRunner, TrtInferenceMixin):
         model_path: Path | str,
         engine_path: Path | str,
         device: TorchDevice = TorchDevice.CPU,
-        return_timestamps: bool = True,
         batch_size: int = 4,
     ):
         ParakeetInferenceRunner.__init__(
             self,
             device=device,
-            return_timestamps=return_timestamps,
             batch_size=batch_size,
         )
         TrtInferenceMixin.__init__(self)
@@ -97,7 +95,6 @@ class ParakeetTrtInferenceRunner(ParakeetInferenceRunner, TrtInferenceMixin):
         return cls(
             model_path=config.model_path,
             engine_path=config.engine_path,
-            return_timestamps=config.return_timestamps,
             **extras,
         )
 
@@ -113,8 +110,17 @@ class ParakeetTrtInferenceRunner(ParakeetInferenceRunner, TrtInferenceMixin):
 
         import nemo.collections.asr as nemo_asr  # pylint: disable=import-outside-toplevel
 
+        from omegaconf import open_dict  # pylint: disable=import-outside-toplevel
+
+        config = nemo_asr.models.ASRModel.restore_from(
+            self._model_path, return_config=True
+        )
+        with open_dict(config.decoding):
+            config.decoding.compute_timestamps = True
+
         self._decoder = nemo_asr.models.ASRModel.restore_from(
             self._model_path,
+            override_config_path=config,
             map_location=self._torch_device,
             save_restore_connector=_decoder_joint_connector(),
             strict=False,
@@ -129,7 +135,7 @@ class ParakeetTrtInferenceRunner(ParakeetInferenceRunner, TrtInferenceMixin):
         self,
         audio_inputs: "torch.Tensor | str | Path | Iterable[torch.Tensor | str | Path]",
         trt_device: TorchDevice = None,
-    ) -> list[Hypothesis] | list[list[Hypothesis]]:
+    ) -> "list[Hypothesis] | list[list[Hypothesis]]":
         """Transcribe audio tensors
 
         :param audio_inputs: audio tensors or audio file paths
@@ -178,6 +184,18 @@ class ParakeetTrtInferenceRunner(ParakeetInferenceRunner, TrtInferenceMixin):
         enc_len = enc_len.to(self._torch_device)
 
         with torch.no_grad():
-            return self._decoder.decoding.rnnt_decoder_predictions_tensor(
+            hypotheses = self._decoder.decoding.rnnt_decoder_predictions_tensor(
                 enc_out, enc_len, return_hypotheses=True
             )
+
+        # pylint: disable=import-outside-toplevel
+        from nemo.collections.asr.parts.utils.timestamp_utils import (
+            process_timestamp_outputs,
+        )
+
+        # convert frame offsets to seconds, as the model's transcribe() would
+        return process_timestamp_outputs(
+            hypotheses,
+            self._decoder.encoder.subsampling_factor,
+            self._decoder.cfg.preprocessor.window_stride,
+        )

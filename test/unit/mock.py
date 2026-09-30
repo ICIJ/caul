@@ -69,10 +69,9 @@ class MockNvidiaASRInferenceRunner(ParakeetInferenceRunner):
         self,
         model_name: str,
         device: TorchDevice | torch.device = TorchDevice.CPU,
-        return_timestamps: bool = True,
         batch_size: int = 4,
     ):
-        super().__init__(model_name, device, return_timestamps, batch_size)
+        super().__init__(model_name, device, batch_size)
 
     def __enter__(self):
         self._model = MockParakeetModel()
